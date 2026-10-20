@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?android:attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:longClickable="true"
+    android:minHeight="56dp"
+    android:orientation="horizontal"
+    android:paddingStart="8dp"
+    android:paddingEnd="4dp">
+
+    <ImageView
+        android:id="@+id/image_drag_handle"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:contentDescription="@null"
+        android:padding="4dp"
+        android:src="@drawable/ic_drag_handle"
+        android:tint="@color/app_text_secondary" />
+
+    <ImageView
+        android:id="@+id/image_status_element_icon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginStart="8dp"
+        android:contentDescription="@null"
+        android:tint="@color/brand_blue" />
+
+    <TextView
+        android:id="@+id/text_status_element_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:maxLines="2"
+        android:textColor="@color/app_text"
+        android:textSize="15sp" />
+
+    <ImageButton
+        android:id="@+id/button_move_status_element"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:padding="10dp"
+        android:src="@drawable/ic_swap_horiz"
+        android:tint="@color/app_text_secondary" />
+</LinearLayout>

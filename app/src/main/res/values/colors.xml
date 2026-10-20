@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- LuckyTool-inspired dark palette. -->
+    <color name="app_background">#0B0F16</color>
+    <color name="app_surface">#141B24</color>
+    <color name="app_surface_high">#1A2330</color>
+    <color name="app_outline">#263241</color>
+    <color name="app_text">#E8EEF7</color>
+    <color name="app_text_secondary">#9AA8BA</color>
+
+    <color name="brand_blue">#A8C7FA</color>
+    <color name="brand_blue_dark">#0B0F16</color>
+    <color name="brand_blue_strong">#4C8DF6</color>
+    <color name="brand_on_primary">#081A33</color>
+    <color name="success">#7ADFA0</color>
+    <color name="warning">#FFD48A</color>
+    <color name="danger">#FF8A80</color>
+
+    <color name="ic_launcher_background">#0B57D0</color>
+</resources>

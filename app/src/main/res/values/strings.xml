@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MockingBatwing</string>
+    <string name="app_tagline">Launcher &amp; SystemUI</string>
+    <string name="creator_credit">製作者: Devola-Sun</string>
+    <string name="creator_credit_short">Devola-Sun</string>
+    <string name="xposed_description">MockingBatwing — Motorola Razr launcher + SystemUI + System Framework customization (LSPosed): icons, grid, labels, status bar, control center, CorePatch, and launcher layout backup/restore.</string>
+
+    <string name="settings_title">MockingBatwing</string>
+    <string name="settings_subtitle">ランチャーとSystemUIの設定を1画面で管理します。設定は共有Preferencesに保存されます。</string>
+    <string name="settings_activation_hint">LSPosedでモジュールを有効化し、スコープに com.motorola.launcher3 と com.android.systemui を追加してください。初回は端末の再起動が必要です。</string>
+
+    <!-- Bottom navigation and page headers -->
+    <string name="nav_home">ホーム</string>
+    <string name="nav_features">機能</string>
+    <string name="nav_log">ログ</string>
+    <string name="nav_appearance">外観</string>
+    <string name="nav_systemui">SystemUI</string>
+    <string name="nav_more">その他</string>
+
+    <string name="page_home_title">MockingBatwing</string>
+    <string name="page_home_subtitle">Launcher &amp; SystemUI tweaks</string>
+    <string name="page_features_title">機能</string>
+    <string name="page_features_subtitle">フック対象アプリごとの設定</string>
+    <string name="page_log_title">ログ</string>
+    <string name="page_log_subtitle">モジュールの動作ログ</string>
+    <string name="page_launcher_title">Moto Launcher</string>
+    <string name="page_launcher_subtitle">アイコン・ラベル・フォルダ・グリッド</string>
+    <string name="page_appearance_title">外観</string>
+    <string name="page_appearance_subtitle">アイコン・ラベル・フォルダ・グリッド</string>
+    <string name="page_systemui_title">SystemUI</string>
+    <string name="page_systemui_subtitle">ステータスバーとコントロールセンター</string>
+    <string name="page_more_title">その他</string>
+    <string name="page_more_subtitle">バックアップ・キャッシュ・モジュール情報</string>
+
+    <!-- Features / per-app settings -->
+    <string name="features_intro">設定したいアプリを選択してください。各カードから専用の設定画面を開けます。</string>
+    <string name="feature_launcher_title">Moto Launcher</string>
+    <string name="feature_launcher_package">com.motorola.launcher3</string>
+    <string name="feature_launcher_desc">アイコン形状・ラベル・フォルダ・ホームグリッド・ウィジェットのリサイズ</string>
+    <string name="feature_systemui_title">SystemUI</string>
+    <string name="feature_systemui_package">com.android.systemui</string>
+    <string name="feature_systemui_desc">ステータスバー・通知バーの並び替え・コントロールセンター</string>
+    <string name="feature_open_settings">設定を開く</string>
+    <string name="feature_scope_title">LSPosed スコープ</string>
+    <string name="feature_scope_summary">com.motorola.launcher3\ncom.android.systemui\nandroid</string>
+    <string name="feature_scope_hint">実際にフックが読み込まれているスコープを検出して表示しています。</string>
+    <string name="feature_scope_none">現在フックが有効なスコープはありません（モジュール無効またはスコープ未設定）</string>
+    <string name="icon_shape_system">システム既定</string>
+    <string name="icon_shape_squircle">角丸四角形</string>
+    <string name="icon_shape_circle">円形</string>
+    <string name="icon_shape_square">正方形</string>
+    <string name="icon_shape_diamond">ひし形</string>
+
+    <string name="feature_launcher_summary">グリッド %1$s ・ Dock %2$d ・ フォルダ %3$s</string>
+    <string name="feature_systemui_summary">秒表示 %1$s ・ iOSアイコン %2$s ・ 並び替え %3$s</string>
+    <string name="feature_framework_title">System Framework</string>
+    <string name="feature_framework_package">android</string>
+    <string name="feature_framework_desc">FLAG_SECURE無効化・シャッター音無効化・署名検証バイパス・ダウングレード許可</string>
+    <string name="feature_framework_summary">FLAG_SECURE %1$s ・ シャッター音無効 %2$s ・ 署名バイパス %3$s ・ ダウングレード %4$s</string>
+    <string name="page_framework_title">System Framework</string>
+    <string name="page_framework_subtitle">システムフレームワーク設定</string>
+    <string name="feature_order_custom">カスタム</string>
+    <string name="feature_order_default">既定</string>
+
+    <!-- Log -->
+    <string name="log_section_title">モジュールログ</string>
+    <string name="log_section_desc">Launcher / SystemUI のフックログを表示します。更新ボタンで最新の内容を読み込みます。</string>
+    <string name="log_refresh">更新</string>
+    <string name="log_clear_view">表示をクリア</string>
+    <string name="log_empty">ログはありません。</string>
+    <string name="log_loading">ログを読み込んでいます…</string>
+    <string name="log_root_hint">ログの取得には root（su）を使用します。</string>
+    <string name="log_root_error">ログを取得できませんでした: %1$s</string>
+    <string name="log_line_count">%1$d 行</string>
+
+    <!-- Widget resize -->
+    <string name="widget_free_resize_title">ウィジェットを自由にリサイズ</string>
+    <string name="widget_free_resize_summary">長押し時のリサイズ制限を解除し、1セル単位でサイズを変更できるようにします。</string>
+
+    <!-- Home -->
+    <string name="home_badge">LSPOSED MODULE</string>
+    <string name="home_status_title">モジュールは準備完了です</string>
+    <string name="home_status_summary">設定は変更と同時に保存されます。反映には対象プロセスの再起動が必要です。</string>
+    <string name="home_scope_title">LSPosed スコープ</string>
+    <string name="home_scope_summary">com.motorola.launcher3\ncom.android.systemui\nandroid</string>
+    <string name="home_scope_hint">実際にフックが読み込まれているスコープを検出して表示しています。</string>
+    <string name="about_scope_body_dynamic">LSPosed スコープ（検出済み）\n%1$s</string>
+    <string name="home_overview_title">現在の設定</string>
+    <string name="home_overview_grid">グリッド</string>
+    <string name="home_overview_dock">Dock</string>
+    <string name="home_overview_folder">フォルダ</string>
+    <string name="home_quick_actions">クイック操作</string>
+    <string name="home_open_appearance">外観設定を開く</string>
+    <string name="home_open_systemui">SystemUI設定を開く</string>
+    <string name="home_footer">MockingBatwing %1$s · LSPosed module · Devola-Sun</string>
+    <string name="value_on">ON</string>
+    <string name="value_off">OFF</string>
+    <string name="value_grid_format">%1$d × %2$d</string>
+    <string name="value_dock_format">%1$d 個</string>
+
+    <!-- Appearance -->
+    <string name="section_appearance">アイコンとラベル</string>
+    <string name="hide_labels_title">アイコンラベルを非表示</string>
+    <string name="hide_labels_summary">Workspace・All Apps・フォルダ・Dockのラベルを透明にします。</string>
+
+    <string name="icon_shape_title">アイコン形状</string>
+    <string name="icon_shape_summary">SYSTEMを選ぶと標準マスクに戻ります。形状変更後はアイコンキャッシュの消去を推奨します。</string>
+
+    <string name="folder_preview_3x3_title">フォルダアイコンを3×3表示</string>
+    <string name="folder_preview_3x3_summary">ランチャーのフォルダアイコンを3×3（最大9個）で表示します。開いたフォルダ内は4×4（最大16個）で左上から整列します。</string>
+
+    <string name="section_layout">ホーム画面グリッド</string>
+    <string name="layout_summary">行数・列数・Dockアイコン数は4〜10です。変更後はランチャーを再起動してください。</string>
+    <string name="grid_rows_title">デスクトップ行数</string>
+    <string name="grid_columns_title">デスクトップ列数</string>
+    <string name="dock_icons_title">Dockアイコン数</string>
+
+    <!-- SystemUI -->
+    <string name="section_systemui_title">ステータスバー</string>
+    <string name="section_control_center_title">コントロールセンター</string>
+    <string name="systemui_hint">ステータスバー設定はSystemUIの再起動後に反映されます。</string>
+
+    <string name="pref_sb_show_seconds_title">時計の秒数を表示する</string>
+    <string name="pref_sb_show_seconds_desc">ステータスバー時計に秒（hh:mm:ss）を表示します。</string>
+    <string name="pref_sb_hide_battery_percent_title">バッテリーパーセントを非表示</string>
+    <string name="pref_sb_hide_battery_percent_desc">残量（%）を隠し、バッテリーアイコンのみ表示します。</string>
+    <string name="pref_sb_hide_volte_title">VoLTE / VoWiFi / NFC アイコンを隠す</string>
+    <string name="pref_sb_hide_volte_desc">VoLTE・HD通話・VoWiFi・NFC・デュアルSIM表示を非表示化します。</string>
+    <string name="pref_sb_ios_icons_title">iOS風アイコンを適用（Wi-Fi / 電波）</string>
+    <string name="pref_sb_ios_icons_desc">Wi-Fiを扇型、電波を4本バーのiOSスタイルに差し替えます。</string>
+    <string name="pref_sb_custom_padding_title">razr fold 最適化パディングを適用</string>
+    <string name="pref_sb_custom_padding_desc">メイン画面（パンチホール）とカバー画面の余白を調整します。</string>
+
+    <!-- Battery -->
+    <string name="section_battery_title">バッテリー</string>
+    <string name="battery_hint">ステータスバーの表示はSystemUI再起動、充電制御は端末再起動後に反映されます。</string>
+    <string name="battery_icon_style_title">バッテリーアイコン</string>
+    <string name="battery_icon_style_summary">ステータスバーのアイコン形状を変更します。</string>
+    <string name="battery_icon_style_system">システム既定</string>
+    <string name="battery_icon_style_circle">サークル</string>
+    <string name="battery_icon_style_pill">ピル</string>
+    <string name="battery_icon_style_hidden">非表示</string>
+    <string name="battery_percent_style_title">バッテリー残量（％）の表示</string>
+    <string name="battery_percent_style_summary">常時表示・非表示・アイコン内表示を切り替えます。「アイコン内」はピル形状で描画されます。</string>
+    <string name="battery_percent_style_system">システム既定</string>
+    <string name="battery_percent_style_always">常に表示</string>
+    <string name="battery_percent_style_hidden">非表示</string>
+    <string name="battery_percent_style_in_icon">アイコン内に表示</string>
+    <string name="battery_charge_limit_title">80%での充電停止を有効化</string>
+    <string name="battery_charge_limit_desc">Motorolaのアダプティブ充電機構を使い、指定した残量で充電を停止します。</string>
+    <string name="battery_charge_limit_value_title">充電停止しきい値</string>
+    <string name="battery_charge_limit_value_desc">60〜100%の範囲で指定します。Motorolaの充電制御が利用できない機種では適用されません。</string>
+    <string name="battery_charge_limit_value_format">%1$d%%</string>
+    <string name="battery_disable_overheat_title">バッテリー温度制御を削除</string>
+    <string name="battery_disable_overheat_desc">高温時のバッテリー過熱シャットダウンを無効化します。自己責任で使用してください。</string>
+    <string name="battery_reboot_hint">充電制御・温度制御は system_server の設定のため、変更後に端末を再起動してください。</string>
+
+    <string name="section_screenshot_title">スクリーンショット</string>
+    <string name="disable_flag_secure_title">FLAG_SECURE無効化 (スクリーンショット許可)</string>
+    <string name="disable_flag_secure_desc">FLAG_SECURE を無視し、保護された画面もスクリーンショット・画面録画できるようにします。</string>
+    <string name="disable_flag_secure_warning">セキュリティ保護された画面（銀行アプリなど）も撮影可能になります。必要なときだけオンにしてください。</string>
+
+    <string name="section_framework_title">システムフレームワーク (System Framework)</string>
+    <string name="restart_menu_title">再起動メニュー</string>
+    <string name="restart_menu_launcher">ランチャー再起動</string>
+    <string name="restart_menu_systemui">SystemUI再起動</string>
+    <string name="restart_menu_soft_reboot">ソフトリブート (Zygote)</string>
+    <string name="restart_menu_device">端末再起動</string>
+    <string name="restart_menu_clear_cache">アイコンキャッシュ消去 &amp; 再起動</string>
+    <string name="status_rebooting">端末を再起動しています…</string>
+    <string name="pref_corepatch_bypass_signatures_title">署名検証バイパス</string>
+    <string name="pref_corepatch_bypass_signatures_desc">異なる署名を持つAPKでの上書きインストールを許可します</string>
+    <string name="pref_disable_camera_sound_title">カメラのシャッター音を無効化</string>
+    <string name="pref_disable_camera_sound_desc">日本地域や日本SIMを挿入したときに有効になるシャッター音を無効にします。</string>
+    <string name="pref_corepatch_allow_downgrade_title">ダウングレード許可</string>
+    <string name="pref_corepatch_allow_downgrade_desc">バージョンが低いAPKへの上書きインストールを許可します</string>
+    <string name="pref_corepatch_bypass_digest_title">破損/テスト署名チェックのスキップ</string>
+    <string name="pref_corepatch_bypass_digest_desc">ダイジェスト検証エラーを無視してインストールします</string>
+    <string name="corepatch_reboot_note">※ システムフレームワークの設定変更を反映するには、端末の再起動またはソフトリブート（Zygote再起動）が必要です</string>
+    <string name="pref_safe_mode_title">セーフモード（非対応デバイス保護）</string>
+    <string name="pref_safe_mode_desc">razr fold 以外のデバイスでフラグ有効時のクラッシュ・ブートループを回避します。エラーログは /sdcard/Download/Errorlog に強制出力されます。</string>
+    <string name="status_safe_mode_log">エラーログを /sdcard/Download/Errorlog に出力しました</string>
+    <string name="button_soft_reboot">ソフトリブート（反映）</string>
+    <string name="status_soft_rebooting">ソフトリブートを実行しています…</string>
+
+    <string name="pref_cc_swap_sliders_title">音量・明るさスライダーの左右反転</string>
+    <string name="pref_cc_swap_sliders_desc">左：明るさ、右：音量へ反転し、高さを同期します。</string>
+    <string name="pref_cc_ios_connectivity_title">通信カードを iOS 15 風 2×2 に変更</string>
+    <string name="pref_cc_ios_connectivity_desc">Wi-Fi・データ・Bluetoothに機内モードを加えた2×2グリッドにします。</string>
+
+    <!-- Status bar element order -->
+    <string name="section_status_bar_order_title">通知バーの並び替え</string>
+    <string name="status_bar_order_summary">長押ししてドラッグすると順番を変更できます。⇄ボタンで左右のグループへ移動します。</string>
+    <string name="status_bar_order_left">左側</string>
+    <string name="status_bar_order_right">右側</string>
+    <string name="status_bar_order_hint">変更後は「SystemUIを再起動して反映」を押してください。</string>
+    <string name="status_bar_order_move">反対側へ移動</string>
+    <string name="status_bar_order_reset">既定の並びに戻す</string>
+    <string name="status_bar_element_clock">時計</string>
+    <string name="status_bar_element_ongoing">進行中アクティビティ</string>
+    <string name="status_bar_element_notifications">通知アイコン</string>
+    <string name="status_bar_element_user_switcher">ユーザーアイコン</string>
+    <string name="status_bar_element_wifi">Wi-Fi</string>
+    <string name="status_bar_element_mobile">電波（モバイル）</string>
+    <string name="status_bar_element_battery">バッテリー</string>
+    <string name="status_bar_element_system_icons">ステータスアイコン（Wi-Fi / 電波 / バッテリー）</string>
+
+    <!-- Maintenance and backup -->
+    <string name="restart_button">ランチャーを再起動して反映</string>
+    <string name="clear_cache_button">アイコンキャッシュを消去</string>
+    <string name="restart_systemui_button">SystemUIを再起動して反映</string>
+    <string name="status_restarting_systemui">SystemUIを再起動しています…</string>
+
+    <string name="section_backup_title">ランチャーレイアウト</string>
+    <string name="backup_section_title">ランチャーレイアウトのバックアップ</string>
+    <string name="backup_section_desc">ホーム画面・Dock・フォルダ構成を保存します。復元時はランチャーを停止してデータベースを置き換えます。</string>
+    <string name="backup_button">現在のレイアウトをバックアップ</string>
+    <string name="restore_button">選択したバックアップを復元</string>
+    <string name="backup_select_hint">復元するバックアップを選択してください。</string>
+    <string name="backup_empty">バックアップはまだありません</string>
+    <string name="backup_none_selected">バックアップが選択されていません。</string>
+    <string name="status_backing_up">ランチャーレイアウトをバックアップしています…</string>
+    <string name="status_restoring">ランチャーレイアウトを復元しています…</string>
+    <string name="status_backup_success">ランチャーレイアウトのバックアップを作成しました。</string>
+    <string name="status_restore_success">ランチャーレイアウトを復元しました。</string>
+
+    <string name="section_actions_title">メンテナンス</string>
+    <string name="section_info_title">モジュール情報</string>
+    <string name="about_scope_body">LSPosed スコープ\n• com.motorola.launcher3\n• com.android.systemui\n• android</string>
+    <string name="about_restart_body">初回インストール後とモジュール更新後は端末を再起動してください。設定変更後は各再起動ボタンを使用します。</string>
+    <string name="about_credits_title">クレジット / ライセンス</string>
+    <string name="about_credits_body">MockingBatwing © 2026 Devola-Sun\n\n使用OSS（敬称略）\n• YukiHookAPI 1.3.2 — Apache License 2.0 © HighCapable\n• KavaRef — Apache License 2.0 © HighCapable\n• AndroidX / AppCompat — Apache License 2.0 © The Android Open Source Project\n• LSPosed Framework — GPLv3 © LSPosed\n\nMockingBatwing 本体は GPLv3 ライセンスの下で提供されます。\n無償でご利用いただけます。</string>
+
+    <string name="status_idle">設定を変更したら「ランチャーを再起動して反映」を押してください。</string>
+    <string name="status_restarting">ランチャーを再起動しています…</string>
+    <string name="status_clearing_cache">形状変更を反映するため、アイコンキャッシュを消去してランチャーを再起動しています…</string>
+    <string name="status_success">完了しました。ランチャーを確認してください。</string>
+    <string name="status_failed">失敗しました: %1$s</string>
+    <string name="status_root_unavailable">Root（su）が利用できません。</string>
+
+    <!-- Language -->
+    <string name="section_language_title">言語 / Language</string>
+    <string name="pref_language_title">表示言語</string>
+    <string name="pref_language_desc">アプリの表示言語を切り替えます。変更は即時反映されます。</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_en">English</string>
+</resources>

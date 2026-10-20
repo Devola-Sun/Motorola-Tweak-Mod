@@ -1,0 +1,13 @@
+.gradle/
+build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+app/build/
+app/src/main/assets/xposed_init
+app/src/main/resources/META-INF/yukihookapi_init
+
+# Local build log / agent workspace
+build-log.txt
+.opencode/

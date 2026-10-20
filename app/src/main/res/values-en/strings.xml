@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MockingBatwing</string>
+    <string name="app_tagline">Launcher &amp; SystemUI</string>
+    <string name="creator_credit">Created by Devola-Sun</string>
+    <string name="creator_credit_short">Devola-Sun</string>
+    <string name="xposed_description">MockingBatwing — Motorola Razr launcher + SystemUI + System Framework customization (LSPosed): icons, grid, labels, status bar, control center, CorePatch, and launcher layout backup/restore.</string>
+
+    <string name="settings_title">MockingBatwing</string>
+    <string name="settings_subtitle">Manage launcher and SystemUI settings in one screen. Settings are saved to shared preferences.</string>
+    <string name="settings_activation_hint">Enable the module in LSPosed and add com.motorola.launcher3, com.android.systemui and android to the scope. A device reboot is required the first time.</string>
+
+    <!-- Bottom navigation and page headers -->
+    <string name="nav_home">Home</string>
+    <string name="nav_features">Features</string>
+    <string name="nav_log">Log</string>
+    <string name="nav_appearance">Appearance</string>
+    <string name="nav_systemui">SystemUI</string>
+    <string name="nav_more">More</string>
+
+    <string name="page_home_title">MockingBatwing</string>
+    <string name="page_home_subtitle">Launcher &amp; SystemUI tweaks</string>
+    <string name="page_features_title">Features</string>
+    <string name="page_features_subtitle">Settings for each hooked app</string>
+    <string name="page_log_title">Log</string>
+    <string name="page_log_subtitle">Module activity log</string>
+    <string name="page_launcher_title">Moto Launcher</string>
+    <string name="page_launcher_subtitle">Icons, labels, folders and grid</string>
+    <string name="page_appearance_title">Appearance</string>
+    <string name="page_appearance_subtitle">Icons, labels, folders and grid</string>
+    <string name="page_systemui_title">SystemUI</string>
+    <string name="page_systemui_subtitle">Status bar and control center</string>
+    <string name="page_more_title">More</string>
+    <string name="page_more_subtitle">Backup, cache and module info</string>
+
+    <!-- Features / per-app settings -->
+    <string name="features_intro">Select the app you want to configure. Each card opens its dedicated settings screen.</string>
+    <string name="feature_launcher_title">Moto Launcher</string>
+    <string name="feature_launcher_package">com.motorola.launcher3</string>
+    <string name="feature_launcher_desc">Icon shape, labels, folders, home grid and widget resizing</string>
+    <string name="feature_systemui_title">SystemUI</string>
+    <string name="feature_systemui_package">com.android.systemui</string>
+    <string name="feature_systemui_desc">Status bar, notification bar ordering and control center</string>
+    <string name="feature_open_settings">Open settings</string>
+    <string name="feature_scope_title">LSPosed scope</string>
+    <string name="feature_scope_summary">com.motorola.launcher3\ncom.android.systemui\nandroid</string>
+    <string name="feature_scope_hint">Showing the scopes whose hooks were actually detected as loaded.</string>
+    <string name="feature_scope_none">No scopes are currently hooked (module disabled or no scope configured)</string>
+    <string name="icon_shape_system">System default</string>
+    <string name="icon_shape_squircle">Rounded square</string>
+    <string name="icon_shape_circle">Circle</string>
+    <string name="icon_shape_square">Square</string>
+    <string name="icon_shape_diamond">Diamond</string>
+
+    <string name="feature_launcher_summary">Grid %1$s · Dock %2$d · Folders %3$s</string>
+    <string name="feature_systemui_summary">Seconds %1$s · iOS icons %2$s · Order %3$s</string>
+    <string name="feature_framework_title">System Framework</string>
+    <string name="feature_framework_package">android</string>
+    <string name="feature_framework_desc">Disable FLAG_SECURE, disable camera shutter sound, signature verification bypass, downgrade allowed</string>
+    <string name="feature_framework_summary">FLAG_SECURE %1$s · Shutter sound off %2$s · Signature bypass %3$s · Downgrade %4$s</string>
+    <string name="page_framework_title">System Framework</string>
+    <string name="page_framework_subtitle">System framework settings</string>
+    <string name="feature_order_custom">Custom</string>
+    <string name="feature_order_default">Default</string>
+
+    <!-- Log -->
+    <string name="log_section_title">Module log</string>
+    <string name="log_section_desc">Shows the hook log of the launcher and SystemUI. Tap refresh to load the latest output.</string>
+    <string name="log_refresh">Refresh</string>
+    <string name="log_clear_view">Clear view</string>
+    <string name="log_empty">No logs.</string>
+    <string name="log_loading">Loading logs…</string>
+    <string name="log_root_hint">Reading logs requires root (su).</string>
+    <string name="log_root_error">Could not read logs: %1$s</string>
+    <string name="log_line_count">%1$d lines</string>
+
+    <!-- Widget resize -->
+    <string name="widget_free_resize_title">Free widget resizing</string>
+    <string name="widget_free_resize_summary">Removes the resize restrictions on long press and allows resizing in 1-cell steps.</string>
+
+    <!-- Home -->
+    <string name="home_badge">LSPOSED MODULE</string>
+    <string name="home_status_title">The module is ready</string>
+    <string name="home_status_summary">Settings are saved immediately. Restart the target process to apply them.</string>
+    <string name="home_scope_title">LSPosed scope</string>
+    <string name="home_scope_summary">com.motorola.launcher3\ncom.android.systemui\nandroid</string>
+    <string name="home_scope_hint">Showing the scopes whose hooks were actually detected as loaded.</string>
+    <string name="about_scope_body_dynamic">LSPosed scope (detected)\n%1$s</string>
+    <string name="home_overview_title">Current settings</string>
+    <string name="home_overview_grid">Grid</string>
+    <string name="home_overview_dock">Dock</string>
+    <string name="home_overview_folder">Folders</string>
+    <string name="home_quick_actions">Quick actions</string>
+    <string name="home_open_appearance">Open appearance settings</string>
+    <string name="home_open_systemui">Open SystemUI settings</string>
+    <string name="home_footer">MockingBatwing %1$s · LSPosed module · Devola-Sun</string>
+    <string name="value_on">ON</string>
+    <string name="value_off">OFF</string>
+    <string name="value_grid_format">%1$d × %2$d</string>
+    <string name="value_dock_format">%1$d</string>
+
+    <!-- Appearance -->
+    <string name="section_appearance">Icons and labels</string>
+    <string name="hide_labels_title">Hide icon labels</string>
+    <string name="hide_labels_summary">Makes labels transparent in Workspace, All Apps, folders and the Dock.</string>
+
+    <string name="icon_shape_title">Icon shape</string>
+    <string name="icon_shape_summary">Choose SYSTEM to restore the standard mask. Clearing the icon cache is recommended after changing the shape.</string>
+
+    <string name="folder_preview_3x3_title">3×3 folder icon preview</string>
+    <string name="folder_preview_3x3_summary">Shows up to 9 app icons in a 3×3 preview. The opened folder uses a fixed 4×4 grid (max 16) aligned from the top-left.</string>
+
+    <string name="section_layout">Home screen grid</string>
+    <string name="layout_summary">Rows, columns and Dock icons range from 4 to 10. Restart the launcher after changing.</string>
+    <string name="grid_rows_title">Desktop rows</string>
+    <string name="grid_columns_title">Desktop columns</string>
+    <string name="dock_icons_title">Dock icons</string>
+
+    <!-- SystemUI -->
+    <string name="section_systemui_title">Status bar</string>
+    <string name="section_control_center_title">Control center</string>
+    <string name="systemui_hint">Status bar settings are applied after restarting SystemUI.</string>
+
+    <string name="pref_sb_show_seconds_title">Show clock seconds</string>
+    <string name="pref_sb_show_seconds_desc">Shows seconds (hh:mm:ss) in the status bar clock.</string>
+    <string name="pref_sb_hide_battery_percent_title">Hide battery percentage</string>
+    <string name="pref_sb_hide_battery_percent_desc">Hides the percentage and shows only the battery icon.</string>
+    <string name="pref_sb_hide_volte_title">Hide VoLTE / VoWiFi / NFC icons</string>
+    <string name="pref_sb_hide_volte_desc">Hides VoLTE, HD voice, VoWiFi, NFC and dual-SIM indicators.</string>
+    <string name="pref_sb_ios_icons_title">iOS-style icons (Wi-Fi / signal)</string>
+    <string name="pref_sb_ios_icons_desc">Replaces Wi-Fi with a fan shape and signal with 4-bar iOS style.</string>
+    <string name="pref_sb_custom_padding_title">Apply razr fold optimized padding</string>
+    <string name="pref_sb_custom_padding_desc">Adjusts the margins of the main (punch-hole) and cover displays.</string>
+
+    <!-- Battery -->
+    <string name="section_battery_title">Battery</string>
+    <string name="battery_hint">Status bar changes apply after restarting SystemUI; charging control applies after a device reboot.</string>
+    <string name="battery_icon_style_title">Battery icon</string>
+    <string name="battery_icon_style_summary">Changes the status bar battery icon shape.</string>
+    <string name="battery_icon_style_system">System default</string>
+    <string name="battery_icon_style_circle">Circle</string>
+    <string name="battery_icon_style_pill">Pill</string>
+    <string name="battery_icon_style_hidden">Hidden</string>
+    <string name="battery_percent_style_title">Battery percentage</string>
+    <string name="battery_percent_style_summary">Switch between always visible, hidden and inside the icon. "Inside icon" is drawn as a pill.</string>
+    <string name="battery_percent_style_system">System default</string>
+    <string name="battery_percent_style_always">Always visible</string>
+    <string name="battery_percent_style_hidden">Hidden</string>
+    <string name="battery_percent_style_in_icon">Inside the icon</string>
+    <string name="battery_charge_limit_title">Enable charging stop at 80%</string>
+    <string name="battery_charge_limit_desc">Uses Motorola adaptive charging to stop charging at the selected level.</string>
+    <string name="battery_charge_limit_value_title">Charge stop threshold</string>
+    <string name="battery_charge_limit_value_desc">Select 60–100%. Not applied on devices without Motorola charging control.</string>
+    <string name="battery_charge_limit_value_format">%1$d%%</string>
+    <string name="battery_disable_overheat_title">Remove battery temperature control</string>
+    <string name="battery_disable_overheat_desc">Disables the battery over-temperature shutdown. Use at your own risk.</string>
+    <string name="battery_reboot_hint">Charging and temperature control live in system_server; reboot the device after changing them.</string>
+
+    <string name="section_screenshot_title">Screenshots</string>
+    <string name="disable_flag_secure_title">Disable FLAG_SECURE (allow screenshots)</string>
+    <string name="disable_flag_secure_desc">Ignores FLAG_SECURE so protected screens can be captured and recorded.</string>
+    <string name="disable_flag_secure_warning">Security-protected screens (banking apps etc.) become capturable. Enable only when needed.</string>
+
+    <string name="section_framework_title">System Framework</string>
+    <string name="restart_menu_title">Restart menu</string>
+    <string name="restart_menu_launcher">Restart launcher</string>
+    <string name="restart_menu_systemui">Restart SystemUI</string>
+    <string name="restart_menu_soft_reboot">Soft reboot (Zygote)</string>
+    <string name="restart_menu_device">Reboot device</string>
+    <string name="restart_menu_clear_cache">Clear icon cache &amp; restart</string>
+    <string name="status_rebooting">Rebooting the device…</string>
+    <string name="pref_corepatch_bypass_signatures_title">Bypass signature verification</string>
+    <string name="pref_corepatch_bypass_signatures_desc">Allows overwriting an installed app with an APK signed by a different key</string>
+    <string name="pref_disable_camera_sound_title">Disable camera shutter sound</string>
+    <string name="pref_disable_camera_sound_desc">Disables the shutter sound that is enabled in the Japanese region or with a Japanese SIM inserted.</string>
+    <string name="pref_corepatch_allow_downgrade_title">Allow downgrade</string>
+    <string name="pref_corepatch_allow_downgrade_desc">Allows overwriting an installed app with a lower versionCode</string>
+    <string name="pref_corepatch_bypass_digest_title">Skip corrupt/test signature checks</string>
+    <string name="pref_corepatch_bypass_digest_desc">Installs while ignoring digest verification errors</string>
+    <string name="corepatch_reboot_note">※ A device reboot or soft reboot (Zygote restart) is required to apply system framework changes.</string>
+    <string name="pref_safe_mode_title">Safe mode (unsupported device protection)</string>
+    <string name="pref_safe_mode_desc">Avoids crashes and boot loops when flags are enabled on devices other than the razr fold. Error logs are force-written to /sdcard/Download/Errorlog.</string>
+    <string name="status_safe_mode_log">Error log written to /sdcard/Download/Errorlog</string>
+    <string name="button_soft_reboot">Soft reboot (apply)</string>
+    <string name="status_soft_rebooting">Performing soft reboot…</string>
+
+    <string name="pref_cc_swap_sliders_title">Swap volume / brightness sliders</string>
+    <string name="pref_cc_swap_sliders_desc">Swaps them to brightness on the left and volume on the right, and syncs their heights.</string>
+    <string name="pref_cc_ios_connectivity_title">iOS 15 style 2×2 connectivity card</string>
+    <string name="pref_cc_ios_connectivity_desc">A 2×2 grid of Wi-Fi, data, Bluetooth and airplane mode.</string>
+
+    <!-- Status bar element order -->
+    <string name="section_status_bar_order_title">Notification bar order</string>
+    <string name="status_bar_order_summary">Long press and drag to reorder. Use the ⇄ button to move items between groups.</string>
+    <string name="status_bar_order_left">Left</string>
+    <string name="status_bar_order_right">Right</string>
+    <string name="status_bar_order_hint">Press \"Restart SystemUI to apply\" after changing.</string>
+    <string name="status_bar_order_move">Move to the other side</string>
+    <string name="status_bar_order_reset">Reset to default order</string>
+    <string name="status_bar_element_clock">Clock</string>
+    <string name="status_bar_element_ongoing">Ongoing activity</string>
+    <string name="status_bar_element_notifications">Notification icons</string>
+    <string name="status_bar_element_user_switcher">User icon</string>
+    <string name="status_bar_element_wifi">Wi-Fi</string>
+    <string name="status_bar_element_mobile">Mobile signal</string>
+    <string name="status_bar_element_battery">Battery</string>
+    <string name="status_bar_element_system_icons">Status icons (Wi-Fi / signal / battery)</string>
+
+    <!-- Maintenance and backup -->
+    <string name="restart_button">Restart launcher to apply</string>
+    <string name="clear_cache_button">Clear icon cache</string>
+    <string name="restart_systemui_button">Restart SystemUI to apply</string>
+    <string name="status_restarting_systemui">Restarting SystemUI…</string>
+
+    <string name="section_backup_title">Launcher layout</string>
+    <string name="backup_section_title">Launcher layout backup</string>
+    <string name="backup_section_desc">Saves the home screen, Dock and folder layout. Restoring stops the launcher and replaces its database.</string>
+    <string name="backup_button">Back up current layout</string>
+    <string name="restore_button">Restore selected backup</string>
+    <string name="backup_select_hint">Select the backup to restore.</string>
+    <string name="backup_empty">No backups yet</string>
+    <string name="backup_none_selected">No backup selected.</string>
+    <string name="status_backing_up">Backing up the launcher layout…</string>
+    <string name="status_restoring">Restoring the launcher layout…</string>
+    <string name="status_backup_success">Launcher layout backup created.</string>
+    <string name="status_restore_success">Launcher layout restored.</string>
+
+    <string name="section_actions_title">Maintenance</string>
+    <string name="section_info_title">Module info</string>
+    <string name="about_scope_body">LSPosed scope\n• com.motorola.launcher3\n• com.android.systemui\n• android</string>
+    <string name="about_restart_body">Reboot the device after the first install and after module updates. Use the restart buttons after changing settings.</string>
+    <string name="about_credits_title">Credits / Licenses</string>
+    <string name="about_credits_body">MockingBatwing © 2026 Devola-Sun\n\nOpen source software used (in no particular order)\n• YukiHookAPI 1.3.2 — Apache License 2.0 © HighCapable\n• KavaRef — Apache License 2.0 © HighCapable\n• AndroidX / AppCompat — Apache License 2.0 © The Android Open Source Project\n• LSPosed Framework — GPLv3 © LSPosed\n\nMockingBatwing itself is provided under the GPLv3 license.\nFree to use.</string>
+
+    <string name="status_idle">Change settings and press \"Restart launcher to apply\".</string>
+    <string name="status_restarting">Restarting the launcher…</string>
+    <string name="status_clearing_cache">Clearing the icon cache and restarting the launcher to apply the shape…</string>
+    <string name="status_success">Done. Check the launcher.</string>
+    <string name="status_failed">Failed: %1$s</string>
+    <string name="status_root_unavailable">Root (su) is not available.</string>
+
+    <!-- Language -->
+    <string name="section_language_title">Language</string>
+    <string name="pref_language_title">Display language</string>
+    <string name="pref_language_desc">Switches the display language of the app. Changes apply immediately.</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_en">English</string>
+</resources>
