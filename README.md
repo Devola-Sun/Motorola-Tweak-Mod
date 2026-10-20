@@ -144,3 +144,42 @@ SystemUI.
 - compileSdk 37 (required by YukiHookAPI 1.3.2), targetSdk 36, minSdk 36
 - YukiHookAPI 1.3.2 / KavaRef 1.0.3
 - AndroidX AppCompat 1.7.1 / Preference KTX 1.2.1
+
+## License
+
+Copyright (C) 2026 Devola-Sun
+
+This project is licensed under the **GNU General Public License v3.0**
+(GPL-3.0). See [LICENSE](LICENSE) for the full license text.
+
+## Disclaimer
+
+This is an unofficial, community-made modification. It is not affiliated
+with, endorsed by, or supported by Motorola, Lenovo, Google, or the LSPosed
+project. All product names and trademarks belong to their respective owners.
+
+**Use at your own risk.** This module changes the behavior of the Motorola
+launcher, SystemUI, and the Android framework through LSPosed hooks. Hooking
+system processes can cause boot loops, UI crashes, data loss, or a device
+that no longer boots. Root (or temproot) access and a recovery method such
+as fastboot or a custom recovery are strongly recommended before installing.
+
+The software is provided "AS IS", without warranty of any kind, express or
+implied, including but not limited to the warranties of merchantability,
+fitness for a particular purpose and noninfringement. In no event shall the
+author be liable for any claim, damages, or other liability, whether in an
+action of contract, tort, or otherwise, arising from, out of, or in
+connection with the software or the use or other dealings in the software.
+
+Only install builds obtained from this repository's
+[Releases](https://github.com/Devola-Sun/Motorola-Tweak-Mod/releases) page.
+
+### 免責事項
+
+本プロジェクトは非公式のコミュニティ製 MOD であり、Motorola / Lenovo /
+Google / LSPosed とは一切関係ありません。本モジュールの使用は**自己責任**
+で行ってください。LSPosed によるシステムプロセスのフックは、ブートループ、
+UI のクラッシュ、データ損失、端末が起動しなくなる等の症状を引き起こす
+可能性があります。導入前にバックアップと復旧手段（fastboot / カスタム
+リカバリ）を必ず用意してください。本ソフトウェアは無保証で提供され、
+作者は一切の責任を負いません。
