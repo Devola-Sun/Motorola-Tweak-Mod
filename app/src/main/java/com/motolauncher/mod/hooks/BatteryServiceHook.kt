@@ -59,7 +59,8 @@ object BatteryServiceHook : YukiBaseHooker() {
                             if (!chargeLimitEnabled()) return@runCatching
 
                             val upper = HookConfig.coerceChargeLimit(
-                                modulePrefs.getInt(
+                                HookConfig.safeGetInt(
+                                    modulePrefs,
                                     HookConfig.KEY_BATTERY_CHARGE_LIMIT_VALUE,
                                     HookConfig.DEFAULT_BATTERY_CHARGE_LIMIT_VALUE
                                 )
@@ -134,19 +135,23 @@ object BatteryServiceHook : YukiBaseHooker() {
         }
     }
 
-    private fun chargeLimitEnabled(): Boolean = runCatching {
-        modulePrefs.getBoolean(
+    private fun chargeLimitEnabled(): Boolean {
+        if (!HookConfig.isBootCompleted()) return false
+        return HookConfig.safeGetBoolean(
+            modulePrefs,
             HookConfig.KEY_BATTERY_CHARGE_LIMIT,
             HookConfig.DEFAULT_BATTERY_CHARGE_LIMIT
         )
-    }.getOrDefault(HookConfig.DEFAULT_BATTERY_CHARGE_LIMIT)
+    }
 
-    private fun overheatShutdownDisabled(): Boolean = runCatching {
-        modulePrefs.getBoolean(
+    private fun overheatShutdownDisabled(): Boolean {
+        if (!HookConfig.isBootCompleted()) return false
+        return HookConfig.safeGetBoolean(
+            modulePrefs,
             HookConfig.KEY_BATTERY_DISABLE_OVERHEAT_SHUTDOWN,
             HookConfig.DEFAULT_BATTERY_DISABLE_OVERHEAT_SHUTDOWN
         )
-    }.getOrDefault(HookConfig.DEFAULT_BATTERY_DISABLE_OVERHEAT_SHUTDOWN)
+    }
 
     /** True when every named field exists on [className]. */
     private fun hasFields(className: String, vararg names: String): Boolean = runCatching {

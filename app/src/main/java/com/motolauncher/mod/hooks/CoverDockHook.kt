@@ -1,6 +1,5 @@
 package com.motolauncher.mod.hooks
 
-import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.res.Configuration
@@ -10,9 +9,7 @@ import android.graphics.Rect
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
-import android.os.Build
 import android.util.Log
-import android.view.Display
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
@@ -20,6 +17,7 @@ import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.motolauncher.mod.HookConfig
 import java.lang.reflect.Field
+import java.lang.reflect.Method
 import java.util.WeakHashMap
 import kotlin.math.roundToInt
 
@@ -34,7 +32,12 @@ object CoverDockHook : YukiBaseHooker() {
     /** Semi-transparent dark gray for the dynamically generated Dock background. */
     private val DOCK_BACKGROUND_COLOR: Int = Color.argb(153, 30, 30, 34)
     private const val DOCK_CORNER_RADIUS_DP = 24f
-    private const val DEFAULT_VERTICAL_PADDING_DP = 8f
+
+    private enum class ScreenState {
+        UNINITIALIZED,
+        COVER,
+        INNER
+    }
 
     private data class OriginalViewState(
         val paddingStart: Int,
@@ -52,6 +55,36 @@ object CoverDockHook : YukiBaseHooker() {
         val clipChildren: Boolean,
         val clipToPadding: Boolean
     )
+
+    /**
+     * Reentrant guard per thread so that View mutations inside a hook callback
+     * (`setVisibility`, `setPaddingRelative`, `background = ...`, etc.) can
+     * never re-enter our hooks and cause a `StackOverflowError` or layout storm.
+     */
+    private val reentrantGuard = object : ThreadLocal<Boolean>() {
+        override fun initialValue(): Boolean = false
+    }
+
+    private inline fun withReentrantGuard(block: () -> Unit) {
+        if (reentrantGuard.get() == true) return
+        reentrantGuard.set(true)
+        try {
+            block()
+        } catch (t: Throwable) {
+            try {
+                Log.w(TAG, "CoverDockHook suppressed error", t)
+            } catch (_: Throwable) {
+            }
+        } finally {
+            reentrantGuard.set(false)
+        }
+    }
+
+    @Volatile
+    private var cachedIsBgVisibleMethod: Method? = null
+
+    @Volatile
+    private var isBgVisibleMethodResolved: Boolean = false
 
     /**
      * [GradientDrawable] whose horizontal and vertical bounds are dynamically
@@ -81,7 +114,7 @@ object CoverDockHook : YukiBaseHooker() {
             topInset: Int,
             bottomInset: Int,
             cornerRadiusPx: Float
-        ) {
+        ): Boolean {
             val coercedWidth = HookConfig.coerceCoverDockWidthPercent(newWidthPercent)
             val coercedHeight = HookConfig.coerceCoverDockHeightPercent(newHeightPercent)
             val safeTopInset = topInset.coerceAtLeast(0)
@@ -103,15 +136,23 @@ object CoverDockHook : YukiBaseHooker() {
                 applyCenteredBounds(rawLeft, rawTop, rawRight, rawBottom)
                 invalidateSelf()
             }
+            return changed
         }
 
         override fun setBounds(left: Int, top: Int, right: Int, bottom: Int) {
+            val rawChanged = !hasRawBounds ||
+                rawLeft != left ||
+                rawTop != top ||
+                rawRight != right ||
+                rawBottom != bottom
             rawLeft = left
             rawTop = top
             rawRight = right
             rawBottom = bottom
             hasRawBounds = true
-            applyCenteredBounds(left, top, right, bottom)
+            if (rawChanged) {
+                applyCenteredBounds(left, top, right, bottom)
+            }
         }
 
         private fun applyCenteredBounds(left: Int, top: Int, right: Int, bottom: Int) {
@@ -135,10 +176,13 @@ object CoverDockHook : YukiBaseHooker() {
 
             if (baseCornerRadiusPx > 0f) {
                 val maxRadius = (targetHeight / 2f).coerceAtLeast(0f)
-                cornerRadius = if (maxRadius > 0f) {
+                val targetRadius = if (maxRadius > 0f) {
                     baseCornerRadiusPx.coerceAtMost(maxRadius)
                 } else {
                     baseCornerRadiusPx
+                }
+                if (cornerRadius != targetRadius) {
+                    cornerRadius = targetRadius
                 }
             }
 
@@ -161,10 +205,10 @@ object CoverDockHook : YukiBaseHooker() {
     private val lastAppliedBarSizeForHotseat = WeakHashMap<View, Int>()
 
     override fun onHook() {
-        hookVisibility()
-        hookHotseatLifecycle()
-        hookMeasure()
-        hookTouchRouting()
+        runCatching { hookVisibility() }
+        runCatching { hookHotseatLifecycle() }
+        runCatching { hookMeasure() }
+        runCatching { hookTouchRouting() }
     }
 
     private fun hookVisibility() {
@@ -177,14 +221,12 @@ object CoverDockHook : YukiBaseHooker() {
                         superClass()
                     }
                     beforeHook {
-                        runCatching {
-                            if (!isHotseatInstance(instance)) return@runCatching
-                            val hotseat = instance as? View ?: return@runCatching
-                            if (isCoverDockActive(hotseat)) {
+                        withReentrantGuard {
+                            if (!isHotseatInstance(instance)) return@withReentrantGuard
+                            val hotseat = instance as? View ?: return@withReentrantGuard
+                            if (resolveEffectiveState(hotseat) == ScreenState.COVER) {
                                 args[0] = View.VISIBLE
                             }
-                        }.onFailure {
-                            Log.w(TAG, "Failed to apply cover dock visibility", it)
                         }
                     }
                 }
@@ -200,7 +242,6 @@ object CoverDockHook : YukiBaseHooker() {
      * Hooks Hotseat initialization, attachment, and inset updates so that:
      * 1. A dynamic rounded GradientDrawable background is added when missing/transparent.
      * 2. Parent containers (DragLayer / FrameLayout) have clipping disabled.
-     * 3. DeviceProfile.hotseatBarSizePx is kept synchronized with the height slider.
      */
     private fun hookHotseatLifecycle() {
         runCatching {
@@ -211,21 +252,12 @@ object CoverDockHook : YukiBaseHooker() {
                     injectMember {
                         allConstructors()
                         afterHook {
-                            runCatching {
-                                val hotseat = instance as? View ?: return@runCatching
+                            withReentrantGuard {
+                                val hotseat = instance as? View ?: return@withReentrantGuard
+                                // Only register the attach listener in the constructor;
+                                // do not mutate padding/background/parents while the View
+                                // hierarchy and Workspace are still being constructed.
                                 installAttachListener(hotseat)
-                                if (!isCoverDockActive(hotseat)) {
-                                    restoreOriginalState(hotseat)
-                                    return@runCatching
-                                }
-
-                                val heightPercent = HookConfig.coverDockHeightPercent(modulePrefs)
-                                val widthPercent = HookConfig.coverDockWidthPercent(modulePrefs)
-                                originalState(hotseat)
-                                applyDockBackgroundAndPadding(hotseat, heightPercent, widthPercent)
-                                unclipParentHierarchy(hotseat)
-                            }.onFailure {
-                                Log.w(TAG, "Failed to initialize cover dock in constructor", it)
                             }
                         }
                     }
@@ -241,12 +273,10 @@ object CoverDockHook : YukiBaseHooker() {
                             superClass()
                         }
                         afterHook {
-                            runCatching {
-                                if (!isHotseatInstance(instance)) return@runCatching
-                                val hotseat = instance as? View ?: return@runCatching
+                            withReentrantGuard {
+                                if (!isHotseatInstance(instance)) return@withReentrantGuard
+                                val hotseat = instance as? View ?: return@withReentrantGuard
                                 onHotseatAttached(hotseat)
-                            }.onFailure {
-                                Log.w(TAG, "Failed in Hotseat.onAttachedToWindow", it)
                             }
                         }
                     }
@@ -262,30 +292,52 @@ object CoverDockHook : YukiBaseHooker() {
                             superClass()
                         }
                         afterHook {
-                            runCatching {
-                                if (!isHotseatInstance(instance)) return@runCatching
-                                val hotseat = instance as? View ?: return@runCatching
-                                if (!isCoverDockActive(hotseat)) {
-                                    restoreOriginalState(hotseat)
-                                    return@runCatching
-                                }
+                            withReentrantGuard {
+                                if (!isHotseatInstance(instance)) return@withReentrantGuard
+                                val hotseat = instance as? View ?: return@withReentrantGuard
 
+                                // Hotseat.setInsets has just applied the true stock padding
+                                // and layoutParams.height for the current display. If we were
+                                // already tracking this Hotseat, refresh the stored stock
+                                // baseline so we never clobber Inner Screen insets with stale
+                                // Cover Screen values.
                                 synchronized(originalStates) {
                                     val existing = originalStates[hotseat]
                                     if (existing != null) {
                                         originalStates[hotseat] = existing.copy(
+                                            paddingStart = hotseat.paddingStart,
                                             paddingTop = hotseat.paddingTop,
-                                            paddingBottom = hotseat.paddingBottom
+                                            paddingEnd = hotseat.paddingEnd,
+                                            paddingBottom = hotseat.paddingBottom,
+                                            layoutHeight = hotseat.layoutParams?.height
+                                                ?: existing.layoutHeight
                                         )
                                     }
                                 }
 
-                                val heightPercent = HookConfig.coverDockHeightPercent(modulePrefs)
-                                val widthPercent = HookConfig.coverDockWidthPercent(modulePrefs)
-                                applyDockBackgroundAndPadding(hotseat, heightPercent, widthPercent)
-                                unclipParentHierarchy(hotseat)
-                            }.onFailure {
-                                Log.w(TAG, "Failed after Hotseat.setInsets", it)
+                                when (resolveEffectiveState(hotseat)) {
+                                    ScreenState.UNINITIALIZED -> return@withReentrantGuard
+                                    ScreenState.INNER -> {
+                                        restoreOriginalState(
+                                            hotseat,
+                                            preserveCurrentPaddingAndHeight = true
+                                        )
+                                        return@withReentrantGuard
+                                    }
+                                    ScreenState.COVER -> {
+                                        val prefs = modulePrefs
+                                        val heightPercent = HookConfig.coverDockHeightPercent(prefs)
+                                        val widthPercent = HookConfig.coverDockWidthPercent(prefs)
+                                        originalState(hotseat)
+                                        applyDockBackgroundAndPadding(
+                                            hotseat = hotseat,
+                                            heightPercent = heightPercent,
+                                            widthPercent = widthPercent,
+                                            allowLayoutMutation = true
+                                        )
+                                        unclipParentHierarchy(hotseat)
+                                    }
+                                }
                             }
                         }
                     }
@@ -301,20 +353,34 @@ object CoverDockHook : YukiBaseHooker() {
                             superClass()
                         }
                         afterHook {
-                            runCatching {
-                                if (!isHotseatInstance(instance)) return@runCatching
-                                val hotseat = instance as? View ?: return@runCatching
-                                if (!isCoverDockActive(hotseat)) {
-                                    restoreOriginalState(hotseat)
-                                    return@runCatching
+                            withReentrantGuard {
+                                if (!isHotseatInstance(instance)) return@withReentrantGuard
+                                val hotseat = instance as? View ?: return@withReentrantGuard
+                                when (resolveEffectiveState(hotseat)) {
+                                    ScreenState.UNINITIALIZED -> return@withReentrantGuard
+                                    ScreenState.INNER -> {
+                                        restoreOriginalState(
+                                            hotseat,
+                                            preserveCurrentPaddingAndHeight = true
+                                        )
+                                        return@withReentrantGuard
+                                    }
+                                    ScreenState.COVER -> {
+                                        val prefs = modulePrefs
+                                        val heightPercent = HookConfig.coverDockHeightPercent(prefs)
+                                        val widthPercent = HookConfig.coverDockWidthPercent(prefs)
+                                        // Never call setPaddingRelative inside onLayout, as that
+                                        // triggers requestLayout() during layout and causes a
+                                        // layout storm. Only update the drawable bounds/insets.
+                                        applyDockBackgroundAndPadding(
+                                            hotseat = hotseat,
+                                            heightPercent = heightPercent,
+                                            widthPercent = widthPercent,
+                                            allowLayoutMutation = false
+                                        )
+                                        unclipParentHierarchy(hotseat)
+                                    }
                                 }
-
-                                val heightPercent = HookConfig.coverDockHeightPercent(modulePrefs)
-                                val widthPercent = HookConfig.coverDockWidthPercent(modulePrefs)
-                                applyDockBackgroundAndPadding(hotseat, heightPercent, widthPercent)
-                                unclipParentHierarchy(hotseat)
-                            }.onFailure {
-                                Log.w(TAG, "Failed after Hotseat.onLayout", it)
                             }
                         }
                     }
@@ -330,20 +396,28 @@ object CoverDockHook : YukiBaseHooker() {
                             superClass()
                         }
                         afterHook {
-                            runCatching {
-                                if (!isHotseatInstance(instance)) return@runCatching
-                                val hotseat = instance as? View ?: return@runCatching
-                                if (!isCoverDockActive(hotseat)) {
-                                    restoreOriginalState(hotseat)
-                                    return@runCatching
+                            withReentrantGuard {
+                                if (!isHotseatInstance(instance)) return@withReentrantGuard
+                                val hotseat = instance as? View ?: return@withReentrantGuard
+                                when (resolveEffectiveState(hotseat)) {
+                                    ScreenState.UNINITIALIZED -> return@withReentrantGuard
+                                    ScreenState.INNER -> {
+                                        restoreOriginalState(hotseat)
+                                        return@withReentrantGuard
+                                    }
+                                    ScreenState.COVER -> {
+                                        val prefs = modulePrefs
+                                        val heightPercent = HookConfig.coverDockHeightPercent(prefs)
+                                        val widthPercent = HookConfig.coverDockWidthPercent(prefs)
+                                        applyDockBackgroundAndPadding(
+                                            hotseat = hotseat,
+                                            heightPercent = heightPercent,
+                                            widthPercent = widthPercent,
+                                            allowLayoutMutation = true
+                                        )
+                                        unclipParentHierarchy(hotseat)
+                                    }
                                 }
-
-                                val heightPercent = HookConfig.coverDockHeightPercent(modulePrefs)
-                                val widthPercent = HookConfig.coverDockWidthPercent(modulePrefs)
-                                applyDockBackgroundAndPadding(hotseat, heightPercent, widthPercent)
-                                unclipParentHierarchy(hotseat)
-                            }.onFailure {
-                                Log.w(TAG, "Failed in Hotseat.onConfigurationChanged", it)
                             }
                         }
                     }
@@ -352,6 +426,7 @@ object CoverDockHook : YukiBaseHooker() {
                 }
 
                 listOf("resetLayout", "layoutBgView").forEach { methodName ->
+                    val allowLayoutMutation = methodName != "layoutBgView"
                     runCatching {
                         injectMember {
                             method {
@@ -359,26 +434,33 @@ object CoverDockHook : YukiBaseHooker() {
                                 paramCount(0..2)
                             }.all()
                             afterHook {
-                                runCatching {
-                                    if (!isHotseatInstance(instance)) return@runCatching
-                                    val hotseat = instance as? View ?: return@runCatching
-                                    if (!isCoverDockActive(hotseat)) {
-                                        restoreOriginalState(hotseat)
-                                        return@runCatching
+                                withReentrantGuard {
+                                    if (!isHotseatInstance(instance)) return@withReentrantGuard
+                                    val hotseat = instance as? View ?: return@withReentrantGuard
+                                    when (resolveEffectiveState(hotseat)) {
+                                        ScreenState.UNINITIALIZED -> return@withReentrantGuard
+                                        ScreenState.INNER -> {
+                                            restoreOriginalState(
+                                                hotseat,
+                                                preserveCurrentPaddingAndHeight = !allowLayoutMutation
+                                            )
+                                            return@withReentrantGuard
+                                        }
+                                        ScreenState.COVER -> {
+                                            val prefs = modulePrefs
+                                            val heightPercent =
+                                                HookConfig.coverDockHeightPercent(prefs)
+                                            val widthPercent =
+                                                HookConfig.coverDockWidthPercent(prefs)
+                                            applyDockBackgroundAndPadding(
+                                                hotseat = hotseat,
+                                                heightPercent = heightPercent,
+                                                widthPercent = widthPercent,
+                                                allowLayoutMutation = allowLayoutMutation
+                                            )
+                                            unclipParentHierarchy(hotseat)
+                                        }
                                     }
-
-                                    val heightPercent =
-                                        HookConfig.coverDockHeightPercent(modulePrefs)
-                                    val widthPercent =
-                                        HookConfig.coverDockWidthPercent(modulePrefs)
-                                    applyDockBackgroundAndPadding(
-                                        hotseat,
-                                        heightPercent,
-                                        widthPercent
-                                    )
-                                    unclipParentHierarchy(hotseat)
-                                }.onFailure {
-                                    Log.w(TAG, "Failed in Hotseat.$methodName", it)
                                 }
                             }
                         }
@@ -404,41 +486,51 @@ object CoverDockHook : YukiBaseHooker() {
                         superClass()
                     }
                     beforeHook {
-                        runCatching {
-                            if (!isHotseatInstance(instance)) return@runCatching
-                            val hotseat = instance as? View ?: return@runCatching
-                            if (!isCoverDockActive(hotseat)) {
-                                restoreOriginalState(hotseat)
-                                return@runCatching
-                            }
+                        withReentrantGuard {
+                            if (!isHotseatInstance(instance)) return@withReentrantGuard
+                            val hotseat = instance as? View ?: return@withReentrantGuard
+                            when (resolveEffectiveState(hotseat)) {
+                                ScreenState.UNINITIALIZED -> return@withReentrantGuard
+                                ScreenState.INNER -> {
+                                    restoreOriginalState(hotseat)
+                                    return@withReentrantGuard
+                                }
+                                ScreenState.COVER -> {
+                                    val prefs = modulePrefs
+                                    val heightPercent = HookConfig.coverDockHeightPercent(prefs)
+                                    val widthPercent = HookConfig.coverDockWidthPercent(prefs)
+                                    val sizePercent = HookConfig.coverDockSizePercent(prefs)
+                                    val original = originalState(hotseat)
 
-                            val heightPercent = HookConfig.coverDockHeightPercent(modulePrefs)
-                            val widthPercent = HookConfig.coverDockWidthPercent(modulePrefs)
-                            val sizePercent = HookConfig.coverDockSizePercent(modulePrefs)
-                            val original = originalState(hotseat)
+                                    val widthSpec = args.getOrNull(0) as? Int
+                                    val measuredWidth = widthSpec?.let { spec ->
+                                        if (View.MeasureSpec.getMode(spec) != View.MeasureSpec.UNSPECIFIED) {
+                                            View.MeasureSpec.getSize(spec)
+                                        } else {
+                                            null
+                                        }
+                                    }
 
-                            val widthSpec = args.getOrNull(0) as? Int
-                            val measuredWidth = widthSpec?.let { spec ->
-                                if (View.MeasureSpec.getMode(spec) != View.MeasureSpec.UNSPECIFIED) {
-                                    View.MeasureSpec.getSize(spec)
-                                } else {
-                                    null
+                                    applyDockBackgroundAndPadding(
+                                        hotseat = hotseat,
+                                        heightPercent = heightPercent,
+                                        widthPercent = widthPercent,
+                                        measuredWidth = measuredWidth,
+                                        allowLayoutMutation = true
+                                    )
+                                    unclipParentHierarchy(hotseat)
+
+                                    val scale = sizePercent / 100f
+                                    val targetScaleX = original.scaleX * scale
+                                    val targetScaleY = original.scaleY * scale
+                                    if (hotseat.scaleX != targetScaleX) {
+                                        hotseat.scaleX = targetScaleX
+                                    }
+                                    if (hotseat.scaleY != targetScaleY) {
+                                        hotseat.scaleY = targetScaleY
+                                    }
                                 }
                             }
-
-                            applyDockBackgroundAndPadding(
-                                hotseat = hotseat,
-                                heightPercent = heightPercent,
-                                widthPercent = widthPercent,
-                                measuredWidth = measuredWidth
-                            )
-                            unclipParentHierarchy(hotseat)
-
-                            val scale = sizePercent / 100f
-                            hotseat.scaleX = original.scaleX * scale
-                            hotseat.scaleY = original.scaleY * scale
-                        }.onFailure {
-                            Log.w(TAG, "Failed to apply cover dock size", it)
                         }
                     }
                 }
@@ -467,19 +559,19 @@ object CoverDockHook : YukiBaseHooker() {
                             superClass()
                         }
                         beforeHook {
-                            runCatching {
-                                if (!isHotseatInstance(instance)) return@runCatching
-                                val hotseat = instance as? View ?: return@runCatching
-                                if (!isCoverDockActive(hotseat)) {
-                                    return@runCatching
+                            withReentrantGuard {
+                                if (!isHotseatInstance(instance)) return@withReentrantGuard
+                                val hotseat = instance as? View ?: return@withReentrantGuard
+                                if (resolveEffectiveState(hotseat) != ScreenState.COVER) {
+                                    return@withReentrantGuard
                                 }
 
                                 val widthPercent = HookConfig.coverDockWidthPercent(modulePrefs)
-                                if (widthPercent >= 100) return@runCatching
+                                if (widthPercent >= 100) return@withReentrantGuard
 
-                                val ev = args.getOrNull(0) as? MotionEvent ?: return@runCatching
+                                val ev = args.getOrNull(0) as? MotionEvent ?: return@withReentrantGuard
                                 val viewWidth = hotseat.width
-                                if (viewWidth <= 0) return@runCatching
+                                if (viewWidth <= 0) return@withReentrantGuard
 
                                 val horizontalInset = computeHorizontalInset(viewWidth, widthPercent)
                                 val leftBound = horizontalInset.toFloat()
@@ -487,8 +579,6 @@ object CoverDockHook : YukiBaseHooker() {
                                 if (ev.x < leftBound || ev.x > rightBound) {
                                     result = false
                                 }
-                            }.onFailure {
-                                Log.w(TAG, "Failed in Hotseat.dispatchTouchEvent", it)
                             }
                         }
                     }
@@ -504,25 +594,23 @@ object CoverDockHook : YukiBaseHooker() {
                             superClass()
                         }
                         afterHook {
-                            runCatching {
-                                if (!isHotseatInstance(instance)) return@runCatching
-                                val hotseat = instance as? View ?: return@runCatching
-                                if (!isCoverDockActive(hotseat)) {
-                                    return@runCatching
+                            withReentrantGuard {
+                                if (!isHotseatInstance(instance)) return@withReentrantGuard
+                                val hotseat = instance as? View ?: return@withReentrantGuard
+                                if (resolveEffectiveState(hotseat) != ScreenState.COVER) {
+                                    return@withReentrantGuard
                                 }
 
                                 val widthPercent = HookConfig.coverDockWidthPercent(modulePrefs)
-                                if (widthPercent >= 100) return@runCatching
+                                if (widthPercent >= 100) return@withReentrantGuard
 
-                                val outRect = args.getOrNull(0) as? Rect ?: return@runCatching
+                                val outRect = args.getOrNull(0) as? Rect ?: return@withReentrantGuard
                                 val fullWidth = (outRect.right - outRect.left).coerceAtLeast(0)
                                 val horizontalInset = computeHorizontalInset(fullWidth, widthPercent)
                                 if (horizontalInset > 0 && outRect.left + horizontalInset < outRect.right - horizontalInset) {
                                     outRect.left += horizontalInset
                                     outRect.right -= horizontalInset
                                 }
-                            }.onFailure {
-                                Log.w(TAG, "Failed in Hotseat.getHitRect", it)
                             }
                         }
                     }
@@ -537,124 +625,12 @@ object CoverDockHook : YukiBaseHooker() {
         }
     }
 
-    /**
-     * Hooks `com.android.launcher3.DeviceProfile` so `hotseatBarSizePx` and
-     * `getHotseatBarSize()` reflect the configured cover-dock height (px).
-     */
-    private fun hookDeviceProfile() {
-        runCatching {
-            val deviceProfileHookClass = findClass(CLASS_DEVICE_PROFILE)
-            val deviceProfileClass = runCatching {
-                Class.forName(
-                    CLASS_DEVICE_PROFILE,
-                    false,
-                    appClassLoader ?: CoverDockHook::class.java.classLoader
-                )
-            }.getOrNull()
-
-            deviceProfileHookClass.hook {
-                runCatching {
-                    injectMember {
-                        allConstructors()
-                        afterHook {
-                            runCatching {
-                                val profile = instance
-                                captureOriginalHotseatBarSize(profile)
-                                if (!HookConfig.isCoverDockEnabled(modulePrefs)) {
-                                    return@runCatching
-                                }
-                                val heightPercent = HookConfig.coverDockHeightPercent(modulePrefs)
-                                applyDeviceProfileBarSize(profile, heightPercent)
-                            }.onFailure {
-                                Log.w(TAG, "Failed to update DeviceProfile in constructor", it)
-                            }
-                        }
-                    }
-                }.onFailure {
-                    Log.w(TAG, "Could not hook DeviceProfile constructors", it)
-                }
-
-                listOf("getHotseatBarSize", "getHotseatBarSizePx").forEach { methodName ->
-                    if (hasMethod(deviceProfileClass, methodName)) {
-                        runCatching {
-                            injectMember {
-                                method {
-                                    name = methodName
-                                    paramCount(0..4)
-                                }.all()
-                                afterHook {
-                                    runCatching {
-                                        if (!HookConfig.isCoverDockEnabled(modulePrefs)) {
-                                            return@runCatching
-                                        }
-                                        val heightPercent =
-                                            HookConfig.coverDockHeightPercent(modulePrefs)
-                                        val scaled =
-                                            applyDeviceProfileBarSize(instance, heightPercent)
-                                        val currentResult = result as? Int
-                                        if (scaled != null) {
-                                            result = scaled
-                                        } else if (currentResult != null) {
-                                            result = (currentResult * heightPercent / 100f)
-                                                .roundToInt()
-                                                .coerceAtLeast(0)
-                                        }
-                                    }.onFailure {
-                                        Log.w(TAG, "Failed in DeviceProfile.$methodName", it)
-                                    }
-                                }
-                            }
-                        }.onFailure {
-                            Log.w(TAG, "Could not hook DeviceProfile.$methodName", it)
-                        }
-                    }
-                }
-
-                listOf(
-                    "updateSizes",
-                    "updateHotseatSizes",
-                    "updateHotseatIconSize",
-                    "updateIsSeascape"
-                ).forEach { methodName ->
-                    if (hasMethod(deviceProfileClass, methodName)) {
-                        runCatching {
-                            injectMember {
-                                method {
-                                    name = methodName
-                                    paramCount(0..6)
-                                }.all()
-                                afterHook {
-                                    runCatching {
-                                        if (!HookConfig.isCoverDockEnabled(modulePrefs)) {
-                                            return@runCatching
-                                        }
-                                        val heightPercent =
-                                            HookConfig.coverDockHeightPercent(modulePrefs)
-                                        applyDeviceProfileBarSize(instance, heightPercent)
-                                    }.onFailure {
-                                        Log.w(TAG, "Failed in DeviceProfile.$methodName", it)
-                                    }
-                                }
-                            }
-                        }.onFailure {
-                            Log.w(TAG, "Could not hook DeviceProfile.$methodName", it)
-                        }
-                    }
-                }
-            }
-
-            Log.i(TAG, "Hooked DeviceProfile for cover dock touch area")
-        }.onFailure {
-            Log.w(TAG, "Could not hook DeviceProfile", it)
-        }
-    }
-
     private fun installAttachListener(hotseat: View) {
         synchronized(attachedListeners) {
             if (attachedListeners.containsKey(hotseat)) return
             val listener = object : View.OnAttachStateChangeListener {
                 override fun onViewAttachedToWindow(v: View) {
-                    runCatching { onHotseatAttached(v) }
+                    withReentrantGuard { onHotseatAttached(v) }
                 }
 
                 override fun onViewDetachedFromWindow(v: View) = Unit
@@ -665,25 +641,47 @@ object CoverDockHook : YukiBaseHooker() {
     }
 
     private fun onHotseatAttached(hotseat: View) {
-        if (!isCoverDockActive(hotseat)) {
-            restoreOriginalState(hotseat)
-            return
+        when (resolveEffectiveState(hotseat)) {
+            ScreenState.UNINITIALIZED -> return
+            ScreenState.INNER -> {
+                restoreOriginalState(hotseat)
+                return
+            }
+            ScreenState.COVER -> {
+                val prefs = modulePrefs
+                val heightPercent = HookConfig.coverDockHeightPercent(prefs)
+                val widthPercent = HookConfig.coverDockWidthPercent(prefs)
+                originalState(hotseat)
+                applyDockBackgroundAndPadding(
+                    hotseat = hotseat,
+                    heightPercent = heightPercent,
+                    widthPercent = widthPercent,
+                    allowLayoutMutation = true
+                )
+                unclipParentHierarchy(hotseat)
+            }
         }
-
-        val heightPercent = HookConfig.coverDockHeightPercent(modulePrefs)
-        val widthPercent = HookConfig.coverDockWidthPercent(modulePrefs)
-        originalState(hotseat)
-        applyDockBackgroundAndPadding(hotseat, heightPercent, widthPercent)
-        unclipParentHierarchy(hotseat)
     }
 
     /**
-     * True only when the cover-dock setting is enabled AND [hotseat] is
-     * currently displayed on the outer cover screen.
+     * Resolves the effective state for [hotseat]:
+     * - [ScreenState.UNINITIALIZED] when Display/Resources/Context are not ready yet
+     *   (e.g. right after soft reboot or during early View inflation).
+     * - [ScreenState.INNER] when the cover-dock toggle is disabled OR [hotseat] is
+     *   on the main inner screen.
+     * - [ScreenState.COVER] when the cover-dock toggle is enabled AND [hotseat] is
+     *   confirmed to be on the outer cover screen.
      */
-    private fun isCoverDockActive(hotseat: View): Boolean {
-        if (!HookConfig.isCoverDockEnabled(modulePrefs)) return false
-        return isCoverScreen(hotseat)
+    private fun resolveEffectiveState(hotseat: View): ScreenState {
+        return try {
+            val prefs = modulePrefs
+            if (!HookConfig.isCoverDockEnabled(prefs)) {
+                return ScreenState.INNER
+            }
+            resolveScreenState(hotseat)
+        } catch (_: Throwable) {
+            ScreenState.UNINITIALIZED
+        }
     }
 
     /**
@@ -693,40 +691,68 @@ object CoverDockHook : YukiBaseHooker() {
      *   - インナースクリーン（開いた状態）: `2232x2484` (`minDim = 2232`, `swDp = 850`), `Hotseat.isBgVisible() = true`
      * - Motorola Razr Flip (Clamshell):
      *   - カバースクリーン: `1056x1066` / `1272x1080` (`minDim = 1056〜1080`, `swDp < 600`)
-     * - いずれも「短辺 `minDim < 1600`（かつ `smallestScreenWidthDp < 600`）かつ標準の `isBgVisible()` が false」のとき外側カバースクリーン。
+     * - Display 未確定時 (`minDim <= 0` または `swDp <= 0`) は `UNINITIALIZED` を返し、
+     *   未初期化状態の View への変更や誤った `restoreOriginalState` を完全に防止する。
      */
-    private fun isCoverScreen(hotseat: View): Boolean {
-        return runCatching {
-            // 1. Hotseat#isBgVisible() が true の場合は Launcher3 標準の Dock 背景 (mBgView) が
-            // 有効なメイン（インナー）画面であるため、二重描画を防ぐため false とする。
-            val stockBgVisible = runCatching {
-                val method = hotseat.javaClass.getDeclaredMethod("isBgVisible")
-                method.isAccessible = true
-                method.invoke(hotseat) as? Boolean
-            }.getOrNull()
-            if (stockBgVisible == true) {
-                return false
+    private fun resolveScreenState(hotseat: View): ScreenState {
+        return try {
+            val context = hotseat.context ?: return ScreenState.UNINITIALIZED
+            val res = context.resources ?: return ScreenState.UNINITIALIZED
+            val config = res.configuration ?: return ScreenState.UNINITIALIZED
+            val metrics = res.displayMetrics ?: return ScreenState.UNINITIALIZED
+
+            val swDp = config.smallestScreenWidthDp
+            val minDim = minOf(metrics.widthPixels, metrics.heightPixels)
+            if (swDp <= 0 || minDim <= 0) {
+                return ScreenState.UNINITIALIZED
             }
 
-            val context = hotseat.context ?: return false
-            isCoverScreen(context)
-        }.getOrDefault(false)
+            if (swDp >= 600 || minDim >= 1600) {
+                return ScreenState.INNER
+            }
+
+            // Hotseat#isBgVisible() が true の場合は Launcher3 標準の Dock 背景 (mBgView) が
+            // 有効なメイン（インナー）画面であるため、二重描画を防ぐため INNER とする。
+            val stockBgVisible = invokeIsBgVisible(hotseat)
+            if (stockBgVisible == true) {
+                return ScreenState.INNER
+            }
+            // If isBgVisible() returned null (e.g. Workspace not yet bound on Launcher)
+            // and the view is not attached to a window yet, wait until it is attached.
+            if (stockBgVisible == null && !hotseat.isAttachedToWindow) {
+                return ScreenState.UNINITIALIZED
+            }
+
+            ScreenState.COVER
+        } catch (_: Throwable) {
+            ScreenState.UNINITIALIZED
+        }
     }
 
-    private fun isCoverScreen(context: Context): Boolean {
-        return runCatching {
-            val config = context.resources.configuration
-            if (config.smallestScreenWidthDp >= 600) {
-                return false
+    private fun invokeIsBgVisible(hotseat: View): Boolean? {
+        return try {
+            var method = cachedIsBgVisibleMethod
+            if (method == null && !isBgVisibleMethodResolved) {
+                var curr: Class<*>? = hotseat.javaClass
+                while (curr != null && curr != View::class.java) {
+                    val found = try {
+                        curr.getDeclaredMethod("isBgVisible").apply { isAccessible = true }
+                    } catch (_: Throwable) {
+                        null
+                    }
+                    if (found != null) {
+                        method = found
+                        cachedIsBgVisibleMethod = found
+                        break
+                    }
+                    curr = curr.superclass
+                }
+                isBgVisibleMethodResolved = true
             }
-            val metrics = context.resources.displayMetrics
-            val minDim = minOf(metrics.widthPixels, metrics.heightPixels)
-            // サイズ未確定（0）の初期段階では誤って restoreOriginalState しないよう true 扱い
-            if (minDim <= 0) {
-                return true
-            }
-            minDim < 1600
-        }.getOrDefault(false)
+            method?.invoke(hotseat) as? Boolean
+        } catch (_: Throwable) {
+            null
+        }
     }
 
     /**
@@ -735,22 +761,29 @@ object CoverDockHook : YukiBaseHooker() {
      * transparent, and updates its horizontal (`widthPercent`) and vertical
      * (`heightPercent`) bounds while preserving the Hotseat View frame and
      * vertical icon placement.
+     *
+     * When [allowLayoutMutation] is `false` (i.e. inside `onLayout` /
+     * `layoutBgView`), `setPaddingRelative` is skipped so `requestLayout()` is
+     * never triggered during a layout pass.
      */
     private fun applyDockBackgroundAndPadding(
         hotseat: View,
         heightPercent: Int,
         widthPercent: Int,
-        measuredWidth: Int? = null
+        measuredWidth: Int? = null,
+        allowLayoutMutation: Boolean = true
     ) {
+        val res = hotseat.resources ?: return
+        val metrics = res.displayMetrics ?: return
         val original = originalState(hotseat)
-        val density = hotseat.resources.displayMetrics.density.coerceAtLeast(1f)
+        val density = metrics.density.coerceAtLeast(1f)
         val cornerRadiusPx = DOCK_CORNER_RADIUS_DP * density
 
         val effectiveWidth = when {
             measuredWidth != null && measuredWidth > 0 -> measuredWidth
             hotseat.width > 0 -> hotseat.width
             hotseat.measuredWidth > 0 -> hotseat.measuredWidth
-            else -> hotseat.resources.displayMetrics.widthPixels
+            else -> metrics.widthPixels
         }
         val horizontalInset = computeHorizontalInset(effectiveWidth, widthPercent)
         val startPadding = (original.paddingStart + horizontalInset).coerceAtLeast(0)
@@ -777,42 +810,53 @@ object CoverDockHook : YukiBaseHooker() {
         }
 
         if (currentBg === existingGenerated || isBackgroundUnsetOrTransparent(currentBg)) {
+            val isNewDrawable = existingGenerated == null
             val drawable = existingGenerated ?: CenteredDockGradientDrawable().also { created ->
+                created.shape = GradientDrawable.RECTANGLE
+                created.setColor(DOCK_BACKGROUND_COLOR)
                 synchronized(generatedBackgrounds) {
                     generatedBackgrounds[hotseat] = created
                 }
             }
-            drawable.shape = GradientDrawable.RECTANGLE
-            drawable.setColor(DOCK_BACKGROUND_COLOR)
-            drawable.updateDimensions(
+            val dimsChanged = drawable.updateDimensions(
                 newWidthPercent = widthPercent,
                 newHeightPercent = heightPercent,
                 topInset = topInset,
                 bottomInset = bottomInset,
                 cornerRadiusPx = cornerRadiusPx
             )
+            var needsInvalidate = isNewDrawable || dimsChanged
             if (hotseat.background !== drawable) {
                 hotseat.background = drawable
+                needsInvalidate = true
             }
             if (hotseat.width > 0 && hotseat.height > 0) {
                 drawable.setBounds(0, 0, hotseat.width, hotseat.height)
             }
-            hotseat.clipToOutline = false
-            hotseat.setWillNotDraw(false)
-            hotseat.invalidate()
+            if (hotseat.clipToOutline) {
+                hotseat.clipToOutline = false
+            }
+            if (hotseat.willNotDraw()) {
+                hotseat.setWillNotDraw(false)
+            }
+            if (needsInvalidate) {
+                hotseat.invalidate()
+            }
         }
 
-        if (hotseat.paddingStart != startPadding ||
-            hotseat.paddingTop != topPadding ||
-            hotseat.paddingEnd != endPadding ||
-            hotseat.paddingBottom != bottomPadding
-        ) {
-            hotseat.setPaddingRelative(
-                startPadding,
-                topPadding,
-                endPadding,
-                bottomPadding
-            )
+        if (allowLayoutMutation) {
+            if (hotseat.paddingStart != startPadding ||
+                hotseat.paddingTop != topPadding ||
+                hotseat.paddingEnd != endPadding ||
+                hotseat.paddingBottom != bottomPadding
+            ) {
+                hotseat.setPaddingRelative(
+                    startPadding,
+                    topPadding,
+                    endPadding,
+                    bottomPadding
+                )
+            }
         }
     }
 
@@ -1118,7 +1162,10 @@ object CoverDockHook : YukiBaseHooker() {
         }
     }
 
-    private fun restoreOriginalState(view: View) {
+    private fun restoreOriginalState(
+        view: View,
+        preserveCurrentPaddingAndHeight: Boolean = false
+    ) {
         val original = synchronized(originalStates) { originalStates.remove(view) }
         val generatedBg = synchronized(generatedBackgrounds) { generatedBackgrounds.remove(view) }
         synchronized(lastAppliedBarSizeForHotseat) { lastAppliedBarSizeForHotseat.remove(view) }
@@ -1131,43 +1178,59 @@ object CoverDockHook : YukiBaseHooker() {
             return
         }
 
-        if (view.paddingStart != original.paddingStart ||
-            view.paddingTop != original.paddingTop ||
-            view.paddingEnd != original.paddingEnd ||
-            view.paddingBottom != original.paddingBottom
-        ) {
-            view.setPaddingRelative(
-                original.paddingStart,
-                original.paddingTop,
-                original.paddingEnd,
-                original.paddingBottom
-            )
+        if (!preserveCurrentPaddingAndHeight) {
+            if (view.paddingStart != original.paddingStart ||
+                view.paddingTop != original.paddingTop ||
+                view.paddingEnd != original.paddingEnd ||
+                view.paddingBottom != original.paddingBottom
+            ) {
+                view.setPaddingRelative(
+                    original.paddingStart,
+                    original.paddingTop,
+                    original.paddingEnd,
+                    original.paddingBottom
+                )
+            }
+            val lp = view.layoutParams
+            if (lp != null && original.layoutHeight > 0 && lp.height != original.layoutHeight) {
+                lp.height = original.layoutHeight
+            }
         }
-        view.scaleX = original.scaleX
-        view.scaleY = original.scaleY
+
+        if (view.scaleX != original.scaleX) {
+            view.scaleX = original.scaleX
+        }
+        if (view.scaleY != original.scaleY) {
+            view.scaleY = original.scaleY
+        }
 
         if ((generatedBg != null && view.background === generatedBg) ||
             view.background is CenteredDockGradientDrawable
         ) {
             view.background = original.background
-            view.setWillNotDraw(original.willNotDraw)
+            if (view.willNotDraw() != original.willNotDraw) {
+                view.setWillNotDraw(original.willNotDraw)
+            }
             view.invalidate()
         }
 
-        val lp = view.layoutParams
-        if (lp != null && original.layoutHeight > 0) {
-            lp.height = original.layoutHeight
-        }
-
         val clipEntries = synchronized(originalClipStates) {
-            val snapshot = originalClipStates.entries.map { it.key to it.value }
-            originalClipStates.clear()
-            snapshot
+            if (originalClipStates.isEmpty()) {
+                emptyList()
+            } else {
+                val snapshot = originalClipStates.entries.map { it.key to it.value }
+                originalClipStates.clear()
+                snapshot
+            }
         }
         for ((group, clipState) in clipEntries) {
             runCatching {
-                group.clipChildren = clipState.clipChildren
-                group.clipToPadding = clipState.clipToPadding
+                if (group.clipChildren != clipState.clipChildren) {
+                    group.clipChildren = clipState.clipChildren
+                }
+                if (group.clipToPadding != clipState.clipToPadding) {
+                    group.clipToPadding = clipState.clipToPadding
+                }
             }
         }
     }

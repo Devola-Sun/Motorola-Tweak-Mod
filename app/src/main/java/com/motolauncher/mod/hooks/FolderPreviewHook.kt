@@ -24,7 +24,8 @@ import de.robv.android.xposed.XposedHelpers
 object FolderPreviewHook : YukiBaseHooker() {
 
     private val is3x3: Boolean
-        get() = modulePrefs.getBoolean(
+        get() = HookConfig.safeGetBoolean(
+            modulePrefs,
             HookConfig.KEY_FOLDER_PREVIEW_3X3,
             HookConfig.DEFAULT_FOLDER_PREVIEW_3X3
         )
@@ -45,166 +46,189 @@ object FolderPreviewHook : YukiBaseHooker() {
     private val forced3x3Preview = ThreadLocal<Boolean>()
 
     override fun onHook() {
-        if (!is3x3) return
-
         // Allow up to 9 preview items instead of 4.
-        findClass("com.android.launcher3.folder.ClippedFolderIconLayoutRule").hook {
-            injectMember {
-                method {
-                    name = "getMaxNumItemsInPreview"
-                    param(BooleanType)
-                }
-                beforeHook {
-                    if (is3x3) result = 9
-                }
-            }
-        }
-
-        findClass("com.android.launcher3.folder.FolderGridOrganizer").hook {
-            // FolderGridOrganizer limits the upper-left quadrant to 2x2 for
-            // folders with more than 4 items. Let the first 9 items through so
-            // the launcher preview can show a 3x3 grid.
-            injectMember {
-                method {
-                    name = "isItemInPreview"
-                    param(IntType, IntType)
-                }
-                beforeHook {
-                    if (is3x3 && args(1).int() < 9) {
-                        result = true
+        runCatching {
+            findClass("com.android.launcher3.folder.ClippedFolderIconLayoutRule").hook {
+                injectMember {
+                    method {
+                        name = "getMaxNumItemsInPreview"
+                        param(BooleanType)
+                    }
+                    beforeHook {
+                        runCatching {
+                            if (is3x3) result = 9
+                        }
                     }
                 }
             }
+        }.onFailure {
+            Log.w(TAG, "Could not hook ClippedFolderIconLayoutRule", it)
+        }
 
-            // The opened folder content is laid out by this organizer. Use a
-            // fixed 4x4 page for ordinary (1x1) folders: ranks then fill from
-            // the top-left and the page width matches the folder width, which
-            // also centers the icons on screen.
-            injectMember {
-                method {
-                    name = "setContentSize"
-                    param(IntType)
+        runCatching {
+            findClass("com.android.launcher3.folder.FolderGridOrganizer").hook {
+                // FolderGridOrganizer limits the upper-left quadrant to 2x2 for
+                // folders with more than 4 items. Let the first 9 items through so
+                // the launcher preview can show a 3x3 grid.
+                injectMember {
+                    method {
+                        name = "isItemInPreview"
+                        param(IntType, IntType)
+                    }
+                    beforeHook {
+                        runCatching {
+                            if (is3x3 && args(1).int() < 9) {
+                                result = true
+                            }
+                        }
+                    }
                 }
-                afterHook {
-                    if (!is3x3) return@afterHook
 
-                    val organizer = instance
-                    val isBigFolder = runCatching {
-                        XposedHelpers.getBooleanField(organizer, "mBigFolder")
-                    }.getOrDefault(false)
-                    if (isBigFolder) return@afterHook
+                // The opened folder content is laid out by this organizer. Use a
+                // fixed 4x4 page for ordinary (1x1) folders: ranks then fill from
+                // the top-left and the page width matches the folder width, which
+                // also centers the icons on screen.
+                injectMember {
+                    method {
+                        name = "setContentSize"
+                        param(IntType)
+                    }
+                    afterHook {
+                        runCatching {
+                            if (!is3x3) return@runCatching
 
-                    XposedHelpers.setIntField(organizer, "mMaxCountX", 4)
-                    XposedHelpers.setIntField(organizer, "mMaxCountY", 4)
-                    XposedHelpers.setIntField(organizer, "mCountX", 4)
-                    XposedHelpers.setIntField(organizer, "mCountY", 4)
-                    XposedHelpers.setIntField(organizer, "mMaxItemsPerPage", 16)
+                            val organizer = instance
+                            val isBigFolder = runCatching {
+                                XposedHelpers.getBooleanField(organizer, "mBigFolder")
+                            }.getOrDefault(false)
+                            if (isBigFolder) return@runCatching
+
+                            XposedHelpers.setIntField(organizer, "mMaxCountX", 4)
+                            XposedHelpers.setIntField(organizer, "mMaxCountY", 4)
+                            XposedHelpers.setIntField(organizer, "mCountX", 4)
+                            XposedHelpers.setIntField(organizer, "mCountY", 4)
+                            XposedHelpers.setIntField(organizer, "mMaxItemsPerPage", 16)
+                        }
+                    }
                 }
             }
+        }.onFailure {
+            Log.w(TAG, "Could not hook FolderGridOrganizer", it)
         }
 
         // FolderIcon draws preview icons through PreviewItemManager.draw.
         // The big-folder branch of drawPreviewItem implements the 3x3 layout,
         // so present the folder as big only for the duration of this draw.
-        findClass("com.android.launcher3.folder.PreviewItemManager").hook {
-            injectMember {
-                method {
-                    name = "draw"
-                    param("android.graphics.Canvas")
+        runCatching {
+            findClass("com.android.launcher3.folder.PreviewItemManager").hook {
+                injectMember {
+                    method {
+                        name = "draw"
+                        param("android.graphics.Canvas")
+                    }
+                    beforeHook {
+                        runCatching {
+                            if (!is3x3) return@runCatching
+
+                            val icon = runCatching {
+                                XposedHelpers.getObjectField(instance, "mIcon")
+                            }.getOrNull() ?: return@runCatching
+                            val info = runCatching {
+                                XposedHelpers.getObjectField(icon, "mInfo")
+                            }.getOrNull() ?: return@runCatching
+
+                            val spanX = runCatching { XposedHelpers.getIntField(info, "spanX") }
+                                .getOrDefault(1)
+                            val spanY = runCatching { XposedHelpers.getIntField(info, "spanY") }
+                                .getOrDefault(1)
+
+                            // Real big folders already use the 3x3 path.
+                            if (spanX == 2 || spanY == 2) return@runCatching
+
+                            savedDrawInfo.set(info)
+                            savedDrawSpans.set(intArrayOf(spanX, spanY))
+                            forced3x3Preview.set(true)
+                            XposedHelpers.setIntField(info, "spanX", 2)
+                            XposedHelpers.setIntField(info, "spanY", 2)
+                        }
+                    }
+                    afterHook {
+                        try {
+                            val info = savedDrawInfo.get() ?: return@afterHook
+                            val saved = savedDrawSpans.get() ?: return@afterHook
+                            runCatching {
+                                XposedHelpers.setIntField(info, "spanX", saved[0])
+                                XposedHelpers.setIntField(info, "spanY", saved[1])
+                            }
+                        } finally {
+                            forced3x3Preview.remove()
+                            savedDrawInfo.remove()
+                            savedDrawSpans.remove()
+                        }
+                    }
                 }
-                beforeHook {
-                    if (!is3x3) return@beforeHook
 
-                    val icon = runCatching {
-                        XposedHelpers.getObjectField(instance, "mIcon")
-                    }.getOrNull() ?: return@beforeHook
-                    val info = runCatching {
-                        XposedHelpers.getObjectField(icon, "mInfo")
-                    }.getOrNull() ?: return@beforeHook
-
-                    val spanX = runCatching { XposedHelpers.getIntField(info, "spanX") }
-                        .getOrDefault(1)
-                    val spanY = runCatching { XposedHelpers.getIntField(info, "spanY") }
-                        .getOrDefault(1)
-
-                    // Real big folders already use the 3x3 path.
-                    if (spanX == 2 || spanY == 2) return@beforeHook
-
-                    savedDrawInfo.set(info)
-                    savedDrawSpans.set(intArrayOf(spanX, spanY))
-                    forced3x3Preview.set(true)
-                    XposedHelpers.setIntField(info, "spanX", 2)
-                    XposedHelpers.setIntField(info, "spanY", 2)
-                }
-                afterHook {
-                    forced3x3Preview.remove()
-
-                    val info = savedDrawInfo.get() ?: return@afterHook
-                    val saved = savedDrawSpans.get() ?: return@afterHook
-                    savedDrawInfo.remove()
-                    savedDrawSpans.remove()
-
-                    XposedHelpers.setIntField(info, "spanX", saved[0])
-                    XposedHelpers.setIntField(info, "spanY", saved[1])
-                }
-            }
-
-            // drawPreviewItem receives the per-cell preview size. Shrinking
-            // that size makes each of the nine preview icons slightly smaller
-            // without changing the 3x3 grid balance.
-            injectMember {
-                method {
-                    name = "drawPreviewItem"
-                    param(
-                        "android.graphics.Canvas",
-                        "com.android.launcher3.folder.PreviewItemDrawingParams",
-                        "android.graphics.PointF",
-                        BooleanType,
-                        "android.graphics.Path",
-                        IntType,
-                        FloatType
-                    )
-                }
-                beforeHook {
-                    if (forced3x3Preview.get() != true) return@beforeHook
-
-                    // Build a square 3x3 grid with equal gaps on both axes.
-                    // The outer margin stays at the original 4.5dp, while the
-                    // gap between icons is reduced to 3dp.
-                    val originalCell = args(6).float()
-                    val context = runCatching {
-                        XposedHelpers.getObjectField(instance, "mContext") as Context
-                    }.getOrNull()
-                    val density = context?.resources?.displayMetrics?.density ?: 1f
-                    val inset = 3f * density
-                    val available = 3f * originalCell
-                    val margin = PREVIEW_MARGIN_DP * density
-                    val gap = PREVIEW_GAP_DP * density
-                    val iconSize = (available - 2f * margin - 2f * gap) / 3f
-                    if (iconSize <= 0f) return@beforeHook
-
-                    // drawPreviewItem uses this gap after we replace its cell
-                    // size. The point is shifted so the rendered grid uses the
-                    // tighter `gap` instead, while keeping equal outer margins.
-                    val methodGap = (available - 3f * iconSize) / 4f
-
-                    val index = args(5).int()
-                    val column = index % 3
-                    val row = index / 3
-
-                    val shiftX = (margin - 1.5f * inset) + column * gap
-                    val shiftY = (margin - methodGap) + row * (gap - methodGap)
-
-                    val point = args(2).any() as? android.graphics.PointF
-                    if (point != null) {
-                        args[2] = android.graphics.PointF(
-                            point.x + shiftX,
-                            point.y + shiftY
+                // drawPreviewItem receives the per-cell preview size. Shrinking
+                // that size makes each of the nine preview icons slightly smaller
+                // without changing the 3x3 grid balance.
+                injectMember {
+                    method {
+                        name = "drawPreviewItem"
+                        param(
+                            "android.graphics.Canvas",
+                            "com.android.launcher3.folder.PreviewItemDrawingParams",
+                            "android.graphics.PointF",
+                            BooleanType,
+                            "android.graphics.Path",
+                            IntType,
+                            FloatType
                         )
                     }
-                    args[6] = iconSize + inset
+                    beforeHook {
+                        runCatching {
+                            if (forced3x3Preview.get() != true) return@runCatching
+
+                            // Build a square 3x3 grid with equal gaps on both axes.
+                            // The outer margin stays at the original 4.5dp, while the
+                            // gap between icons is reduced to 3dp.
+                            val originalCell = args(6).float()
+                            val context = runCatching {
+                                XposedHelpers.getObjectField(instance, "mContext") as Context
+                            }.getOrNull()
+                            val density = context?.resources?.displayMetrics?.density ?: 1f
+                            val inset = 3f * density
+                            val available = 3f * originalCell
+                            val margin = PREVIEW_MARGIN_DP * density
+                            val gap = PREVIEW_GAP_DP * density
+                            val iconSize = (available - 2f * margin - 2f * gap) / 3f
+                            if (iconSize <= 0f) return@runCatching
+
+                            // drawPreviewItem uses this gap after we replace its cell
+                            // size. The point is shifted so the rendered grid uses the
+                            // tighter `gap` instead, while keeping equal outer margins.
+                            val methodGap = (available - 3f * iconSize) / 4f
+
+                            val index = args(5).int()
+                            val column = index % 3
+                            val row = index / 3
+
+                            val shiftX = (margin - 1.5f * inset) + column * gap
+                            val shiftY = (margin - methodGap) + row * (gap - methodGap)
+
+                            val point = args(2).any() as? android.graphics.PointF
+                            if (point != null) {
+                                args[2] = android.graphics.PointF(
+                                    point.x + shiftX,
+                                    point.y + shiftY
+                                )
+                            }
+                            args[6] = iconSize + inset
+                        }
+                    }
                 }
             }
+        }.onFailure {
+            Log.w(TAG, "Could not hook PreviewItemManager", it)
         }
 
         Log.i(TAG, "Folder hooks installed: 3x3 launcher preview, 4x4 opened content")

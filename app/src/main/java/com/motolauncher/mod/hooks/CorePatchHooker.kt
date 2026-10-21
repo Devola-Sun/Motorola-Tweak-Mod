@@ -130,9 +130,10 @@ object CorePatchHooker : YukiBaseHooker() {
         )
     }
 
-    private fun readFlag(key: String, default: Boolean): Boolean = runCatching {
-        modulePrefs.getBoolean(key, default)
-    }.getOrDefault(default)
+    private fun readFlag(key: String, default: Boolean): Boolean {
+        if (!bootCompleted) return default
+        return HookConfig.safeGetBoolean(modulePrefs, key, default)
+    }
 
     private fun findMethods(className: String, methodName: String): List<Method> = runCatching {
         Class.forName(className, false, appClassLoader)

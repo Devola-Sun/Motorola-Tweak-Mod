@@ -1,7 +1,11 @@
 package com.motolauncher.mod
 
+import android.content.Context
+import android.os.SystemClock
+import android.os.UserManager
 import androidx.annotation.StringRes
 import com.highcapable.yukihookapi.hook.xposed.prefs.YukiHookPrefsBridge
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Shared preference contract between the settings UI and the hooked launcher.
@@ -102,8 +106,139 @@ object HookConfig {
 
     /** True on the Motorola razr fold (the reference device of this module). */
     fun isRazrFoldDevice(): Boolean {
-        val model = android.os.Build.MODEL.orEmpty().lowercase()
+        val model = runCatching { android.os.Build.MODEL.orEmpty().lowercase() }.getOrDefault("")
         return model.contains("razr") && model.contains("fold")
+    }
+
+    /**
+     * True once `sys.boot_completed` is `1`. During cold boot or right after a
+     * soft reboot (`ctl.restart zygote` / `ksud soft-reboot`), this is false until
+     * system_server finishes booting.
+     */
+    fun isBootCompleted(): Boolean = try {
+        val clazz = Class.forName("android.os.SystemProperties")
+        val method = clazz.getMethod("getBoolean", String::class.java, java.lang.Boolean.TYPE)
+        method.invoke(null, "sys.boot_completed", false) as? Boolean ?: false
+    } catch (_: Throwable) {
+        false
+    }
+
+    /**
+     * True when Credential Encrypted (CE) storage is unlocked for the user
+     * associated with [context]. Before Direct Boot unlock, reading CE resources
+     * or preferences may fail.
+     */
+    fun isUserUnlocked(context: Context?): Boolean = try {
+        if (context == null) {
+            isBootCompleted()
+        } else {
+            val um = context.getSystemService(UserManager::class.java)
+            um?.isUserUnlocked ?: isBootCompleted()
+        }
+    } catch (_: Throwable) {
+        false
+    }
+
+    private const val PREFS_CACHE_TTL_MS = 750L
+    private val prefsLock = Any()
+    private val boolCache = ConcurrentHashMap<String, Pair<Long, Boolean>>()
+    private val intCache = ConcurrentHashMap<String, Pair<Long, Int>>()
+    private val stringCache = ConcurrentHashMap<String, Pair<Long, String>>()
+
+    fun safeGetBoolean(prefs: YukiHookPrefsBridge?, key: String, defaultValue: Boolean): Boolean {
+        if (prefs == null) return defaultValue
+        val now = try {
+            SystemClock.uptimeMillis()
+        } catch (_: Throwable) {
+            0L
+        }
+        if (now > 0L) {
+            val cached = boolCache[key]
+            if (cached != null && now - cached.first in 0 until PREFS_CACHE_TTL_MS) {
+                return cached.second
+            }
+        }
+        return try {
+            synchronized(prefsLock) {
+                if (now > 0L) {
+                    val cached = boolCache[key]
+                    if (cached != null && now - cached.first in 0 until PREFS_CACHE_TTL_MS) {
+                        return@synchronized cached.second
+                    }
+                }
+                val value = prefs.getBoolean(key, defaultValue)
+                if (now > 0L) {
+                    boolCache[key] = now to value
+                }
+                value
+            }
+        } catch (_: Throwable) {
+            defaultValue
+        }
+    }
+
+    fun safeGetInt(prefs: YukiHookPrefsBridge?, key: String, defaultValue: Int): Int {
+        if (prefs == null) return defaultValue
+        val now = try {
+            SystemClock.uptimeMillis()
+        } catch (_: Throwable) {
+            0L
+        }
+        if (now > 0L) {
+            val cached = intCache[key]
+            if (cached != null && now - cached.first in 0 until PREFS_CACHE_TTL_MS) {
+                return cached.second
+            }
+        }
+        return try {
+            synchronized(prefsLock) {
+                if (now > 0L) {
+                    val cached = intCache[key]
+                    if (cached != null && now - cached.first in 0 until PREFS_CACHE_TTL_MS) {
+                        return@synchronized cached.second
+                    }
+                }
+                val value = prefs.getInt(key, defaultValue)
+                if (now > 0L) {
+                    intCache[key] = now to value
+                }
+                value
+            }
+        } catch (_: Throwable) {
+            defaultValue
+        }
+    }
+
+    fun safeGetString(prefs: YukiHookPrefsBridge?, key: String, defaultValue: String): String {
+        if (prefs == null) return defaultValue
+        val now = try {
+            SystemClock.uptimeMillis()
+        } catch (_: Throwable) {
+            0L
+        }
+        if (now > 0L) {
+            val cached = stringCache[key]
+            if (cached != null && now - cached.first in 0 until PREFS_CACHE_TTL_MS) {
+                return cached.second
+            }
+        }
+        return try {
+            synchronized(prefsLock) {
+                if (now > 0L) {
+                    val cached = stringCache[key]
+                    if (cached != null && now - cached.first in 0 until PREFS_CACHE_TTL_MS) {
+                        return@synchronized cached.second
+                    }
+                }
+                val value = prefs.getString(key, defaultValue)
+                if (now > 0L) {
+                    stringCache[key] = now to value
+                }
+                value
+            }
+        } catch (_: Throwable) {
+            defaultValue
+        }
     }
 
     const val DEFAULT_HIDE_LABELS: Boolean = false
@@ -219,30 +354,26 @@ object HookConfig {
     }
 
     /** Cover-dock settings are read through YukiHookAPI's XSharedPreferences bridge. */
-    fun isCoverDockEnabled(prefs: YukiHookPrefsBridge): Boolean = runCatching {
-        prefs.getBoolean(KEY_COVER_DOCK_ENABLED, DEFAULT_COVER_DOCK_ENABLED)
-    }.getOrDefault(DEFAULT_COVER_DOCK_ENABLED)
+    fun isCoverDockEnabled(prefs: YukiHookPrefsBridge?): Boolean =
+        safeGetBoolean(prefs, KEY_COVER_DOCK_ENABLED, DEFAULT_COVER_DOCK_ENABLED)
 
-    fun coverDockHeightPercent(prefs: YukiHookPrefsBridge): Int = runCatching {
+    fun coverDockHeightPercent(prefs: YukiHookPrefsBridge?): Int =
         coerceCoverDockHeightPercent(
-            prefs.getInt(KEY_COVER_DOCK_HEIGHT_PERCENT, DEFAULT_COVER_DOCK_HEIGHT_PERCENT),
+            safeGetInt(prefs, KEY_COVER_DOCK_HEIGHT_PERCENT, DEFAULT_COVER_DOCK_HEIGHT_PERCENT),
             DEFAULT_COVER_DOCK_HEIGHT_PERCENT
         )
-    }.getOrDefault(DEFAULT_COVER_DOCK_HEIGHT_PERCENT)
 
-    fun coverDockWidthPercent(prefs: YukiHookPrefsBridge): Int = runCatching {
+    fun coverDockWidthPercent(prefs: YukiHookPrefsBridge?): Int =
         coerceCoverDockWidthPercent(
-            prefs.getInt(KEY_COVER_DOCK_WIDTH, DEFAULT_COVER_DOCK_WIDTH_PERCENT),
+            safeGetInt(prefs, KEY_COVER_DOCK_WIDTH, DEFAULT_COVER_DOCK_WIDTH_PERCENT),
             DEFAULT_COVER_DOCK_WIDTH_PERCENT
         )
-    }.getOrDefault(DEFAULT_COVER_DOCK_WIDTH_PERCENT)
 
-    fun coverDockSizePercent(prefs: YukiHookPrefsBridge): Int = runCatching {
+    fun coverDockSizePercent(prefs: YukiHookPrefsBridge?): Int =
         coerceCoverDockPercent(
-            prefs.getInt(KEY_COVER_DOCK_SIZE_PERCENT, DEFAULT_COVER_DOCK_SIZE_PERCENT),
+            safeGetInt(prefs, KEY_COVER_DOCK_SIZE_PERCENT, DEFAULT_COVER_DOCK_SIZE_PERCENT),
             DEFAULT_COVER_DOCK_SIZE_PERCENT
         )
-    }.getOrDefault(DEFAULT_COVER_DOCK_SIZE_PERCENT)
 
     /**
      * True when the camera shutter sound has to be suppressed.
@@ -251,7 +382,6 @@ object HookConfig {
      * the YukiHookAPI prefs bridge, because in the system_server process the
      * module prefs are exposed as XSharedPreferences.
      */
-    fun isCameraSoundDisabled(prefs: YukiHookPrefsBridge): Boolean = runCatching {
-        prefs.getBoolean(KEY_DISABLE_CAMERA_SOUND, DEFAULT_DISABLE_CAMERA_SOUND)
-    }.getOrDefault(DEFAULT_DISABLE_CAMERA_SOUND)
+    fun isCameraSoundDisabled(prefs: YukiHookPrefsBridge?): Boolean =
+        safeGetBoolean(prefs, KEY_DISABLE_CAMERA_SOUND, DEFAULT_DISABLE_CAMERA_SOUND)
 }

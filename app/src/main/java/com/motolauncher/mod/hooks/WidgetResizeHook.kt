@@ -19,60 +19,67 @@ object WidgetResizeHook : YukiBaseHooker() {
     private const val TAG = "MotoLauncherMod"
 
     private val enabled: Boolean
-        get() = modulePrefs.getBoolean(
+        get() = HookConfig.safeGetBoolean(
+            modulePrefs,
             HookConfig.KEY_WIDGET_FREE_RESIZE,
             HookConfig.DEFAULT_WIDGET_FREE_RESIZE
         )
 
     override fun onHook() {
-        findClass("com.android.launcher3.AppWidgetResizeFrame").hook {
-            injectMember {
-                method {
-                    name = "setupForWidget"
-                    paramCount = 3
-                }
-                afterHook {
-                    if (!enabled) return@afterHook
-
-                    val frame = instance
-                    val widgetView = runCatching {
-                        XposedHelpers.getObjectField(frame, "mWidgetView")
-                    }.getOrNull() ?: return@afterHook
-
-                    // Widget stacks have their own resize contract; keep their
-                    // original behavior.
-                    val inStack = runCatching {
-                        XposedHelpers.callMethod(widgetView, "isInStack") as? Boolean
-                    }.getOrNull() ?: false
-                    if (inStack) return@afterHook
-
-                    val cellLayout = runCatching {
-                        XposedHelpers.getObjectField(frame, "mCellLayout")
-                    }.getOrNull() ?: return@afterHook
-                    val countX = runCatching {
-                        XposedHelpers.callMethod(cellLayout, "getCountX") as? Int
-                    }.getOrNull() ?: return@afterHook
-                    val countY = runCatching {
-                        XposedHelpers.callMethod(cellLayout, "getCountY") as? Int
-                    }.getOrNull() ?: return@afterHook
-
-                    XposedHelpers.setIntField(frame, "mMinHSpan", 1)
-                    XposedHelpers.setIntField(frame, "mMaxHSpan", countX)
-                    XposedHelpers.setIntField(frame, "mMinVSpan", 1)
-                    XposedHelpers.setIntField(frame, "mMaxVSpan", countY)
-                    XposedHelpers.setBooleanField(frame, "mHorizontalResizeActive", true)
-                    XposedHelpers.setBooleanField(frame, "mVerticalResizeActive", true)
-
-                    val handles = runCatching {
-                        XposedHelpers.getObjectField(frame, "mDragHandles") as? Array<*>
-                    }.getOrNull()
-                    handles?.forEach { handle ->
-                        (handle as? View)?.visibility = View.VISIBLE
+        runCatching {
+            findClass("com.android.launcher3.AppWidgetResizeFrame").hook {
+                injectMember {
+                    method {
+                        name = "setupForWidget"
+                        paramCount = 3
                     }
+                    afterHook {
+                        runCatching {
+                            if (!enabled) return@runCatching
 
-                    Log.i(TAG, "Widget resize limits removed: ${countX}x$countY")
+                            val frame = instance
+                            val widgetView = runCatching {
+                                XposedHelpers.getObjectField(frame, "mWidgetView")
+                            }.getOrNull() ?: return@runCatching
+
+                            // Widget stacks have their own resize contract; keep their
+                            // original behavior.
+                            val inStack = runCatching {
+                                XposedHelpers.callMethod(widgetView, "isInStack") as? Boolean
+                            }.getOrNull() ?: false
+                            if (inStack) return@runCatching
+
+                            val cellLayout = runCatching {
+                                XposedHelpers.getObjectField(frame, "mCellLayout")
+                            }.getOrNull() ?: return@runCatching
+                            val countX = runCatching {
+                                XposedHelpers.callMethod(cellLayout, "getCountX") as? Int
+                            }.getOrNull() ?: return@runCatching
+                            val countY = runCatching {
+                                XposedHelpers.callMethod(cellLayout, "getCountY") as? Int
+                            }.getOrNull() ?: return@runCatching
+
+                            XposedHelpers.setIntField(frame, "mMinHSpan", 1)
+                            XposedHelpers.setIntField(frame, "mMaxHSpan", countX)
+                            XposedHelpers.setIntField(frame, "mMinVSpan", 1)
+                            XposedHelpers.setIntField(frame, "mMaxVSpan", countY)
+                            XposedHelpers.setBooleanField(frame, "mHorizontalResizeActive", true)
+                            XposedHelpers.setBooleanField(frame, "mVerticalResizeActive", true)
+
+                            val handles = runCatching {
+                                XposedHelpers.getObjectField(frame, "mDragHandles") as? Array<*>
+                            }.getOrNull()
+                            handles?.forEach { handle ->
+                                (handle as? View)?.visibility = View.VISIBLE
+                            }
+
+                            Log.i(TAG, "Widget resize limits removed: ${countX}x$countY")
+                        }
+                    }
                 }
             }
+        }.onFailure {
+            Log.w(TAG, "Could not hook AppWidgetResizeFrame", it)
         }
     }
 }

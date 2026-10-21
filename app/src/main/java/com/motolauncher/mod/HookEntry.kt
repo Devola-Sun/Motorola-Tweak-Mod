@@ -55,100 +55,129 @@ object HookEntry : IYukiHookXposedInit {
     override fun onHook() {
         YukiHookAPI.encase {
             loadApp(name = LauncherHooker.TARGET_PACKAGE) {
-                logScopeMarker(LauncherHooker.TARGET_PACKAGE)
-                // Read the same bridge that MainActivity writes to. LSPosed's
-                // New XSharedPreferences makes the module prefs visible inside
-                // the launcher process.
-                val prefs = prefs(HookConfig.PREFS_NAME)
-
                 runCatching {
-                    Log.i(
-                        MODULE_TAG,
-                        "Settings loaded: hide_labels=${prefs.getBoolean(HookConfig.KEY_HIDE_LABELS, HookConfig.DEFAULT_HIDE_LABELS)}, " +
-                            "icon_shape=${prefs.getString(HookConfig.KEY_ICON_SHAPE, HookConfig.DEFAULT_ICON_SHAPE)}, " +
-                            "grid=${prefs.getInt(HookConfig.KEY_GRID_COLUMNS, HookConfig.DEFAULT_GRID_COLUMNS)}" +
-                            "x${prefs.getInt(HookConfig.KEY_GRID_ROWS, HookConfig.DEFAULT_GRID_ROWS)}, " +
-                            "dock=${prefs.getInt(HookConfig.KEY_DOCK_ICONS, HookConfig.DEFAULT_DOCK_ICONS)}"
-                    )
-                }.onFailure {
-                    Log.w(MODULE_TAG, "Could not read shared preferences", it)
-                }
+                    if (processName.isNotEmpty() && processName != LauncherHooker.TARGET_PACKAGE) {
+                        return@loadApp
+                    }
+                    logScopeMarker(LauncherHooker.TARGET_PACKAGE)
+                    val prefs = runCatching { prefs(HookConfig.PREFS_NAME) }.getOrNull()
 
-                LauncherHooker.install(this, prefs)
-                loadHooker(CoverDockHook)
-                loadHooker(FolderPreviewHook)
-                loadHooker(WidgetResizeHook)
-                FlagSecureFrameworkHook.hook(this)
+                    if (HookConfig.isBootCompleted()) {
+                        runCatching {
+                            Log.i(
+                                MODULE_TAG,
+                                "Settings loaded: hide_labels=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_HIDE_LABELS, HookConfig.DEFAULT_HIDE_LABELS)}, " +
+                                    "icon_shape=${HookConfig.safeGetString(prefs, HookConfig.KEY_ICON_SHAPE, HookConfig.DEFAULT_ICON_SHAPE)}, " +
+                                    "grid=${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_COLUMNS, HookConfig.DEFAULT_GRID_COLUMNS)}" +
+                                    "x${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_ROWS, HookConfig.DEFAULT_GRID_ROWS)}, " +
+                                    "dock=${HookConfig.safeGetInt(prefs, HookConfig.KEY_DOCK_ICONS, HookConfig.DEFAULT_DOCK_ICONS)}"
+                            )
+                        }
+                    }
+
+                    runCatching { LauncherHooker.install(this, prefs) }.onFailure {
+                        Log.w(MODULE_TAG, "LauncherHooker could not be installed", it)
+                    }
+                    runCatching { loadHooker(CoverDockHook) }.onFailure {
+                        Log.w(MODULE_TAG, "CoverDockHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(FolderPreviewHook) }.onFailure {
+                        Log.w(MODULE_TAG, "FolderPreviewHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(WidgetResizeHook) }.onFailure {
+                        Log.w(MODULE_TAG, "WidgetResizeHook could not be loaded", it)
+                    }
+                    runCatching { FlagSecureFrameworkHook.hook(this) }.onFailure {
+                        Log.w(MODULE_TAG, "FlagSecureFrameworkHook could not be loaded", it)
+                    }
+                }
             }
 
             loadApp(name = HookConfig.SYSTEM_UI_PACKAGE) {
-                logScopeMarker(HookConfig.SYSTEM_UI_PACKAGE)
-                val prefs = prefs(HookConfig.PREFS_NAME)
                 runCatching {
-                    Log.i(
-                        MODULE_TAG,
-                        "SystemUI settings loaded: seconds=${prefs.getBoolean(HookConfig.KEY_SB_SHOW_SECONDS, HookConfig.DEFAULT_SB_SHOW_SECONDS)}, " +
-                            "hideBatteryPercent=${prefs.getBoolean(HookConfig.KEY_SB_HIDE_BATTERY_PERCENT, HookConfig.DEFAULT_SB_HIDE_BATTERY_PERCENT)}, " +
-                            "hideVolte=${prefs.getBoolean(HookConfig.KEY_SB_HIDE_VOLTE, HookConfig.DEFAULT_SB_HIDE_VOLTE)}, " +
-                            "iosIcons=${prefs.getBoolean(HookConfig.KEY_SB_IOS_ICONS, HookConfig.DEFAULT_SB_IOS_ICONS)}, " +
-                            "padding=${prefs.getBoolean(HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING, HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING)}, " +
-                            "swapSliders=${prefs.getBoolean(HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)}, " +
-                            "iosConnectivity=${prefs.getBoolean(HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)}"
-                    )
-                }.onFailure {
-                    Log.w(MODULE_TAG, "Could not read SystemUI prefs", it)
-                }
+                    // Only hook the real SystemUI process; do not inject into other
+                    // packages (like com.moto.dragdrop) that merely load SystemUI's
+                    // APK resources via createPackageContext.
+                    if (processName.isNotEmpty() && processName != HookConfig.SYSTEM_UI_PACKAGE) {
+                        return@loadApp
+                    }
+                    logScopeMarker(HookConfig.SYSTEM_UI_PACKAGE)
+                    val prefs = runCatching { prefs(HookConfig.PREFS_NAME) }.getOrNull()
+                    if (HookConfig.isBootCompleted()) {
+                        runCatching {
+                            Log.i(
+                                MODULE_TAG,
+                                "SystemUI settings loaded: seconds=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_SHOW_SECONDS, HookConfig.DEFAULT_SB_SHOW_SECONDS)}, " +
+                                    "hideBatteryPercent=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_BATTERY_PERCENT, HookConfig.DEFAULT_SB_HIDE_BATTERY_PERCENT)}, " +
+                                    "hideVolte=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_VOLTE, HookConfig.DEFAULT_SB_HIDE_VOLTE)}, " +
+                                    "iosIcons=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_IOS_ICONS, HookConfig.DEFAULT_SB_IOS_ICONS)}, " +
+                                    "padding=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING, HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING)}, " +
+                                    "swapSliders=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)}, " +
+                                    "iosConnectivity=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)}"
+                            )
+                        }
+                    }
 
-                loadHooker(StatusBarHooks)
-                loadHooker(ControlCenterHooks)
-                FlagSecureFrameworkHook.hook(this)
+                    runCatching { loadHooker(StatusBarHooks) }.onFailure {
+                        Log.w(MODULE_TAG, "StatusBarHooks could not be loaded", it)
+                    }
+                    runCatching { loadHooker(ControlCenterHooks) }.onFailure {
+                        Log.w(MODULE_TAG, "ControlCenterHooks could not be loaded", it)
+                    }
+                    runCatching { FlagSecureFrameworkHook.hook(this) }.onFailure {
+                        Log.w(MODULE_TAG, "FlagSecureFrameworkHook could not be loaded", it)
+                    }
+                }
             }
 
             // System framework ("android" / system_server). CorePatch-style
             // installer policy bypass and the FLAG_SECURE removal live here so
             // every app benefits.
             loadSystem {
-                logScopeMarker(HookConfig.FRAMEWORK_PACKAGE)
-                val prefs = prefs(HookConfig.PREFS_NAME)
-                val safeMode = runCatching {
-                    prefs.getBoolean(HookConfig.KEY_SAFE_MODE, HookConfig.DEFAULT_SAFE_MODE)
-                }.getOrDefault(HookConfig.DEFAULT_SAFE_MODE)
-
-                // Safe mode: on devices other than the razr fold the framework
-                // flags can crash system_server / cause a boot loop, so the
-                // framework hooks are only installed on the reference device.
-                val frameworkHooksAllowed = !safeMode || HookConfig.isRazrFoldDevice()
-                if (!frameworkHooksAllowed) {
-                    val reason =
-                        "Safe mode: framework hooks skipped on non-razr-fold device " +
-                            "(${android.os.Build.MODEL})"
-                    Log.i(MODULE_TAG, reason)
-                    runCatching { ErrorLogger.log(MODULE_TAG, reason) }
-                    return@loadSystem
-                }
-
                 runCatching {
-                    Log.i(
-                        MODULE_TAG,
-                        "System framework settings loaded: " +
-                            "disableFlagSecure=${prefs.getBoolean(HookConfig.KEY_DISABLE_FLAG_SECURE, HookConfig.DEFAULT_DISABLE_FLAG_SECURE)}, " +
-                            "disableCameraSound=${prefs.getBoolean(HookConfig.KEY_DISABLE_CAMERA_SOUND, HookConfig.DEFAULT_DISABLE_CAMERA_SOUND)}, " +
-                            "bypassSignatures=${prefs.getBoolean(HookConfig.KEY_COREPATCH_BYPASS_SIGNATURES, HookConfig.DEFAULT_COREPATCH_BYPASS_SIGNATURES)}, " +
-                            "allowDowngrade=${prefs.getBoolean(HookConfig.KEY_COREPATCH_ALLOW_DOWNGRADE, HookConfig.DEFAULT_COREPATCH_ALLOW_DOWNGRADE)}, " +
-                            "bypassDigest=${prefs.getBoolean(HookConfig.KEY_COREPATCH_BYPASS_DIGEST, HookConfig.DEFAULT_COREPATCH_BYPASS_DIGEST)}, " +
-                            "safeMode=$safeMode"
-                    )
-                }.onFailure {
-                    Log.w(MODULE_TAG, "Could not read system framework prefs", it)
-                }
+                    logScopeMarker(HookConfig.FRAMEWORK_PACKAGE)
 
-                FlagSecureFrameworkHook.hook(this)
-                CorePatchHooker.hook(this)
-                runCatching { loadHooker(CameraHook) }.onFailure {
-                    Log.w(MODULE_TAG, "CameraHook could not be loaded", it)
-                }
-                runCatching { loadHooker(BatteryServiceHook) }.onFailure {
-                    Log.w(MODULE_TAG, "BatteryServiceHook could not be loaded", it)
+                    // Safe mode: on devices other than the razr fold the framework
+                    // flags can crash system_server / cause a boot loop, so the
+                    // framework hooks are only installed on the reference device.
+                    // Note: at system_server startBootstrapServices time (especially
+                    // during soft reboot), LSPosedBridge has not yet received its
+                    // service binder, so do not force XSharedPreferences loading on
+                    // the reference device during bootstrap.
+                    val isReferenceDevice = HookConfig.isRazrFoldDevice()
+                    val safeMode = if (isReferenceDevice) {
+                        HookConfig.DEFAULT_SAFE_MODE
+                    } else {
+                        val prefs = runCatching { prefs(HookConfig.PREFS_NAME) }.getOrNull()
+                        HookConfig.safeGetBoolean(
+                            prefs,
+                            HookConfig.KEY_SAFE_MODE,
+                            HookConfig.DEFAULT_SAFE_MODE
+                        )
+                    }
+
+                    val frameworkHooksAllowed = !safeMode || isReferenceDevice
+                    if (!frameworkHooksAllowed) {
+                        val reason =
+                            "Safe mode: framework hooks skipped on non-razr-fold device " +
+                                "(${android.os.Build.MODEL})"
+                        Log.i(MODULE_TAG, reason)
+                        runCatching { ErrorLogger.log(MODULE_TAG, reason) }
+                        return@loadSystem
+                    }
+
+                    runCatching { FlagSecureFrameworkHook.hook(this) }.onFailure {
+                        Log.w(MODULE_TAG, "FlagSecureFrameworkHook could not be loaded", it)
+                    }
+                    runCatching { CorePatchHooker.hook(this) }.onFailure {
+                        Log.w(MODULE_TAG, "CorePatchHooker could not be loaded", it)
+                    }
+                    runCatching { loadHooker(CameraHook) }.onFailure {
+                        Log.w(MODULE_TAG, "CameraHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(BatteryServiceHook) }.onFailure {
+                        Log.w(MODULE_TAG, "BatteryServiceHook could not be loaded", it)
+                    }
                 }
             }
         }

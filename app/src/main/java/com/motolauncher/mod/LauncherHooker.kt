@@ -32,7 +32,7 @@ object LauncherHooker {
     private const val CLASS_BASE_ICON_FACTORY = "com.android.launcher3.icons.BaseIconFactory"
     private const val CLASS_ICON_OPTIONS = "com.android.launcher3.icons.BaseIconFactory\$IconOptions"
 
-    fun install(packageParam: PackageParam, prefs: YukiHookPrefsBridge) = with(packageParam) {
+    fun install(packageParam: PackageParam, prefs: YukiHookPrefsBridge?) = with(packageParam) {
         hookAppLabels(prefs)
         hookWorkspaceGrid(prefs)
         hookDeviceProfile(prefs)
@@ -45,7 +45,7 @@ object LauncherHooker {
      * The preference is checked in the callback, not at install time, so toggling
      * the switch takes effect on the next label update without a re-hook.
      */
-    private fun PackageParam.hookAppLabels(prefs: YukiHookPrefsBridge) {
+    private fun PackageParam.hookAppLabels(prefs: YukiHookPrefsBridge?) {
         runCatching {
             loadClass(CLASS_BUBBLE_TEXT_VIEW)
                 .resolve()
@@ -56,7 +56,12 @@ object LauncherHooker {
                 .hook {
                     before {
                         runCatching {
-                            if (prefs.getBoolean(HookConfig.KEY_HIDE_LABELS, HookConfig.DEFAULT_HIDE_LABELS)) {
+                            if (HookConfig.safeGetBoolean(
+                                    prefs,
+                                    HookConfig.KEY_HIDE_LABELS,
+                                    HookConfig.DEFAULT_HIDE_LABELS
+                                )
+                            ) {
                                 args[0] = false
                             }
                         }.onFailure {
@@ -79,7 +84,7 @@ object LauncherHooker {
      * recalculate cell sizes for the new grid. Values are 4..10 and are kept
      * independent: the dock count is no longer clamped to the column count.
      */
-    private fun PackageParam.hookWorkspaceGrid(prefs: YukiHookPrefsBridge) {
+    private fun PackageParam.hookWorkspaceGrid(prefs: YukiHookPrefsBridge?) {
         runCatching {
             loadClass(CLASS_INVARIANT_DEVICE_PROFILE)
                 .resolve()
@@ -91,16 +96,19 @@ object LauncherHooker {
                         runCatching {
                             val profile = instance
 
-                            val columns = HookConfig.coerceGridValue(
-                                prefs.getInt(HookConfig.KEY_GRID_COLUMNS, HookConfig.DEFAULT_GRID_COLUMNS),
+                            val columns = readGridValue(
+                                prefs,
+                                HookConfig.KEY_GRID_COLUMNS,
                                 HookConfig.DEFAULT_GRID_COLUMNS
                             )
-                            val rows = HookConfig.coerceGridValue(
-                                prefs.getInt(HookConfig.KEY_GRID_ROWS, HookConfig.DEFAULT_GRID_ROWS),
+                            val rows = readGridValue(
+                                prefs,
+                                HookConfig.KEY_GRID_ROWS,
                                 HookConfig.DEFAULT_GRID_ROWS
                             )
-                            val dockIcons = HookConfig.coerceGridValue(
-                                prefs.getInt(HookConfig.KEY_DOCK_ICONS, HookConfig.DEFAULT_DOCK_ICONS),
+                            val dockIcons = readGridValue(
+                                prefs,
+                                HookConfig.KEY_DOCK_ICONS,
                                 HookConfig.DEFAULT_DOCK_ICONS
                             )
 
@@ -135,7 +143,7 @@ object LauncherHooker {
      * cell sizes with the new grid, and the after callback also pins the
      * Hotseat count on the DeviceProfile itself.
      */
-    private fun PackageParam.hookDeviceProfile(prefs: YukiHookPrefsBridge) {
+    private fun PackageParam.hookDeviceProfile(prefs: YukiHookPrefsBridge?) {
         runCatching {
             loadClass(CLASS_DEVICE_PROFILE)
                 .resolve()
@@ -220,28 +228,23 @@ object LauncherHooker {
     }
 
     private fun readGridValue(
-        prefs: YukiHookPrefsBridge,
+        prefs: YukiHookPrefsBridge?,
         key: String,
         defaultValue: Int
-    ): Int = HookConfig.coerceGridValue(prefs.getInt(key, defaultValue), defaultValue)
+    ): Int = HookConfig.coerceGridValue(
+        HookConfig.safeGetInt(prefs, key, defaultValue),
+        defaultValue
+    )
 
     /**
      * 3. Change the icon shape.
      *
-     * When the preference is SYSTEM, the method is not hooked at all. This is
-     * what makes "back to system shape" work: the launcher's own adaptive icon
-     * mask is left untouched instead of being overwritten by an empty Path.
-     * The callback also re-checks the preference so a stale hook can never
-     * force a shape after the user selects SYSTEM.
+     * Always installs the hook without reading XSharedPreferences at
+     * handleLoadPackage time (which may run during Direct Boot / soft reboot).
+     * When the preference is SYSTEM at callback time, the launcher's own
+     * adaptive icon mask is left untouched.
      */
-    private fun PackageParam.hookIconShape(prefs: YukiHookPrefsBridge) {
-        val installedShape = runCatching { readIconShape(prefs) }
-            .getOrDefault(HookConfig.IconShape.SYSTEM)
-        if (installedShape == HookConfig.IconShape.SYSTEM) {
-            Log.i(TAG, "Icon shape hook bypassed: SYSTEM")
-            return
-        }
-
+    private fun PackageParam.hookIconShape(prefs: YukiHookPrefsBridge?) {
         runCatching {
             val iconOptionsClass = loadClass(CLASS_ICON_OPTIONS)
 
@@ -271,15 +274,15 @@ object LauncherHooker {
                     }
                 }
 
-            Log.i(TAG, "Hooked BaseIconFactory.createBadgedIconBitmap (shape=${installedShape.key})")
+            Log.i(TAG, "Hooked BaseIconFactory.createBadgedIconBitmap")
         }.onFailure {
             Log.e(TAG, "Failed to hook BaseIconFactory.createBadgedIconBitmap", it)
         }
     }
 
-    private fun readIconShape(prefs: YukiHookPrefsBridge): HookConfig.IconShape =
+    private fun readIconShape(prefs: YukiHookPrefsBridge?): HookConfig.IconShape =
         HookConfig.IconShape.fromKey(
-            prefs.getString(HookConfig.KEY_ICON_SHAPE, HookConfig.DEFAULT_ICON_SHAPE)
+            HookConfig.safeGetString(prefs, HookConfig.KEY_ICON_SHAPE, HookConfig.DEFAULT_ICON_SHAPE)
         )
 
     /**

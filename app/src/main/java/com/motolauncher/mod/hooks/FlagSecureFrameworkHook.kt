@@ -47,15 +47,15 @@ object FlagSecureFrameworkHook : YukiBaseHooker() {
 
     private val enabled: Boolean
         get() {
+            if (!HookConfig.isBootCompleted()) return false
             val now = SystemClock.uptimeMillis()
             if (now - cachedAt >= PREFS_TTL_MS) {
                 cachedAt = now
-                cachedEnabled = runCatching {
-                    modulePrefs.getBoolean(
-                        HookConfig.KEY_DISABLE_FLAG_SECURE,
-                        HookConfig.DEFAULT_DISABLE_FLAG_SECURE
-                    )
-                }.getOrDefault(HookConfig.DEFAULT_DISABLE_FLAG_SECURE)
+                cachedEnabled = HookConfig.safeGetBoolean(
+                    modulePrefs,
+                    HookConfig.KEY_DISABLE_FLAG_SECURE,
+                    HookConfig.DEFAULT_DISABLE_FLAG_SECURE
+                )
             }
             return cachedEnabled
         }

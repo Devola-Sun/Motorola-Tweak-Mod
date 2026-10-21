@@ -3,6 +3,7 @@ package com.motolauncher.mod.hooks
 import android.util.Log
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.param.PackageParam
+import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.motolauncher.mod.ErrorLogger
 import com.motolauncher.mod.HookConfig
 
@@ -92,10 +93,11 @@ object CameraHook : YukiBaseHooker() {
                 injectMember {
                     method {
                         name = "setForceUse"
-                        param(Int::class, Int::class)
+                        param(IntType, IntType)
                     }
                     beforeHook {
                         runCatching {
+                            if (!HookConfig.isBootCompleted()) return@runCatching
                             if (!HookConfig.isCameraSoundDisabled(modulePrefs)) {
                                 return@runCatching
                             }
@@ -130,6 +132,7 @@ object CameraHook : YukiBaseHooker() {
                     }
                     afterHook {
                         runCatching {
+                            if (!HookConfig.isBootCompleted()) return@runCatching
                             if (!HookConfig.isCameraSoundDisabled(modulePrefs)) {
                                 return@runCatching
                             }
@@ -161,15 +164,13 @@ object CameraHook : YukiBaseHooker() {
                     }
                     afterHook {
                         runCatching {
+                            if (!HookConfig.isBootCompleted()) return@runCatching
                             if (!HookConfig.isCameraSoundDisabled(modulePrefs)) {
                                 return@runCatching
                             }
                             result = false
+                            releaseForSystemForceUse()
                         }
-                        // The camera app asks the audio service about the
-                        // shutter sound, so this is a good moment to release
-                        // the enforced configuration as well.
-                        runCatching { releaseForSystemForceUse() }
                     }
                 }
             }
@@ -191,11 +192,13 @@ object CameraHook : YukiBaseHooker() {
         runCatching {
             findClass(AUDIO_SERVICE).hook {
                 injectMember {
-                    constructor {
-                        paramCount(1..4)
-                    }
+                    allConstructors()
                     afterHook {
-                        runCatching { releaseForSystemForceUse() }
+                        runCatching {
+                            if (!HookConfig.isBootCompleted()) return@runCatching
+                            if (!HookConfig.isCameraSoundDisabled(modulePrefs)) return@runCatching
+                            releaseForSystemForceUse()
+                        }
                     }
                 }
             }
@@ -218,6 +221,7 @@ object CameraHook : YukiBaseHooker() {
                     runCatching { Thread.sleep(delay) }.onFailure { return@Thread }
                 }
                 runCatching {
+                    if (!HookConfig.isBootCompleted()) return@runCatching
                     if (!HookConfig.isCameraSoundDisabled(modulePrefs)) return@runCatching
                     releaseForSystemForceUse()
                 }

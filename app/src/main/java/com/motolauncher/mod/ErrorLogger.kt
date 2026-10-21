@@ -18,8 +18,15 @@ object ErrorLogger {
 
     @Synchronized
     fun log(tag: String, message: String, error: Throwable? = null) {
-        runCatching { Log.e(tag, message, error) }
-        runCatching {
+        try {
+            Log.e(tag, message, error)
+        } catch (_: Throwable) {
+        }
+        // Never touch /sdcard/Download before boot_completed=1 (Direct Boot /
+        // soft reboot startup), as FUSE / external storage is not mounted yet
+        // and synchronous file I/O on system_server's bootstrap thread is unsafe.
+        if (!HookConfig.isBootCompleted()) return
+        try {
             logFile.parentFile?.mkdirs()
             val stamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
             val entry = buildString {
@@ -30,7 +37,11 @@ object ErrorLogger {
                 append('\n')
             }
             logFile.appendText(entry)
-            runCatching { logFile.setReadable(true, false) }
+            try {
+                logFile.setReadable(true, false)
+            } catch (_: Throwable) {
+            }
+        } catch (_: Throwable) {
         }
     }
 }
