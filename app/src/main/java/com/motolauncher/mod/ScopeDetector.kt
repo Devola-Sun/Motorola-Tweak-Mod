@@ -19,7 +19,12 @@ import java.io.File
 object ScopeDetector {
 
     private const val TAG = "MotoLauncherMod"
-    private const val MODULE_PACKAGE = "com.motolauncher.mod"
+
+    /**
+     * The module's own package name as registered in LSPosed. It follows the
+     * applicationId, so it is taken from BuildConfig instead of a literal.
+     */
+    private val MODULE_PACKAGE: String = BuildConfig.APPLICATION_ID
 
     /** LSPosed stores the system framework scope as "system" or "android". */
     private val FRAMEWORK_SCOPE_KEYS = setOf("system", "android")

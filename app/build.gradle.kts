@@ -14,7 +14,10 @@ android {
     buildToolsVersion = "37.0.0"
 
     defaultConfig {
-        applicationId = "com.motolauncher.mod"
+        // LSPosed repository review requires the module id to follow the
+        // io.github.<owner>.<repo> convention. The namespace stays
+        // com.motolauncher.mod so the Kotlin sources are untouched.
+        applicationId = "io.github.devola_sun.motorolatweak"
         minSdk = 36
         targetSdk = 36
         versionCode = 16

@@ -9,6 +9,7 @@ import android.graphics.drawable.DrawableWrapper
 import android.graphics.drawable.LevelListDrawable
 import android.view.View
 import android.widget.ImageView
+import com.motolauncher.mod.BuildConfig
 import com.motolauncher.mod.R
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.current
@@ -399,7 +400,7 @@ object SignalIconHook : YukiBaseHooker() {
     private fun getModuleContext(context: Context): Context? {
         if (moduleContextCache == null) {
             moduleContextCache = runCatching {
-                context.createPackageContext("com.motolauncher.mod", Context.CONTEXT_IGNORE_SECURITY)
+                context.createPackageContext(BuildConfig.APPLICATION_ID, Context.CONTEXT_IGNORE_SECURITY)
             }.getOrNull()
         }
         return moduleContextCache

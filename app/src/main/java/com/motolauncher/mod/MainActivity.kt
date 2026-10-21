@@ -1484,8 +1484,11 @@ class MainActivity : AppCompatActivity() {
         private const val DATABASE_DIR =
             "/data/data/${HookConfig.TARGET_PACKAGE}/databases"
 
-        private const val SOURCE_PREFS =
-            "/data/user/0/com.motolauncher.mod/shared_prefs/${HookConfig.PREFS_NAME}.xml"
+        /** The module's own package (applicationId) that stores the prefs. */
+        private val MODULE_PACKAGE: String = BuildConfig.APPLICATION_ID
+
+        private val SOURCE_PREFS =
+            "/data/user/0/$MODULE_PACKAGE/shared_prefs/${HookConfig.PREFS_NAME}.xml"
 
         /**
          * LSPosed's New XSharedPreferences copies module prefs to
@@ -1498,7 +1501,7 @@ class MainActivity : AppCompatActivity() {
             append("if [ -f $SOURCE_PREFS ]; then ")
             append("for p in /data/misc/apexdata/*/prefs; do ")
             append("if [ -d \"\$p\" ]; then ")
-            append("d=\"\$p/com.motolauncher.mod\"; ")
+            append("d=\"\$p/$MODULE_PACKAGE\"; ")
             append("mkdir -p \"\$d\"; ")
             append("cp $SOURCE_PREFS \"\$d/${HookConfig.PREFS_NAME}.xml\" && ")
             append("chmod 644 \"\$d/${HookConfig.PREFS_NAME}.xml\"; ")
