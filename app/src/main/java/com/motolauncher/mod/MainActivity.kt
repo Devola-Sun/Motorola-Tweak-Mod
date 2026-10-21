@@ -16,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.material.slider.Slider
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -66,6 +67,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var corepatchBypassDigest: SwitchCompat
     private lateinit var safeModeSwitch: SwitchCompat
     private lateinit var languageSpinner: Spinner
+    private lateinit var coverDockSwitch: SwitchCompat
+    private lateinit var coverDockHeightSlider: Slider
+    private lateinit var coverDockWidthSlider: Slider
+    private lateinit var coverDockSizeSlider: Slider
+    private lateinit var coverDockHeightValue: TextView
+    private lateinit var coverDockWidthValue: TextView
+    private lateinit var coverDockSizeValue: TextView
     private lateinit var softRebootButton: Button
     private lateinit var restartMenuButton: View
 
@@ -140,6 +148,7 @@ class MainActivity : AppCompatActivity() {
         bindNavigation()
         bindAppearance()
         bindLayout()
+        bindCoverDockSettings()
         bindSystemUiSettings()
         bindBatterySettings()
         bindCorePatchSettings()
@@ -224,6 +233,13 @@ class MainActivity : AppCompatActivity() {
         corepatchBypassDigest = findViewById(R.id.switch_corepatch_bypass_digest)
         safeModeSwitch = findViewById(R.id.switch_safe_mode)
         languageSpinner = findViewById(R.id.spinner_language)
+        coverDockSwitch = findViewById(R.id.switch_enable_cover_dock)
+        coverDockHeightSlider = findViewById(R.id.slider_cover_dock_height)
+        coverDockWidthSlider = findViewById(R.id.slider_cover_dock_width)
+        coverDockSizeSlider = findViewById(R.id.slider_cover_dock_size)
+        coverDockHeightValue = findViewById(R.id.text_cover_dock_height_value)
+        coverDockWidthValue = findViewById(R.id.text_cover_dock_width_value)
+        coverDockSizeValue = findViewById(R.id.text_cover_dock_size_value)
         softRebootButton = findViewById(R.id.button_soft_reboot)
         restartMenuButton = findViewById(R.id.button_restart_menu)
         statusText = findViewById(R.id.text_status)
@@ -457,8 +473,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindVersionLabels() {
-        val version = BuildConfig.VERSION_NAME
-        findViewById<TextView>(R.id.text_app_version).text = "v$version"
+        // Bind every version label to BuildConfig so the UI always matches the
+        // installed APK (no hard-coded version strings in the UI layer).
+        val version = getString(R.string.app_version_format, BuildConfig.VERSION_NAME)
+        findViewById<TextView>(R.id.text_app_version).text = version
         findViewById<TextView>(R.id.text_about_version).text =
             getString(R.string.app_name) + " " + version
         findViewById<TextView>(R.id.text_footer).text =
@@ -585,6 +603,79 @@ class MainActivity : AppCompatActivity() {
             HookConfig.KEY_DOCK_ICONS,
             settings.dockIcons
         )
+    }
+
+    private fun bindCoverDockSettings() {
+        coverDockSwitch.isChecked = settings.coverDockEnabled
+        coverDockSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.coverDockEnabled = enabled
+            syncModulePrefs()
+        }
+
+        bindCoverDockSlider(
+            slider = coverDockHeightSlider,
+            valueView = coverDockHeightValue,
+            initialValue = settings.coverDockHeightPercent,
+            minPercent = HookConfig.MIN_COVER_DOCK_HEIGHT_PERCENT,
+            maxPercent = HookConfig.MAX_COVER_DOCK_HEIGHT_PERCENT,
+            defaultPercent = HookConfig.DEFAULT_COVER_DOCK_HEIGHT_PERCENT,
+            onValueChanged = { settings.coverDockHeightPercent = it }
+        )
+        bindCoverDockSlider(
+            slider = coverDockWidthSlider,
+            valueView = coverDockWidthValue,
+            initialValue = settings.coverDockWidthPercent,
+            minPercent = HookConfig.MIN_COVER_DOCK_WIDTH_PERCENT,
+            maxPercent = HookConfig.MAX_COVER_DOCK_WIDTH_PERCENT,
+            defaultPercent = HookConfig.DEFAULT_COVER_DOCK_WIDTH_PERCENT,
+            onValueChanged = { settings.coverDockWidthPercent = it }
+        )
+        bindCoverDockSlider(
+            slider = coverDockSizeSlider,
+            valueView = coverDockSizeValue,
+            initialValue = settings.coverDockSizePercent,
+            onValueChanged = { settings.coverDockSizePercent = it }
+        )
+    }
+
+    private fun bindCoverDockSlider(
+        slider: Slider,
+        valueView: TextView,
+        initialValue: Int,
+        minPercent: Int = HookConfig.MIN_COVER_DOCK_PERCENT,
+        maxPercent: Int = HookConfig.MAX_COVER_DOCK_PERCENT,
+        defaultPercent: Int = HookConfig.DEFAULT_COVER_DOCK_HEIGHT_PERCENT,
+        onValueChanged: (Int) -> Unit
+    ) {
+        val coercedInitial = if (initialValue in minPercent..maxPercent) {
+            initialValue
+        } else {
+            defaultPercent.coerceIn(minPercent, maxPercent)
+        }
+        slider.valueTo = maxPercent.toFloat()
+        slider.value = minPercent.toFloat()
+        slider.valueFrom = minPercent.toFloat()
+        slider.stepSize = 1f
+        slider.value = coercedInitial.toFloat()
+
+        fun showValue(value: Int) {
+            valueView.text = getString(R.string.cover_dock_percent_format, value)
+        }
+        showValue(slider.value.toInt())
+
+        slider.addOnChangeListener { _, value, fromUser ->
+            val percent = value.toInt().coerceIn(minPercent, maxPercent)
+            showValue(percent)
+            if (fromUser) onValueChanged(percent)
+        }
+        slider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) = Unit
+
+            override fun onStopTrackingTouch(slider: Slider) {
+                onValueChanged(slider.value.toInt().coerceIn(minPercent, maxPercent))
+                syncModulePrefs()
+            }
+        })
     }
 
     private fun bindSeekBar(

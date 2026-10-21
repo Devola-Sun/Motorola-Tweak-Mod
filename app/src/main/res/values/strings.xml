@@ -78,6 +78,15 @@
     <string name="widget_free_resize_title">ウィジェットを自由にリサイズ</string>
     <string name="widget_free_resize_summary">長押し時のリサイズ制限を解除し、1セル単位でサイズを変更できるようにします。</string>
 
+    <!-- Cover-screen Dock -->
+    <string name="section_cover_dock">カバースクリーンDock</string>
+    <string name="cover_dock_enable_title">カバースクリーンにDockを表示</string>
+    <string name="cover_dock_enable_summary">外側ディスプレイにHotseatを表示します。変更後はランチャーを再起動してください。</string>
+    <string name="cover_dock_height_title">Dock背景の高さ</string>
+    <string name="cover_dock_width_title">Dock背景の横幅</string>
+    <string name="cover_dock_size_title">Dockのサイズ</string>
+    <string name="cover_dock_percent_format">%1$d%%</string>
+
     <!-- Home -->
     <string name="home_badge">LSPOSED MODULE</string>
     <string name="home_status_title">モジュールは準備完了です</string>
@@ -94,6 +103,7 @@
     <string name="home_open_appearance">外観設定を開く</string>
     <string name="home_open_systemui">SystemUI設定を開く</string>
     <string name="home_footer">MockingBatwing %1$s · LSPosed module · Devola-Sun</string>
+    <string name="app_version_format">v%1$s</string>
     <string name="value_on">ON</string>
     <string name="value_off">OFF</string>
     <string name="value_grid_format">%1$d × %2$d</string>

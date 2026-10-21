@@ -26,6 +26,23 @@ object HookConfig {
     const val KEY_GRID_COLUMNS: String = "grid_columns"
     const val KEY_DOCK_ICONS: String = "dock_icons"
 
+    /** Cover-screen Hotseat (Dock). */
+    const val KEY_COVER_DOCK_ENABLED: String = "cover_dock_enabled"
+    const val KEY_COVER_DOCK_HEIGHT_PERCENT: String = "cover_dock_height_percent"
+    const val KEY_COVER_DOCK_WIDTH: String = "cover_dock_width_percent"
+    const val KEY_COVER_DOCK_WIDTH_PERCENT: String = KEY_COVER_DOCK_WIDTH
+    const val KEY_COVER_DOCK_SIZE_PERCENT: String = "cover_dock_size_percent"
+    const val DEFAULT_COVER_DOCK_ENABLED: Boolean = false
+    const val DEFAULT_COVER_DOCK_HEIGHT_PERCENT: Int = 100
+    const val DEFAULT_COVER_DOCK_WIDTH_PERCENT: Int = 100
+    const val DEFAULT_COVER_DOCK_SIZE_PERCENT: Int = 100
+    const val MIN_COVER_DOCK_PERCENT: Int = 50
+    const val MAX_COVER_DOCK_PERCENT: Int = 150
+    const val MIN_COVER_DOCK_HEIGHT_PERCENT: Int = 50
+    const val MAX_COVER_DOCK_HEIGHT_PERCENT: Int = 200
+    const val MIN_COVER_DOCK_WIDTH_PERCENT: Int = 50
+    const val MAX_COVER_DOCK_WIDTH_PERCENT: Int = 100
+
     /** SystemUI status bar. */
     const val KEY_SB_SHOW_SECONDS: String = "sb_show_seconds"
     const val KEY_SB_HIDE_BATTERY_PERCENT: String = "sb_hide_battery_percent"
@@ -179,6 +196,53 @@ object HookConfig {
 
     fun coerceChargeLimit(value: Int): Int =
         value.coerceIn(MIN_BATTERY_CHARGE_LIMIT, MAX_BATTERY_CHARGE_LIMIT)
+
+    fun coerceCoverDockPercent(value: Int, defaultValue: Int = 100): Int =
+        if (value in MIN_COVER_DOCK_PERCENT..MAX_COVER_DOCK_PERCENT) value else defaultValue
+
+    fun coerceCoverDockHeightPercent(
+        value: Int,
+        defaultValue: Int = DEFAULT_COVER_DOCK_HEIGHT_PERCENT
+    ): Int = if (value in MIN_COVER_DOCK_HEIGHT_PERCENT..MAX_COVER_DOCK_HEIGHT_PERCENT) {
+        value
+    } else {
+        defaultValue
+    }
+
+    fun coerceCoverDockWidthPercent(
+        value: Int,
+        defaultValue: Int = DEFAULT_COVER_DOCK_WIDTH_PERCENT
+    ): Int = if (value in MIN_COVER_DOCK_WIDTH_PERCENT..MAX_COVER_DOCK_WIDTH_PERCENT) {
+        value
+    } else {
+        defaultValue
+    }
+
+    /** Cover-dock settings are read through YukiHookAPI's XSharedPreferences bridge. */
+    fun isCoverDockEnabled(prefs: YukiHookPrefsBridge): Boolean = runCatching {
+        prefs.getBoolean(KEY_COVER_DOCK_ENABLED, DEFAULT_COVER_DOCK_ENABLED)
+    }.getOrDefault(DEFAULT_COVER_DOCK_ENABLED)
+
+    fun coverDockHeightPercent(prefs: YukiHookPrefsBridge): Int = runCatching {
+        coerceCoverDockHeightPercent(
+            prefs.getInt(KEY_COVER_DOCK_HEIGHT_PERCENT, DEFAULT_COVER_DOCK_HEIGHT_PERCENT),
+            DEFAULT_COVER_DOCK_HEIGHT_PERCENT
+        )
+    }.getOrDefault(DEFAULT_COVER_DOCK_HEIGHT_PERCENT)
+
+    fun coverDockWidthPercent(prefs: YukiHookPrefsBridge): Int = runCatching {
+        coerceCoverDockWidthPercent(
+            prefs.getInt(KEY_COVER_DOCK_WIDTH, DEFAULT_COVER_DOCK_WIDTH_PERCENT),
+            DEFAULT_COVER_DOCK_WIDTH_PERCENT
+        )
+    }.getOrDefault(DEFAULT_COVER_DOCK_WIDTH_PERCENT)
+
+    fun coverDockSizePercent(prefs: YukiHookPrefsBridge): Int = runCatching {
+        coerceCoverDockPercent(
+            prefs.getInt(KEY_COVER_DOCK_SIZE_PERCENT, DEFAULT_COVER_DOCK_SIZE_PERCENT),
+            DEFAULT_COVER_DOCK_SIZE_PERCENT
+        )
+    }.getOrDefault(DEFAULT_COVER_DOCK_SIZE_PERCENT)
 
     /**
      * True when the camera shutter sound has to be suppressed.

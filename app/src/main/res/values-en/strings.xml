@@ -78,6 +78,15 @@
     <string name="widget_free_resize_title">Free widget resizing</string>
     <string name="widget_free_resize_summary">Removes the resize restrictions on long press and allows resizing in 1-cell steps.</string>
 
+    <!-- Cover-screen Dock -->
+    <string name="section_cover_dock">Cover-screen Dock</string>
+    <string name="cover_dock_enable_title">Show the Dock on the cover screen</string>
+    <string name="cover_dock_enable_summary">Shows the Hotseat on the outer display. Restart the launcher after changing this setting.</string>
+    <string name="cover_dock_height_title">Dock background height</string>
+    <string name="cover_dock_width_title">Dock background width</string>
+    <string name="cover_dock_size_title">Dock size</string>
+    <string name="cover_dock_percent_format">%1$d%%</string>
+
     <!-- Home -->
     <string name="home_badge">LSPOSED MODULE</string>
     <string name="home_status_title">The module is ready</string>
@@ -94,6 +103,7 @@
     <string name="home_open_appearance">Open appearance settings</string>
     <string name="home_open_systemui">Open SystemUI settings</string>
     <string name="home_footer">MockingBatwing %1$s · LSPosed module · Devola-Sun</string>
+    <string name="app_version_format">v%1$s</string>
     <string name="value_on">ON</string>
     <string name="value_off">OFF</string>
     <string name="value_grid_format">%1$d × %2$d</string>

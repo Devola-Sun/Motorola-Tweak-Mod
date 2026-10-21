@@ -77,6 +77,44 @@ class SettingsStore(context: Context) {
         get() = gridValue(HookConfig.KEY_DOCK_ICONS, HookConfig.DEFAULT_DOCK_ICONS)
         set(value) = update(HookConfig.KEY_DOCK_ICONS, value)
 
+    var coverDockEnabled: Boolean
+        get() = values[HookConfig.KEY_COVER_DOCK_ENABLED] as? Boolean
+            ?: HookConfig.DEFAULT_COVER_DOCK_ENABLED
+        set(value) = update(HookConfig.KEY_COVER_DOCK_ENABLED, value)
+
+    var coverDockHeightPercent: Int
+        get() = HookConfig.coerceCoverDockHeightPercent(
+            values[HookConfig.KEY_COVER_DOCK_HEIGHT_PERCENT] as? Int
+                ?: HookConfig.DEFAULT_COVER_DOCK_HEIGHT_PERCENT,
+            HookConfig.DEFAULT_COVER_DOCK_HEIGHT_PERCENT
+        )
+        set(value) = update(
+            HookConfig.KEY_COVER_DOCK_HEIGHT_PERCENT,
+            HookConfig.coerceCoverDockHeightPercent(value, HookConfig.DEFAULT_COVER_DOCK_HEIGHT_PERCENT)
+        )
+
+    var coverDockWidthPercent: Int
+        get() = HookConfig.coerceCoverDockWidthPercent(
+            values[HookConfig.KEY_COVER_DOCK_WIDTH] as? Int
+                ?: HookConfig.DEFAULT_COVER_DOCK_WIDTH_PERCENT,
+            HookConfig.DEFAULT_COVER_DOCK_WIDTH_PERCENT
+        )
+        set(value) = update(
+            HookConfig.KEY_COVER_DOCK_WIDTH,
+            HookConfig.coerceCoverDockWidthPercent(value, HookConfig.DEFAULT_COVER_DOCK_WIDTH_PERCENT)
+        )
+
+    var coverDockSizePercent: Int
+        get() = HookConfig.coerceCoverDockPercent(
+            values[HookConfig.KEY_COVER_DOCK_SIZE_PERCENT] as? Int
+                ?: HookConfig.DEFAULT_COVER_DOCK_SIZE_PERCENT,
+            HookConfig.DEFAULT_COVER_DOCK_SIZE_PERCENT
+        )
+        set(value) = update(
+            HookConfig.KEY_COVER_DOCK_SIZE_PERCENT,
+            HookConfig.coerceCoverDockPercent(value, HookConfig.DEFAULT_COVER_DOCK_SIZE_PERCENT)
+        )
+
     var sbShowSeconds: Boolean
         get() = values[HookConfig.KEY_SB_SHOW_SECONDS] as? Boolean
             ?: HookConfig.DEFAULT_SB_SHOW_SECONDS
@@ -216,6 +254,10 @@ class SettingsStore(context: Context) {
             HookConfig.KEY_GRID_ROWS to HookConfig.DEFAULT_GRID_ROWS,
             HookConfig.KEY_GRID_COLUMNS to HookConfig.DEFAULT_GRID_COLUMNS,
             HookConfig.KEY_DOCK_ICONS to HookConfig.DEFAULT_DOCK_ICONS,
+            HookConfig.KEY_COVER_DOCK_ENABLED to HookConfig.DEFAULT_COVER_DOCK_ENABLED,
+            HookConfig.KEY_COVER_DOCK_HEIGHT_PERCENT to HookConfig.DEFAULT_COVER_DOCK_HEIGHT_PERCENT,
+            HookConfig.KEY_COVER_DOCK_WIDTH to HookConfig.DEFAULT_COVER_DOCK_WIDTH_PERCENT,
+            HookConfig.KEY_COVER_DOCK_SIZE_PERCENT to HookConfig.DEFAULT_COVER_DOCK_SIZE_PERCENT,
             HookConfig.KEY_SB_SHOW_SECONDS to HookConfig.DEFAULT_SB_SHOW_SECONDS,
             HookConfig.KEY_SB_HIDE_BATTERY_PERCENT to HookConfig.DEFAULT_SB_HIDE_BATTERY_PERCENT,
             HookConfig.KEY_SB_HIDE_VOLTE to HookConfig.DEFAULT_SB_HIDE_VOLTE,

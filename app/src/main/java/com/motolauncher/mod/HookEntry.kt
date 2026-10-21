@@ -7,6 +7,7 @@ import com.highcapable.yukihookapi.hook.xposed.proxy.IYukiHookXposedInit
 import com.motolauncher.mod.hooks.BatteryServiceHook
 import com.motolauncher.mod.hooks.CameraHook
 import com.motolauncher.mod.hooks.ControlCenterHooks
+import com.motolauncher.mod.hooks.CoverDockHook
 import com.motolauncher.mod.hooks.CorePatchHooker
 import com.motolauncher.mod.hooks.FlagSecureFrameworkHook
 import com.motolauncher.mod.hooks.FolderPreviewHook
@@ -74,6 +75,7 @@ object HookEntry : IYukiHookXposedInit {
                 }
 
                 LauncherHooker.install(this, prefs)
+                loadHooker(CoverDockHook)
                 loadHooker(FolderPreviewHook)
                 loadHooker(WidgetResizeHook)
                 FlagSecureFrameworkHook.hook(this)
