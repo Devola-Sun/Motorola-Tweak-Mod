@@ -54,7 +54,8 @@ object BatteryHook : YukiBaseHooker() {
 
     private val iconStyle: HookConfig.BatteryIconStyle
         get() = HookConfig.BatteryIconStyle.fromKey(
-            modulePrefs.getString(
+            HookConfig.safeGetString(
+                modulePrefs,
                 HookConfig.KEY_BATTERY_ICON_STYLE,
                 HookConfig.DEFAULT_BATTERY_ICON_STYLE
             )
@@ -62,7 +63,8 @@ object BatteryHook : YukiBaseHooker() {
 
     private val percentStyle: HookConfig.BatteryPercentStyle
         get() = HookConfig.BatteryPercentStyle.fromKey(
-            modulePrefs.getString(
+            HookConfig.safeGetString(
+                modulePrefs,
                 HookConfig.KEY_BATTERY_PERCENT_STYLE,
                 HookConfig.DEFAULT_BATTERY_PERCENT_STYLE
             )
@@ -71,7 +73,11 @@ object BatteryHook : YukiBaseHooker() {
     /** Keeps the legacy "hide battery percent" preference working after the UI migration. */
     private val effectivePercentStyle: HookConfig.BatteryPercentStyle
         get() = if (
-            modulePrefs.getBoolean(HookConfig.KEY_SB_HIDE_BATTERY_PERCENT, false)
+            HookConfig.safeGetBoolean(
+                modulePrefs,
+                HookConfig.KEY_SB_HIDE_BATTERY_PERCENT,
+                HookConfig.DEFAULT_SB_HIDE_BATTERY_PERCENT
+            )
         ) HookConfig.BatteryPercentStyle.HIDDEN else percentStyle
 
     /**

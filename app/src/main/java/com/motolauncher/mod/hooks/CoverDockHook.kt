@@ -713,14 +713,11 @@ object CoverDockHook : YukiBaseHooker() {
 
             // Hotseat#isBgVisible() が true の場合は Launcher3 標準の Dock 背景 (mBgView) が
             // 有効なメイン（インナー）画面であるため、二重描画を防ぐため INNER とする。
+            // なお、Workspace バインド前の初期段階では isBgVisible() が null を返すが、
+            // 上記で swDp in 1..599 かつ minDim in 1..1599 が確定しているため COVER として扱う。
             val stockBgVisible = invokeIsBgVisible(hotseat)
             if (stockBgVisible == true) {
                 return ScreenState.INNER
-            }
-            // If isBgVisible() returned null (e.g. Workspace not yet bound on Launcher)
-            // and the view is not attached to a window yet, wait until it is attached.
-            if (stockBgVisible == null && !hotseat.isAttachedToWindow) {
-                return ScreenState.UNINITIALIZED
             }
 
             ScreenState.COVER

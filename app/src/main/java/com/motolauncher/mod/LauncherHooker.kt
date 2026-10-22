@@ -7,6 +7,7 @@ import android.util.Log
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.yukihookapi.hook.param.PackageParam
 import com.highcapable.yukihookapi.hook.xposed.prefs.YukiHookPrefsBridge
+import de.robv.android.xposed.XposedBridge
 import java.lang.reflect.Field
 
 /**
@@ -31,6 +32,19 @@ object LauncherHooker {
     private const val CLASS_DEVICE_PROFILE = "com.android.launcher3.DeviceProfile"
     private const val CLASS_BASE_ICON_FACTORY = "com.android.launcher3.icons.BaseIconFactory"
     private const val CLASS_ICON_OPTIONS = "com.android.launcher3.icons.BaseIconFactory\$IconOptions"
+
+    private fun logInfo(message: String) {
+        runCatching { Log.i(TAG, message) }
+        runCatching { XposedBridge.log("[$TAG] $message") }
+    }
+
+    private fun logError(message: String, error: Throwable) {
+        runCatching { Log.e(TAG, message, error) }
+        runCatching {
+            XposedBridge.log("[$TAG] $message: $error")
+            XposedBridge.log(error)
+        }
+    }
 
     fun install(packageParam: PackageParam, prefs: YukiHookPrefsBridge?) = with(packageParam) {
         hookAppLabels(prefs)
@@ -70,9 +84,9 @@ object LauncherHooker {
                     }
                 }
 
-            Log.i(TAG, "Hooked BubbleTextView.setTextVisibility")
+            logInfo("Hooked BubbleTextView.setTextVisibility")
         }.onFailure {
-            Log.e(TAG, "Failed to hook BubbleTextView.setTextVisibility", it)
+            logError("Failed to hook BubbleTextView.setTextVisibility", it)
         }
     }
 
@@ -86,7 +100,9 @@ object LauncherHooker {
      */
     private fun PackageParam.hookWorkspaceGrid(prefs: YukiHookPrefsBridge?) {
         runCatching {
-            loadClass(CLASS_INVARIANT_DEVICE_PROFILE)
+            val idpClass = loadClass(CLASS_INVARIANT_DEVICE_PROFILE)
+
+            idpClass
                 .resolve()
                 .firstConstructor {
                     parameters(Context::class)
@@ -94,44 +110,71 @@ object LauncherHooker {
                 .hook {
                     after {
                         runCatching {
-                            val profile = instance
-
-                            val columns = readGridValue(
-                                prefs,
-                                HookConfig.KEY_GRID_COLUMNS,
-                                HookConfig.DEFAULT_GRID_COLUMNS
-                            )
-                            val rows = readGridValue(
-                                prefs,
-                                HookConfig.KEY_GRID_ROWS,
-                                HookConfig.DEFAULT_GRID_ROWS
-                            )
-                            val dockIcons = readGridValue(
-                                prefs,
-                                HookConfig.KEY_DOCK_ICONS,
-                                HookConfig.DEFAULT_DOCK_ICONS
-                            )
-
-                            setIntField(profile, "numColumns", columns)
-                            setIntField(profile, "numRows", rows)
-                            setIntField(profile, "numShownHotseatIcons", dockIcons)
-
-                            Log.i(
-                                TAG,
-                                "Grid applied: ${columns}x$rows, dock=$dockIcons " +
-                                    "(idp hotseat shown=${getIntField(profile, "numShownHotseatIcons")}, " +
-                                    "total=${getIntField(profile, "numHotseatIcons")}, " +
-                                    "db=${getIntField(profile, "numDatabaseHotseatIcons")})"
-                            )
+                            applyIdpGridOverride(instance, prefs, logChange = true)
                         }.onFailure {
                             Log.w(TAG, "Failed to apply grid override", it)
                         }
                     }
                 }
 
-            Log.i(TAG, "Hooked InvariantDeviceProfile(Context)")
+            // Also hook initGrid(Context, String) so fold/unfold configuration
+            // changes on Razr Fold re-apply the grid and dock overrides on the
+            // existing InvariantDeviceProfile singleton.
+            runCatching {
+                idpClass
+                    .resolve()
+                    .firstMethod {
+                        name = "initGrid"
+                        parameters(Context::class, String::class)
+                    }
+                    .hook {
+                        after {
+                            runCatching {
+                                applyIdpGridOverride(instance, prefs, logChange = false)
+                            }.onFailure {
+                                Log.w(TAG, "Failed to apply grid override after initGrid", it)
+                            }
+                        }
+                    }
+            }
+
+            logInfo("Hooked InvariantDeviceProfile(Context)")
         }.onFailure {
-            Log.e(TAG, "Failed to hook InvariantDeviceProfile(Context)", it)
+            logError("Failed to hook InvariantDeviceProfile(Context)", it)
+        }
+    }
+
+    private fun applyIdpGridOverride(profile: Any, prefs: YukiHookPrefsBridge?, logChange: Boolean) {
+        val columns = readGridValue(
+            prefs,
+            HookConfig.KEY_GRID_COLUMNS,
+            HookConfig.DEFAULT_GRID_COLUMNS
+        )
+        val rows = readGridValue(
+            prefs,
+            HookConfig.KEY_GRID_ROWS,
+            HookConfig.DEFAULT_GRID_ROWS
+        )
+        val dockIcons = readGridValue(
+            prefs,
+            HookConfig.KEY_DOCK_ICONS,
+            HookConfig.DEFAULT_DOCK_ICONS
+        )
+
+        setIntField(profile, "numColumns", columns)
+        setIntField(profile, "numRows", rows)
+        setIntField(profile, "numShownHotseatIcons", dockIcons)
+        runCatching { setIntField(profile, "numHotseatIcons", dockIcons) }
+        runCatching { setIntField(profile, "numDatabaseHotseatIcons", dockIcons) }
+        runCatching { setIntField(profile, "numShrunkenHotseatIcons", dockIcons) }
+
+        if (logChange) {
+            logInfo(
+                "Grid applied: ${columns}x$rows, dock=$dockIcons " +
+                    "(idp hotseat shown=${getIntField(profile, "numShownHotseatIcons")}, " +
+                    "total=${getIntField(profile, "numHotseatIcons")}, " +
+                    "db=${getIntField(profile, "numDatabaseHotseatIcons")})"
+            )
         }
     }
 
@@ -180,8 +223,7 @@ object LauncherHooker {
                             val currentColumns = getIntField(inv, "numColumns")
                             val currentRows = getIntField(inv, "numRows")
                             if (currentColumns != columns || currentRows != rows) {
-                                Log.i(
-                                    TAG,
+                                logInfo(
                                     "DeviceProfile before: inv=${currentColumns}x" +
                                         "$currentRows -> ${columns}x$rows, dock=$dockIcons"
                                 )
@@ -190,6 +232,9 @@ object LauncherHooker {
                             setIntField(inv, "numColumns", columns)
                             setIntField(inv, "numRows", rows)
                             setIntField(inv, "numShownHotseatIcons", dockIcons)
+                            runCatching { setIntField(inv, "numHotseatIcons", dockIcons) }
+                            runCatching { setIntField(inv, "numDatabaseHotseatIcons", dockIcons) }
+                            runCatching { setIntField(inv, "numShrunkenHotseatIcons", dockIcons) }
                         }.onFailure {
                             Log.w(TAG, "Failed to apply grid before DeviceProfile", it)
                         }
@@ -221,9 +266,9 @@ object LauncherHooker {
                     }
                 }
 
-            Log.i(TAG, "Hooked DeviceProfile(13 args) for grid and Hotseat")
+            logInfo("Hooked DeviceProfile(13 args) for grid and Hotseat")
         }.onFailure {
-            Log.e(TAG, "Failed to hook DeviceProfile(13 args)", it)
+            logError("Failed to hook DeviceProfile(13 args)", it)
         }
     }
 
@@ -274,9 +319,9 @@ object LauncherHooker {
                     }
                 }
 
-            Log.i(TAG, "Hooked BaseIconFactory.createBadgedIconBitmap")
+            logInfo("Hooked BaseIconFactory.createBadgedIconBitmap")
         }.onFailure {
-            Log.e(TAG, "Failed to hook BaseIconFactory.createBadgedIconBitmap", it)
+            logError("Failed to hook BaseIconFactory.createBadgedIconBitmap", it)
         }
     }
 

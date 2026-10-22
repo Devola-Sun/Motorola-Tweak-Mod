@@ -3,15 +3,23 @@ package com.motolauncher.mod.hooks
 import android.view.View
 import android.widget.FrameLayout
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
-import com.highcapable.yukihookapi.hook.log.YLog
+import com.motolauncher.mod.HookConfig
 
 object PaddingHook : YukiBaseHooker() {
 
     private val isHideVolte: Boolean
-        get() = modulePrefs.getBoolean("sb_hide_volte", modulePrefs.getBoolean("pref_hide_volte", true))
+        get() = HookConfig.safeGetBoolean(
+            modulePrefs,
+            HookConfig.KEY_SB_HIDE_VOLTE,
+            HookConfig.DEFAULT_SB_HIDE_VOLTE
+        )
 
     private val isEnablePadding: Boolean
-        get() = modulePrefs.getBoolean("sb_enable_custom_padding", modulePrefs.getBoolean("pref_enable_custom_padding", true))
+        get() = HookConfig.safeGetBoolean(
+            modulePrefs,
+            HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING,
+            HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING
+        )
 
     override fun onHook() {
         // 1. メイン画面（内側 / Unfolded）: PhoneStatusBarView のパディング制御

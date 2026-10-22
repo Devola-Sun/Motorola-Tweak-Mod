@@ -4,9 +4,9 @@ import android.view.View
 import android.view.ViewGroup
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.current
-import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.StringClass
+import com.motolauncher.mod.HookConfig
 
 object IconSlotHook : YukiBaseHooker() {
 
@@ -26,7 +26,11 @@ object IconSlotHook : YukiBaseHooker() {
     )
 
     val isHideVolte: Boolean
-        get() = modulePrefs.getBoolean("sb_hide_volte", modulePrefs.getBoolean("pref_hide_volte", true))
+        get() = HookConfig.safeGetBoolean(
+            modulePrefs,
+            HookConfig.KEY_SB_HIDE_VOLTE,
+            HookConfig.DEFAULT_SB_HIDE_VOLTE
+        )
 
     override fun onHook() {
         // 1. StatusBarIconControllerImpl.setIconVisibility

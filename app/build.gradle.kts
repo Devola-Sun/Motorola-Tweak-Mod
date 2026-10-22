@@ -20,8 +20,8 @@ android {
         applicationId = "io.github.devola_sun.motorolatweak"
         minSdk = 36
         targetSdk = 36
-        versionCode = 16
-        versionName = "2.5.0"
+        versionCode = 18
+        versionName = "2.5.2"
     }
 
     buildTypes {

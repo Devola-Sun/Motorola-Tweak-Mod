@@ -17,6 +17,8 @@ import java.io.StringWriter
  */
 class SettingsStore(context: Context) {
 
+    private val appContext: Context = context.applicationContext ?: context
+
     private val prefsFile = File(
         context.applicationInfo.dataDir,
         "shared_prefs/${HookConfig.PREFS_NAME}.xml"
@@ -310,6 +312,26 @@ class SettingsStore(context: Context) {
 
     @Synchronized
     private fun write() {
+        // Also write through Android's SharedPreferences with MODE_WORLD_READABLE
+        // when LSPosed / Vector's xposedsharedprefs hook is active in the module
+        // process, so the Xposed daemon's shared prefs store is updated natively.
+        runCatching {
+            @Suppress("DEPRECATION", "WorldReadableFiles")
+            val sp = appContext.getSharedPreferences(
+                HookConfig.PREFS_NAME,
+                Context.MODE_WORLD_READABLE
+            )
+            val editor = sp.edit()
+            for ((key, value) in values) {
+                when (value) {
+                    is Boolean -> editor.putBoolean(key, value)
+                    is Int -> editor.putInt(key, value)
+                    is String -> editor.putString(key, value)
+                }
+            }
+            editor.commit()
+        }
+
         runCatching {
             prefsFile.parentFile?.mkdirs()
 
@@ -350,9 +372,12 @@ class SettingsStore(context: Context) {
             }
 
             // LSPosed's daemon can read this regardless, but make the file
-            // readable for a direct XSharedPreferences fallback as well.
+            // and both parent directories (shared_prefs and dataDir) traversable
+            // for direct XSharedPreferences / fallback XML reading as well.
             runCatching { prefsFile.setReadable(true, false) }
+            runCatching { prefsFile.parentFile?.setReadable(true, false) }
             runCatching { prefsFile.parentFile?.setExecutable(true, false) }
+            runCatching { prefsFile.parentFile?.parentFile?.setExecutable(true, false) }
         }
     }
 }

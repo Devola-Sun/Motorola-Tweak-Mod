@@ -143,6 +143,7 @@ class MainActivity : AppCompatActivity() {
 
         settings = SettingsStore(this)
         Log.i(TAG, "Settings prefs: dir=${applicationInfo.dataDir}, all=${settings.snapshot()}")
+        syncModulePrefs()
 
         bindViews()
         bindNavigation()
@@ -538,6 +539,7 @@ class MainActivity : AppCompatActivity() {
         hideLabelsSwitch.isChecked = settings.hideLabels
         hideLabelsSwitch.setOnCheckedChangeListener { _, checked ->
             settings.hideLabels = checked
+            syncModulePrefs()
             updateOverview()
         }
 
@@ -554,12 +556,14 @@ class MainActivity : AppCompatActivity() {
         folderPreview3x3Switch.isChecked = settings.folderPreview3x3
         folderPreview3x3Switch.setOnCheckedChangeListener { _, value ->
             settings.folderPreview3x3 = value
+            syncModulePrefs()
             updateOverview()
         }
 
         widgetFreeResizeSwitch.isChecked = settings.widgetFreeResize
         widgetFreeResizeSwitch.setOnCheckedChangeListener { _, value ->
             settings.widgetFreeResize = value
+            syncModulePrefs()
             updateFeatureSummaries()
         }
 
@@ -577,6 +581,7 @@ class MainActivity : AppCompatActivity() {
                 id: Long
             ) {
                 settings.iconShape = shapes[position].key
+                syncModulePrefs()
                 updateFeatureSummaries()
             }
 
@@ -703,6 +708,7 @@ class MainActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 if (seekBar != null) {
                     settings.setGridValue(key, HookConfig.MIN_GRID_VALUE + seekBar.progress)
+                    syncModulePrefs()
                 }
             }
         })
@@ -712,24 +718,28 @@ class MainActivity : AppCompatActivity() {
         sbShowSeconds.isChecked = settings.sbShowSeconds
         sbShowSeconds.setOnCheckedChangeListener { _, value ->
             settings.sbShowSeconds = value
+            syncModulePrefs()
             updateFeatureSummaries()
         }
 
         sbHideVolte.isChecked = settings.sbHideVolte
         sbHideVolte.setOnCheckedChangeListener { _, value ->
             settings.sbHideVolte = value
+            syncModulePrefs()
             updateFeatureSummaries()
         }
 
         sbIosIcons.isChecked = settings.sbIosIcons
         sbIosIcons.setOnCheckedChangeListener { _, value ->
             settings.sbIosIcons = value
+            syncModulePrefs()
             updateFeatureSummaries()
         }
 
         sbCustomPadding.isChecked = settings.sbEnableCustomPadding
         sbCustomPadding.setOnCheckedChangeListener { _, value ->
             settings.sbEnableCustomPadding = value
+            syncModulePrefs()
             updateFeatureSummaries()
         }
 
@@ -743,12 +753,14 @@ class MainActivity : AppCompatActivity() {
         ccSwapSliders.isChecked = settings.ccSwapSliders
         ccSwapSliders.setOnCheckedChangeListener { _, value ->
             settings.ccSwapSliders = value
+            syncModulePrefs()
             updateFeatureSummaries()
         }
 
         ccIosConnectivity.isChecked = settings.ccIosConnectivity
         ccIosConnectivity.setOnCheckedChangeListener { _, value ->
             settings.ccIosConnectivity = value
+            syncModulePrefs()
             updateFeatureSummaries()
         }
     }
@@ -1044,6 +1056,7 @@ class MainActivity : AppCompatActivity() {
         }
         settings.statusBarLeftOrder = statusLeftAdapter.keys().joinToString(",")
         settings.statusBarRightOrder = statusRightAdapter.keys().joinToString(",")
+        syncModulePrefs()
         updateFeatureSummaries()
     }
 
@@ -1428,8 +1441,41 @@ class MainActivity : AppCompatActivity() {
         private const val HOME_START =
             "am start -a android.intent.action.MAIN -c android.intent.category.HOME"
 
+        private const val DATABASE_DIR =
+            "/data/data/${HookConfig.TARGET_PACKAGE}/databases"
+
+        /** The module's own package (applicationId) that stores the prefs. */
+        private val MODULE_PACKAGE: String = BuildConfig.APPLICATION_ID
+
+        private val SOURCE_PREFS =
+            "/data/user/0/$MODULE_PACKAGE/shared_prefs/${HookConfig.PREFS_NAME}.xml"
+
+        /**
+         * LSPosed / Vector's New XSharedPreferences copies module prefs to
+         * /data/misc/apexdata/<uuid>/prefs/<module>/ or /data/misc/<uuid>/prefs/<module>/
+         * and may create the copy with mode 660. Copy our XML into all candidate
+         * locations (including /data/local/tmp as a universal fallback) and make
+         * it world-readable before restarting the launcher or SystemUI.
+         */
+        private val SYNC_PREFS_COMMAND = buildString {
+            append("if [ -f $SOURCE_PREFS ]; then ")
+            append("chmod 711 /data/user/0/$MODULE_PACKAGE /data/data/$MODULE_PACKAGE 2>/dev/null; ")
+            append("chmod 755 /data/user/0/$MODULE_PACKAGE/shared_prefs /data/data/$MODULE_PACKAGE/shared_prefs 2>/dev/null; ")
+            append("chmod 644 $SOURCE_PREFS 2>/dev/null; ")
+            append("cp $SOURCE_PREFS /data/local/tmp/${HookConfig.PREFS_NAME}.xml 2>/dev/null && ")
+            append("chmod 644 /data/local/tmp/${HookConfig.PREFS_NAME}.xml 2>/dev/null; ")
+            append("for p in /data/misc/apexdata/*/prefs /data/misc/*/prefs /data/adb/lspd/prefs; do ")
+            append("if [ -d \"\$p\" ]; then ")
+            append("d=\"\$p/$MODULE_PACKAGE\"; ")
+            append("mkdir -p \"\$d\"; ")
+            append("cp $SOURCE_PREFS \"\$d/${HookConfig.PREFS_NAME}.xml\" && ")
+            append("chmod 755 \"\$d\" 2>/dev/null && ")
+            append("chmod 644 \"\$d/${HookConfig.PREFS_NAME}.xml\"; ")
+            append("fi; done; fi")
+        }
+
         /** Restarts the Zygote processes (= soft reboot) so system_server reloads the module. */
-        private const val SOFT_REBOOT_COMMAND = "setprop ctl.restart zygote"
+        private val SOFT_REBOOT_COMMAND = "$SYNC_PREFS_COMMAND; setprop ctl.restart zygote"
 
         /** Restart menu commands (run through root). */
         private val DUMP_ERROR_LOG_COMMAND = buildString {
@@ -1446,12 +1492,14 @@ class MainActivity : AppCompatActivity() {
         private const val MENU_REBOOT_DEVICE = 4
         private const val MENU_CLEAR_CACHE = 5
 
-        private val RESTART_LAUNCHER_COMMAND = "am force-stop ${HookConfig.TARGET_PACKAGE}"
-        private val RESTART_SYSTEMUI_QUICK_COMMAND = "pkill -f ${HookConfig.SYSTEM_UI_PACKAGE}"
+        private val RESTART_LAUNCHER_COMMAND =
+            "$SYNC_PREFS_COMMAND; am force-stop ${HookConfig.TARGET_PACKAGE}; $HOME_START"
+        private val RESTART_SYSTEMUI_QUICK_COMMAND =
+            "$SYNC_PREFS_COMMAND; pkill -f ${HookConfig.SYSTEM_UI_PACKAGE}"
         private const val REBOOT_COMMAND = "reboot"
         private val CLEAR_CACHE_QUICK_COMMAND =
-            "rm -f /data/data/${HookConfig.TARGET_PACKAGE}/databases/app_icons.db* " +
-                "&& am force-stop ${HookConfig.TARGET_PACKAGE}"
+            "$SYNC_PREFS_COMMAND; rm -f /data/data/${HookConfig.TARGET_PACKAGE}/databases/app_icons.db* " +
+                "&& am force-stop ${HookConfig.TARGET_PACKAGE}; $HOME_START"
 
         private val BACKUP_NAME_PATTERN = Regex("^\\d{8}_\\d{6}$")
         private val STOP_LAUNCHER_COMMAND = "am force-stop ${HookConfig.TARGET_PACKAGE}"
@@ -1479,33 +1527,6 @@ class MainActivity : AppCompatActivity() {
             append("owner2=\$(stat -c '%u:%g' \$PREFS); ")
             append("chown \$owner2 \$PREFS/*.xml 2>/dev/null; ")
             append("chmod 660 \$PREFS/*.xml 2>/dev/null; true")
-        }
-
-        private const val DATABASE_DIR =
-            "/data/data/${HookConfig.TARGET_PACKAGE}/databases"
-
-        /** The module's own package (applicationId) that stores the prefs. */
-        private val MODULE_PACKAGE: String = BuildConfig.APPLICATION_ID
-
-        private val SOURCE_PREFS =
-            "/data/user/0/$MODULE_PACKAGE/shared_prefs/${HookConfig.PREFS_NAME}.xml"
-
-        /**
-         * LSPosed's New XSharedPreferences copies module prefs to
-         * /data/misc/apexdata/<uuid>/prefs/<module>/ and creates the copy with
-         * mode 660. The launcher (a different UID) then cannot read it, so the
-         * host sees empty settings. Copy our directly-written XML into that
-         * location and make it world-readable before restarting the launcher.
-         */
-        private val SYNC_PREFS_COMMAND = buildString {
-            append("if [ -f $SOURCE_PREFS ]; then ")
-            append("for p in /data/misc/apexdata/*/prefs; do ")
-            append("if [ -d \"\$p\" ]; then ")
-            append("d=\"\$p/$MODULE_PACKAGE\"; ")
-            append("mkdir -p \"\$d\"; ")
-            append("cp $SOURCE_PREFS \"\$d/${HookConfig.PREFS_NAME}.xml\" && ")
-            append("chmod 644 \"\$d/${HookConfig.PREFS_NAME}.xml\"; ")
-            append("fi; done; fi")
         }
 
         private val RESTART_COMMAND =

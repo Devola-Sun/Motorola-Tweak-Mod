@@ -10,6 +10,7 @@ import android.graphics.drawable.LevelListDrawable
 import android.view.View
 import android.widget.ImageView
 import com.motolauncher.mod.BuildConfig
+import com.motolauncher.mod.HookConfig
 import com.motolauncher.mod.R
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.current
@@ -30,7 +31,11 @@ object SignalIconHook : YukiBaseHooker() {
     private val isReplacingDrawable = ThreadLocal<Boolean>()
     private var moduleContextCache: Context? = null
     private val isEnableIosIcons: Boolean
-        get() = modulePrefs.getBoolean("sb_ios_icons", modulePrefs.getBoolean("pref_ios_icons", false))
+        get() = HookConfig.safeGetBoolean(
+            modulePrefs,
+            HookConfig.KEY_SB_IOS_ICONS,
+            HookConfig.DEFAULT_SB_IOS_ICONS
+        )
 
     override fun onHook() {
         hookSignalDrawable()

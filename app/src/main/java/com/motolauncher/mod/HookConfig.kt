@@ -3,8 +3,11 @@ package com.motolauncher.mod
 import android.content.Context
 import android.os.SystemClock
 import android.os.UserManager
+import android.util.Xml
 import androidx.annotation.StringRes
 import com.highcapable.yukihookapi.hook.xposed.prefs.YukiHookPrefsBridge
+import org.xmlpull.v1.XmlPullParser
+import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -106,8 +109,14 @@ object HookConfig {
 
     /** True on the Motorola razr fold (the reference device of this module). */
     fun isRazrFoldDevice(): Boolean {
-        val model = runCatching { android.os.Build.MODEL.orEmpty().lowercase() }.getOrDefault("")
-        return model.contains("razr") && model.contains("fold")
+        val combined = runCatching {
+            listOf(
+                android.os.Build.MODEL.orEmpty(),
+                android.os.Build.DEVICE.orEmpty(),
+                android.os.Build.PRODUCT.orEmpty()
+            ).joinToString(" ").lowercase()
+        }.getOrDefault("")
+        return combined.contains("razr") && combined.contains("fold")
     }
 
     /**
@@ -145,8 +154,81 @@ object HookConfig {
     private val intCache = ConcurrentHashMap<String, Pair<Long, Int>>()
     private val stringCache = ConcurrentHashMap<String, Pair<Long, String>>()
 
+    @Volatile
+    private var fallbackPrefsCacheAt: Long = 0L
+
+    @Volatile
+    private var fallbackPrefsLastModified: Long = -1L
+
+    @Volatile
+    private var fallbackPrefsMap: Map<String, Any>? = null
+
+    private val FALLBACK_PREFS_PATHS = arrayOf(
+        "/data/local/tmp/$PREFS_NAME.xml",
+        "/data/user/0/${BuildConfig.APPLICATION_ID}/shared_prefs/$PREFS_NAME.xml",
+        "/data/data/${BuildConfig.APPLICATION_ID}/shared_prefs/$PREFS_NAME.xml",
+        "/data/user/0/com.motolauncher.mod/shared_prefs/$PREFS_NAME.xml",
+        "/data/data/com.motolauncher.mod/shared_prefs/$PREFS_NAME.xml"
+    )
+
+    private fun loadFallbackPrefsMap(now: Long): Map<String, Any>? {
+        if (now > 0L && fallbackPrefsMap != null && now - fallbackPrefsCacheAt in 0 until PREFS_CACHE_TTL_MS) {
+            return fallbackPrefsMap
+        }
+        return try {
+            val file = FALLBACK_PREFS_PATHS
+                .asSequence()
+                .map { File(it) }
+                .firstOrNull { it.isFile && it.canRead() }
+            if (file == null) {
+                fallbackPrefsCacheAt = now
+                fallbackPrefsMap = null
+                return null
+            }
+            val lastMod = file.lastModified()
+            val existing = fallbackPrefsMap
+            if (existing != null && lastMod > 0L && lastMod == fallbackPrefsLastModified) {
+                fallbackPrefsCacheAt = now
+                return existing
+            }
+            val parsed = HashMap<String, Any>()
+            file.inputStream().use { stream ->
+                val parser = Xml.newPullParser()
+                parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
+                parser.setInput(stream, null)
+                while (parser.next() != XmlPullParser.END_DOCUMENT) {
+                    if (parser.eventType != XmlPullParser.START_TAG) continue
+                    val key = parser.getAttributeValue(null, "name") ?: continue
+                    when (parser.name) {
+                        "boolean" -> parser.getAttributeValue(null, "value")
+                            ?.toBooleanStrictOrNull()
+                            ?.let { parsed[key] = it }
+                        "int" -> parser.getAttributeValue(null, "value")
+                            ?.toIntOrNull()
+                            ?.let { parsed[key] = it }
+                        "string" -> parsed[key] = parser.nextText()
+                    }
+                }
+            }
+            fallbackPrefsCacheAt = now
+            fallbackPrefsLastModified = lastMod
+            fallbackPrefsMap = parsed
+            parsed
+        } catch (_: Throwable) {
+            fallbackPrefsMap
+        }
+    }
+
+    private fun isBridgeReadable(prefs: YukiHookPrefsBridge?): Boolean {
+        if (prefs == null) return false
+        return try {
+            prefs.isPreferencesAvailable
+        } catch (_: Throwable) {
+            false
+        }
+    }
+
     fun safeGetBoolean(prefs: YukiHookPrefsBridge?, key: String, defaultValue: Boolean): Boolean {
-        if (prefs == null) return defaultValue
         val now = try {
             SystemClock.uptimeMillis()
         } catch (_: Throwable) {
@@ -166,7 +248,21 @@ object HookConfig {
                         return@synchronized cached.second
                     }
                 }
-                val value = prefs.getBoolean(key, defaultValue)
+                val value = when {
+                    isBridgeReadable(prefs) -> try {
+                        prefs!!.getBoolean(key, defaultValue)
+                    } catch (_: Throwable) {
+                        (loadFallbackPrefsMap(now)?.get(key) as? Boolean) ?: defaultValue
+                    }
+                    else -> {
+                        val fallback = loadFallbackPrefsMap(now)?.get(key) as? Boolean
+                        fallback ?: try {
+                            prefs?.getBoolean(key, defaultValue) ?: defaultValue
+                        } catch (_: Throwable) {
+                            defaultValue
+                        }
+                    }
+                }
                 if (now > 0L) {
                     boolCache[key] = now to value
                 }
@@ -178,7 +274,6 @@ object HookConfig {
     }
 
     fun safeGetInt(prefs: YukiHookPrefsBridge?, key: String, defaultValue: Int): Int {
-        if (prefs == null) return defaultValue
         val now = try {
             SystemClock.uptimeMillis()
         } catch (_: Throwable) {
@@ -198,7 +293,21 @@ object HookConfig {
                         return@synchronized cached.second
                     }
                 }
-                val value = prefs.getInt(key, defaultValue)
+                val value = when {
+                    isBridgeReadable(prefs) -> try {
+                        prefs!!.getInt(key, defaultValue)
+                    } catch (_: Throwable) {
+                        (loadFallbackPrefsMap(now)?.get(key) as? Int) ?: defaultValue
+                    }
+                    else -> {
+                        val fallback = loadFallbackPrefsMap(now)?.get(key) as? Int
+                        fallback ?: try {
+                            prefs?.getInt(key, defaultValue) ?: defaultValue
+                        } catch (_: Throwable) {
+                            defaultValue
+                        }
+                    }
+                }
                 if (now > 0L) {
                     intCache[key] = now to value
                 }
@@ -210,7 +319,6 @@ object HookConfig {
     }
 
     fun safeGetString(prefs: YukiHookPrefsBridge?, key: String, defaultValue: String): String {
-        if (prefs == null) return defaultValue
         val now = try {
             SystemClock.uptimeMillis()
         } catch (_: Throwable) {
@@ -230,7 +338,21 @@ object HookConfig {
                         return@synchronized cached.second
                     }
                 }
-                val value = prefs.getString(key, defaultValue)
+                val value = when {
+                    isBridgeReadable(prefs) -> try {
+                        prefs!!.getString(key, defaultValue)
+                    } catch (_: Throwable) {
+                        (loadFallbackPrefsMap(now)?.get(key) as? String) ?: defaultValue
+                    }
+                    else -> {
+                        val fallback = loadFallbackPrefsMap(now)?.get(key) as? String
+                        fallback ?: try {
+                            prefs?.getString(key, defaultValue) ?: defaultValue
+                        } catch (_: Throwable) {
+                            defaultValue
+                        }
+                    }
+                }
                 if (now > 0L) {
                     stringCache[key] = now to value
                 }

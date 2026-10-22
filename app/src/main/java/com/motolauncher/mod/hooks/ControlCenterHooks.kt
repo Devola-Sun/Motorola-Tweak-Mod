@@ -26,6 +26,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
+import com.motolauncher.mod.HookConfig
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
 import de.robv.android.xposed.XposedHelpers
@@ -83,7 +84,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "setBrightnessViewMargin",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val panel = param.thisObject ?: return
                         fixBrightnessMargin(panel)
                         reorderSliders(panel)
@@ -97,7 +98,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "setVolumeSliderContainerMargin",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val panel = param.thisObject ?: return
                         fixVolumeMargin(panel)
                         reorderSliders(panel)
@@ -111,7 +112,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "updateDimens",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val panel = param.thisObject ?: return
                         updateSquareDimensAndScrollMargin(panel)
                         enforceSquareAndSliderHeights(panel)
@@ -125,7 +126,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "updateResources",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val panel = param.thisObject ?: return
                         reorderAndFixMargins(panel)
                         updateSquareDimensAndScrollMargin(panel)
@@ -142,13 +143,13 @@ object ControlCenterHooks : YukiBaseHooker() {
                 Int::class.javaPrimitiveType,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val panel = param.thisObject ?: return
                         updateSquareDimensAndScrollMargin(panel)
                         enforceSquareAndSliderHeights(panel)
                     }
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val panel = param.thisObject ?: return
                         enforceSquareAndSliderHeights(panel)
                     }
@@ -166,7 +167,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 Int::class.javaPrimitiveType,
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val panel = param.thisObject as? ViewGroup ?: return
                         ensureMediaPlayerBelowSliders(panel)
                     }
@@ -179,12 +180,12 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "onFinishInflate",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val panel = param.thisObject as? ViewGroup ?: return
                         val seekBarContainer = getSeekBarContainer(panel)
 
                         seekBarContainer?.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-                            if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return@addOnLayoutChangeListener
+                            if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return@addOnLayoutChangeListener
                             seekBarContainer.post {
                                 reorderAndFixMargins(panel)
                                 enforceSquareAndSliderHeights(panel)
@@ -193,7 +194,7 @@ object ControlCenterHooks : YukiBaseHooker() {
 
                         val fixedPanel = XposedHelpers.getObjectField(panel, "mFixedPanel") as? View
                         fixedPanel?.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ ->
-                            if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return@addOnLayoutChangeListener
+                            if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return@addOnLayoutChangeListener
                             fixedPanel.post {
                                 enforceSquareAndSliderHeights(panel)
                             }
@@ -216,7 +217,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 View::class.java,
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val container = param.thisObject ?: return
                         val modernPanel = XposedHelpers.getObjectField(container, "mQSModernPanel") ?: return
                         reorderAndFixMargins(modernPanel)
@@ -238,7 +239,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "maybeReinflateSlider",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_swap_sliders", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)) return
                         val controller = param.thisObject ?: return
                         val view = XposedHelpers.getObjectField(controller, "mView") ?: return
                         val modernPanel = XposedHelpers.getObjectField(view, "mQSModernPanel") ?: return
@@ -254,7 +255,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "setTiles",
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                         try {
                             val controller = param.thisObject ?: return
                             val host = XposedHelpers.getObjectField(controller, "mHost") ?: return
@@ -636,7 +637,7 @@ object ControlCenterHooks : YukiBaseHooker() {
             val panelClass = XposedHelpers.findClass(CLASS_QS_MODERN_FIXED_PANEL, classLoader)
             XposedBridge.hookAllConstructors(panelClass, object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
-                    if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                    if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                     try {
                         val panel = param.thisObject as? View ?: return
                         XposedHelpers.setIntField(panel, "mMaxTiles", 3)
@@ -670,11 +671,11 @@ object ControlCenterHooks : YukiBaseHooker() {
 
             XposedBridge.hookAllConstructors(layoutClass, object : XC_MethodHook() {
                 override fun afterHookedMethod(param: MethodHookParam) {
-                    if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                    if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                     val layout = param.thisObject ?: return
                     enforceGridDimensions(layout)
                     (layout as? View)?.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return@addOnLayoutChangeListener
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return@addOnLayoutChangeListener
                         val vg = v as? ViewGroup ?: return@addOnLayoutChangeListener
                         layoutAirplaneButton(vg)
                     }
@@ -686,7 +687,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "updateResources",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                         val layout = param.thisObject ?: return
                         enforceGridDimensions(layout)
                     }
@@ -700,12 +701,12 @@ object ControlCenterHooks : YukiBaseHooker() {
                 Int::class.javaPrimitiveType,
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                         val layout = param.thisObject ?: return
                         enforceGridDimensions(layout)
                     }
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                         val layout = param.thisObject as? ViewGroup ?: return
                         val airplaneBtn = getOrCreateAirplaneButton(layout)
                         airplaneBtn.visibility = View.VISIBLE
@@ -796,7 +797,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "createAndAddLabels",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                         val tileView = param.thisObject as? View ?: return
                         styleModernFixedTileView(tileView)
                     }
@@ -808,7 +809,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "updateLayout$2",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                         val tileView = param.thisObject as? View ?: return
                         styleModernFixedTileView(tileView)
                     }
@@ -820,7 +821,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "updateResources",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                         val tileView = param.thisObject as? View ?: return
                         styleModernFixedTileView(tileView)
                     }
@@ -832,7 +833,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "handleStateChanged",
                 object : XC_MethodHook() {
                     override fun afterHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                         val tileView = param.thisObject as? View ?: return
                         styleModernFixedTileView(tileView)
                     }
@@ -899,7 +900,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "setTiles",
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
+                        if (!HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)) return
                         try {
                             val controller = param.thisObject ?: return
 

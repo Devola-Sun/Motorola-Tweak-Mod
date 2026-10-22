@@ -13,6 +13,7 @@ import com.motolauncher.mod.hooks.FlagSecureFrameworkHook
 import com.motolauncher.mod.hooks.FolderPreviewHook
 import com.motolauncher.mod.hooks.StatusBarHooks
 import com.motolauncher.mod.hooks.WidgetResizeHook
+import de.robv.android.xposed.XposedBridge
 
 /**
  * YukiHookAPI entry point.
@@ -41,11 +42,29 @@ object HookEntry : IYukiHookXposedInit {
         }
     }
 
+    private fun logInfo(message: String) {
+        runCatching { Log.i(MODULE_TAG, message) }
+        runCatching { XposedBridge.log("[$MODULE_TAG] $message") }
+    }
+
+    private fun logWarn(message: String, error: Throwable? = null) {
+        runCatching { Log.w(MODULE_TAG, message, error) }
+        runCatching {
+            if (error != null) {
+                XposedBridge.log("[$MODULE_TAG] $message: $error")
+                XposedBridge.log(error)
+            } else {
+                XposedBridge.log("[$MODULE_TAG] $message")
+            }
+        }
+    }
+
     override fun onInit() {
         YukiHookAPI.configs {
             // Keep per-callback debug output off: BubbleTextView calls this
             // hook very frequently, and verbose logging would flood logcat.
             isDebug = false
+            isEnableHookSharedPreferences = true
             debugLog {
                 tag = MODULE_TAG
             }
@@ -56,40 +75,44 @@ object HookEntry : IYukiHookXposedInit {
         YukiHookAPI.encase {
             loadApp(name = LauncherHooker.TARGET_PACKAGE) {
                 runCatching {
-                    if (processName.isNotEmpty() && processName != LauncherHooker.TARGET_PACKAGE) {
+                    // Only skip explicit secondary processes (e.g. ":appprediction").
+                    // Note: in VectorLegacyBridge or early package load, YukiHookAPI
+                    // may populate processName with "android" when lpparam.processName
+                    // is null, so never require processName == TARGET_PACKAGE here.
+                    if (processName.startsWith("${LauncherHooker.TARGET_PACKAGE}:")) {
                         return@loadApp
                     }
                     logScopeMarker(LauncherHooker.TARGET_PACKAGE)
                     val prefs = runCatching { prefs(HookConfig.PREFS_NAME) }.getOrNull()
 
-                    if (HookConfig.isBootCompleted()) {
-                        runCatching {
-                            Log.i(
-                                MODULE_TAG,
-                                "Settings loaded: hide_labels=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_HIDE_LABELS, HookConfig.DEFAULT_HIDE_LABELS)}, " +
-                                    "icon_shape=${HookConfig.safeGetString(prefs, HookConfig.KEY_ICON_SHAPE, HookConfig.DEFAULT_ICON_SHAPE)}, " +
-                                    "grid=${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_COLUMNS, HookConfig.DEFAULT_GRID_COLUMNS)}" +
-                                    "x${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_ROWS, HookConfig.DEFAULT_GRID_ROWS)}, " +
-                                    "dock=${HookConfig.safeGetInt(prefs, HookConfig.KEY_DOCK_ICONS, HookConfig.DEFAULT_DOCK_ICONS)}"
-                            )
-                        }
+                    runCatching {
+                        logInfo(
+                            "Settings loaded: hide_labels=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_HIDE_LABELS, HookConfig.DEFAULT_HIDE_LABELS)}, " +
+                                "icon_shape=${HookConfig.safeGetString(prefs, HookConfig.KEY_ICON_SHAPE, HookConfig.DEFAULT_ICON_SHAPE)}, " +
+                                "grid=${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_COLUMNS, HookConfig.DEFAULT_GRID_COLUMNS)}" +
+                                "x${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_ROWS, HookConfig.DEFAULT_GRID_ROWS)}, " +
+                                "dock=${HookConfig.safeGetInt(prefs, HookConfig.KEY_DOCK_ICONS, HookConfig.DEFAULT_DOCK_ICONS)}, " +
+                                "coverDock=${HookConfig.isCoverDockEnabled(prefs)}"
+                        )
                     }
 
                     runCatching { LauncherHooker.install(this, prefs) }.onFailure {
-                        Log.w(MODULE_TAG, "LauncherHooker could not be installed", it)
+                        logWarn("LauncherHooker could not be installed", it)
                     }
                     runCatching { loadHooker(CoverDockHook) }.onFailure {
-                        Log.w(MODULE_TAG, "CoverDockHook could not be loaded", it)
+                        logWarn("CoverDockHook could not be loaded", it)
                     }
                     runCatching { loadHooker(FolderPreviewHook) }.onFailure {
-                        Log.w(MODULE_TAG, "FolderPreviewHook could not be loaded", it)
+                        logWarn("FolderPreviewHook could not be loaded", it)
                     }
                     runCatching { loadHooker(WidgetResizeHook) }.onFailure {
-                        Log.w(MODULE_TAG, "WidgetResizeHook could not be loaded", it)
+                        logWarn("WidgetResizeHook could not be loaded", it)
                     }
                     runCatching { FlagSecureFrameworkHook.hook(this) }.onFailure {
-                        Log.w(MODULE_TAG, "FlagSecureFrameworkHook could not be loaded", it)
+                        logWarn("FlagSecureFrameworkHook could not be loaded", it)
                     }
+                }.onFailure {
+                    logWarn("Failed in loadApp(${LauncherHooker.TARGET_PACKAGE})", it)
                 }
             }
 
@@ -97,36 +120,40 @@ object HookEntry : IYukiHookXposedInit {
                 runCatching {
                     // Only hook the real SystemUI process; do not inject into other
                     // packages (like com.moto.dragdrop) that merely load SystemUI's
-                    // APK resources via createPackageContext.
-                    if (processName.isNotEmpty() && processName != HookConfig.SYSTEM_UI_PACKAGE) {
+                    // APK resources via createPackageContext. Note that YukiHookAPI
+                    // uses "android" as the fallback when lpparam.processName is null
+                    // (e.g. under VectorLegacyBridge), so allow "android" as well.
+                    if (processName.isNotEmpty() &&
+                        processName != "android" &&
+                        processName != HookConfig.SYSTEM_UI_PACKAGE
+                    ) {
                         return@loadApp
                     }
                     logScopeMarker(HookConfig.SYSTEM_UI_PACKAGE)
                     val prefs = runCatching { prefs(HookConfig.PREFS_NAME) }.getOrNull()
-                    if (HookConfig.isBootCompleted()) {
-                        runCatching {
-                            Log.i(
-                                MODULE_TAG,
-                                "SystemUI settings loaded: seconds=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_SHOW_SECONDS, HookConfig.DEFAULT_SB_SHOW_SECONDS)}, " +
-                                    "hideBatteryPercent=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_BATTERY_PERCENT, HookConfig.DEFAULT_SB_HIDE_BATTERY_PERCENT)}, " +
-                                    "hideVolte=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_VOLTE, HookConfig.DEFAULT_SB_HIDE_VOLTE)}, " +
-                                    "iosIcons=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_IOS_ICONS, HookConfig.DEFAULT_SB_IOS_ICONS)}, " +
-                                    "padding=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING, HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING)}, " +
-                                    "swapSliders=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)}, " +
-                                    "iosConnectivity=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)}"
-                            )
-                        }
+                    runCatching {
+                        logInfo(
+                            "SystemUI settings loaded: seconds=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_SHOW_SECONDS, HookConfig.DEFAULT_SB_SHOW_SECONDS)}, " +
+                                "hideBatteryPercent=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_BATTERY_PERCENT, HookConfig.DEFAULT_SB_HIDE_BATTERY_PERCENT)}, " +
+                                "hideVolte=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_VOLTE, HookConfig.DEFAULT_SB_HIDE_VOLTE)}, " +
+                                "iosIcons=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_IOS_ICONS, HookConfig.DEFAULT_SB_IOS_ICONS)}, " +
+                                "padding=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING, HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING)}, " +
+                                "swapSliders=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)}, " +
+                                "iosConnectivity=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)}"
+                        )
                     }
 
                     runCatching { loadHooker(StatusBarHooks) }.onFailure {
-                        Log.w(MODULE_TAG, "StatusBarHooks could not be loaded", it)
+                        logWarn("StatusBarHooks could not be loaded", it)
                     }
                     runCatching { loadHooker(ControlCenterHooks) }.onFailure {
-                        Log.w(MODULE_TAG, "ControlCenterHooks could not be loaded", it)
+                        logWarn("ControlCenterHooks could not be loaded", it)
                     }
                     runCatching { FlagSecureFrameworkHook.hook(this) }.onFailure {
-                        Log.w(MODULE_TAG, "FlagSecureFrameworkHook could not be loaded", it)
+                        logWarn("FlagSecureFrameworkHook could not be loaded", it)
                     }
+                }.onFailure {
+                    logWarn("Failed in loadApp(${HookConfig.SYSTEM_UI_PACKAGE})", it)
                 }
             }
 
@@ -161,23 +188,27 @@ object HookEntry : IYukiHookXposedInit {
                         val reason =
                             "Safe mode: framework hooks skipped on non-razr-fold device " +
                                 "(${android.os.Build.MODEL})"
-                        Log.i(MODULE_TAG, reason)
+                        logInfo(reason)
                         runCatching { ErrorLogger.log(MODULE_TAG, reason) }
                         return@loadSystem
                     }
 
+                    logInfo("System framework settings loaded: isReferenceDevice=$isReferenceDevice, safeMode=$safeMode")
+
                     runCatching { FlagSecureFrameworkHook.hook(this) }.onFailure {
-                        Log.w(MODULE_TAG, "FlagSecureFrameworkHook could not be loaded", it)
+                        logWarn("FlagSecureFrameworkHook could not be loaded", it)
                     }
                     runCatching { CorePatchHooker.hook(this) }.onFailure {
-                        Log.w(MODULE_TAG, "CorePatchHooker could not be loaded", it)
+                        logWarn("CorePatchHooker could not be loaded", it)
                     }
                     runCatching { loadHooker(CameraHook) }.onFailure {
-                        Log.w(MODULE_TAG, "CameraHook could not be loaded", it)
+                        logWarn("CameraHook could not be loaded", it)
                     }
                     runCatching { loadHooker(BatteryServiceHook) }.onFailure {
-                        Log.w(MODULE_TAG, "BatteryServiceHook could not be loaded", it)
+                        logWarn("BatteryServiceHook could not be loaded", it)
                     }
+                }.onFailure {
+                    logWarn("Failed in loadSystem", it)
                 }
             }
         }

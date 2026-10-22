@@ -2,16 +2,18 @@ package com.motolauncher.mod.hooks
 
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.current
-import com.highcapable.yukihookapi.hook.log.YLog
+import com.motolauncher.mod.HookConfig
 
 object ClockHook : YukiBaseHooker() {
 
     private val isShowSeconds: Boolean
-        get() = modulePrefs.getBoolean("sb_show_seconds", modulePrefs.getBoolean("pref_show_seconds", true))
+        get() = HookConfig.safeGetBoolean(
+            modulePrefs,
+            HookConfig.KEY_SB_SHOW_SECONDS,
+            HookConfig.DEFAULT_SB_SHOW_SECONDS
+        )
 
     override fun onHook() {
-        if (!isShowSeconds) return
-
         findClass("com.android.systemui.statusbar.policy.Clock").hook {
             injectMember {
                 method {

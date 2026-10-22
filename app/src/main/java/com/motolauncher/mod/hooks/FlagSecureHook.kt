@@ -18,7 +18,8 @@ object FlagSecureHook : YukiBaseHooker() {
     private const val TAG = "MotoLauncherMod"
 
     private val enabled: Boolean
-        get() = modulePrefs.getBoolean(
+        get() = HookConfig.safeGetBoolean(
+            modulePrefs,
             HookConfig.KEY_DISABLE_FLAG_SECURE,
             HookConfig.DEFAULT_DISABLE_FLAG_SECURE
         )

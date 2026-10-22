@@ -374,7 +374,7 @@ object StatusBarOrderHook : YukiBaseHooker() {
      * placed on both sides.
      */
     private fun readOrder(key: String, default: String): MutableList<String> {
-        val raw = runCatching { modulePrefs.getString(key, default) }.getOrDefault(default)
+        val raw = HookConfig.safeGetString(modulePrefs, key, default)
         val result = mutableListOf<String>()
         raw.orEmpty().split(',').forEach { part ->
             val value = part.trim()
