@@ -68,6 +68,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var safeModeSwitch: SwitchCompat
     private lateinit var languageSpinner: Spinner
     private lateinit var coverDockSwitch: SwitchCompat
+    private lateinit var coverDockFloatingIslandSwitch: SwitchCompat
+    private lateinit var coverDockFrostSwitch: SwitchCompat
     private lateinit var coverDockHeightSlider: Slider
     private lateinit var coverDockWidthSlider: Slider
     private lateinit var coverDockSizeSlider: Slider
@@ -234,6 +236,8 @@ class MainActivity : AppCompatActivity() {
         safeModeSwitch = findViewById(R.id.switch_safe_mode)
         languageSpinner = findViewById(R.id.spinner_language)
         coverDockSwitch = findViewById(R.id.switch_enable_cover_dock)
+        coverDockFloatingIslandSwitch = findViewById(R.id.switch_cover_dock_floating_island)
+        coverDockFrostSwitch = findViewById(R.id.switch_cover_dock_frost)
         coverDockHeightSlider = findViewById(R.id.slider_cover_dock_height)
         coverDockWidthSlider = findViewById(R.id.slider_cover_dock_width)
         coverDockSizeSlider = findViewById(R.id.slider_cover_dock_size)
@@ -609,6 +613,18 @@ class MainActivity : AppCompatActivity() {
         coverDockSwitch.isChecked = settings.coverDockEnabled
         coverDockSwitch.setOnCheckedChangeListener { _, enabled ->
             settings.coverDockEnabled = enabled
+            updateCoverDockControls()
+            syncModulePrefs()
+        }
+
+        coverDockFloatingIslandSwitch.isChecked = settings.coverDockFloatingIsland
+        coverDockFloatingIslandSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.coverDockFloatingIsland = enabled
+            syncModulePrefs()
+        }
+        coverDockFrostSwitch.isChecked = settings.coverDockFrost
+        coverDockFrostSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.coverDockFrost = enabled
             syncModulePrefs()
         }
 
@@ -636,6 +652,15 @@ class MainActivity : AppCompatActivity() {
             initialValue = settings.coverDockSizePercent,
             onValueChanged = { settings.coverDockSizePercent = it }
         )
+        updateCoverDockControls()
+    }
+
+    private fun updateCoverDockControls() {
+        val enabled = coverDockSwitch.isChecked
+        listOf(coverDockFloatingIslandSwitch, coverDockFrostSwitch).forEach { view ->
+            view.isEnabled = enabled
+            view.alpha = if (enabled) 1f else 0.4f
+        }
     }
 
     private fun bindCoverDockSlider(

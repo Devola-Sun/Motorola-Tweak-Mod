@@ -82,6 +82,10 @@
     <string name="section_cover_dock">Cover-screen Dock</string>
     <string name="cover_dock_enable_title">Show the Dock on the cover screen</string>
     <string name="cover_dock_enable_summary">Shows the Hotseat on the outer display. Restart the launcher after changing this setting.</string>
+    <string name="cover_dock_floating_island_title">Floating Island Dock</string>
+    <string name="cover_dock_floating_island_summary">Cover screen only. Adds at least 20dp side insets and 28dp rounded corners to the background. Reuses background width and height settings without changing the icon count or layout area. Restart the launcher after changing this setting.</string>
+    <string name="cover_dock_frost_title">Dock Blur / Frost</string>
+    <string name="cover_dock_frost_summary">Gives the cover-screen Dock a frosted look using a translucent gradient and a subtle border. Does not blur the wallpaper or icons. Restart the launcher after changing this setting.</string>
     <string name="cover_dock_height_title">Dock background height</string>
     <string name="cover_dock_width_title">Dock background width</string>
     <string name="cover_dock_size_title">Dock size</string>

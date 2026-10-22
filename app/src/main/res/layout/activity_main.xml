@@ -620,6 +620,51 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
+                        android:padding="18dp">
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switch_cover_dock_floating_island"
+                            style="@style/Widget.Moto.Switch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/cover_dock_floating_island_title"
+                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/cover_dock_floating_island_summary"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switch_cover_dock_frost"
+                            style="@style/Widget.Moto.Switch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:minHeight="48dp"
+                            android:text="@string/cover_dock_frost_title"
+                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/cover_dock_frost_summary"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/app_outline" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
                         android:paddingStart="18dp"
                         android:paddingTop="16dp"
                         android:paddingEnd="18dp"

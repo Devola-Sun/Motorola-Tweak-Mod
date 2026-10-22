@@ -88,6 +88,16 @@ class SettingsStore(context: Context) {
             ?: HookConfig.DEFAULT_COVER_DOCK_ENABLED
         set(value) = update(HookConfig.KEY_COVER_DOCK_ENABLED, value)
 
+    var coverDockFloatingIsland: Boolean
+        get() = values[HookConfig.KEY_COVER_DOCK_FLOATING_ISLAND] as? Boolean
+            ?: HookConfig.DEFAULT_COVER_DOCK_FLOATING_ISLAND
+        set(value) = update(HookConfig.KEY_COVER_DOCK_FLOATING_ISLAND, value)
+
+    var coverDockFrost: Boolean
+        get() = values[HookConfig.KEY_COVER_DOCK_FROST] as? Boolean
+            ?: HookConfig.DEFAULT_COVER_DOCK_FROST
+        set(value) = update(HookConfig.KEY_COVER_DOCK_FROST, value)
+
     var coverDockHeightPercent: Int
         get() = HookConfig.coerceCoverDockHeightPercent(
             values[HookConfig.KEY_COVER_DOCK_HEIGHT_PERCENT] as? Int
@@ -261,6 +271,8 @@ class SettingsStore(context: Context) {
             HookConfig.KEY_GRID_COLUMNS to HookConfig.DEFAULT_GRID_COLUMNS,
             HookConfig.KEY_DOCK_ICONS to HookConfig.DEFAULT_DOCK_ICONS,
             HookConfig.KEY_COVER_DOCK_ENABLED to HookConfig.DEFAULT_COVER_DOCK_ENABLED,
+            HookConfig.KEY_COVER_DOCK_FLOATING_ISLAND to HookConfig.DEFAULT_COVER_DOCK_FLOATING_ISLAND,
+            HookConfig.KEY_COVER_DOCK_FROST to HookConfig.DEFAULT_COVER_DOCK_FROST,
             HookConfig.KEY_COVER_DOCK_HEIGHT_PERCENT to HookConfig.DEFAULT_COVER_DOCK_HEIGHT_PERCENT,
             HookConfig.KEY_COVER_DOCK_WIDTH to HookConfig.DEFAULT_COVER_DOCK_WIDTH_PERCENT,
             HookConfig.KEY_COVER_DOCK_SIZE_PERCENT to HookConfig.DEFAULT_COVER_DOCK_SIZE_PERCENT,

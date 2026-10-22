@@ -32,11 +32,15 @@ object HookConfig {
 
     /** Cover-screen Hotseat (Dock). */
     const val KEY_COVER_DOCK_ENABLED: String = "cover_dock_enabled"
+    const val KEY_COVER_DOCK_FLOATING_ISLAND: String = "cover_dock_floating_island"
+    const val KEY_COVER_DOCK_FROST: String = "cover_dock_frost"
     const val KEY_COVER_DOCK_HEIGHT_PERCENT: String = "cover_dock_height_percent"
     const val KEY_COVER_DOCK_WIDTH: String = "cover_dock_width_percent"
     const val KEY_COVER_DOCK_WIDTH_PERCENT: String = KEY_COVER_DOCK_WIDTH
     const val KEY_COVER_DOCK_SIZE_PERCENT: String = "cover_dock_size_percent"
     const val DEFAULT_COVER_DOCK_ENABLED: Boolean = false
+    const val DEFAULT_COVER_DOCK_FLOATING_ISLAND: Boolean = false
+    const val DEFAULT_COVER_DOCK_FROST: Boolean = false
     const val DEFAULT_COVER_DOCK_HEIGHT_PERCENT: Int = 100
     const val DEFAULT_COVER_DOCK_WIDTH_PERCENT: Int = 100
     const val DEFAULT_COVER_DOCK_SIZE_PERCENT: Int = 100
@@ -356,6 +360,12 @@ object HookConfig {
     /** Cover-dock settings are read through YukiHookAPI's XSharedPreferences bridge. */
     fun isCoverDockEnabled(prefs: YukiHookPrefsBridge?): Boolean =
         safeGetBoolean(prefs, KEY_COVER_DOCK_ENABLED, DEFAULT_COVER_DOCK_ENABLED)
+
+    fun isCoverDockFloatingIslandEnabled(prefs: YukiHookPrefsBridge?): Boolean =
+        safeGetBoolean(prefs, KEY_COVER_DOCK_FLOATING_ISLAND, DEFAULT_COVER_DOCK_FLOATING_ISLAND)
+
+    fun isCoverDockFrostEnabled(prefs: YukiHookPrefsBridge?): Boolean =
+        safeGetBoolean(prefs, KEY_COVER_DOCK_FROST, DEFAULT_COVER_DOCK_FROST)
 
     fun coverDockHeightPercent(prefs: YukiHookPrefsBridge?): Int =
         coerceCoverDockHeightPercent(

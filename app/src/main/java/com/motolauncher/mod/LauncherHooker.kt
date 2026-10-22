@@ -115,6 +115,13 @@ object LauncherHooker {
                             setIntField(profile, "numColumns", columns)
                             setIntField(profile, "numRows", rows)
                             setIntField(profile, "numShownHotseatIcons", dockIcons)
+                            runCatching { setIntField(profile, "numHotseatIcons", dockIcons) }
+                            runCatching {
+                                val currentDbIcons = getIntField(profile, "numDatabaseHotseatIcons")
+                                if (currentDbIcons < dockIcons) {
+                                    setIntField(profile, "numDatabaseHotseatIcons", dockIcons)
+                                }
+                            }
 
                             Log.i(
                                 TAG,
@@ -190,6 +197,13 @@ object LauncherHooker {
                             setIntField(inv, "numColumns", columns)
                             setIntField(inv, "numRows", rows)
                             setIntField(inv, "numShownHotseatIcons", dockIcons)
+                            runCatching { setIntField(inv, "numHotseatIcons", dockIcons) }
+                            runCatching {
+                                val currentDbIcons = getIntField(inv, "numDatabaseHotseatIcons")
+                                if (currentDbIcons < dockIcons) {
+                                    setIntField(inv, "numDatabaseHotseatIcons", dockIcons)
+                                }
+                            }
                         }.onFailure {
                             Log.w(TAG, "Failed to apply grid before DeviceProfile", it)
                         }
@@ -205,6 +219,15 @@ object LauncherHooker {
                             )
                             val previousDock = getIntField(profile, "numShownHotseatIcons")
                             setIntField(profile, "numShownHotseatIcons", dockIcons)
+
+                            // Optimize Hotseat border space and layout padding on Cover Screen (swDp < 600)
+                            // when 5 or 6+ icons are displayed, avoiding excessive side margins or negative gaps.
+                            val context = args.getOrNull(0) as? Context
+                            if (isCoverScreenProfile(profile, context) &&
+                                HookConfig.isCoverDockEnabled(prefs)
+                            ) {
+                                optimizeCoverDeviceProfileHotseat(profile, dockIcons)
+                            }
 
                             if (previousDock != dockIcons) {
                                 val inv = findField(profile.javaClass, "inv").get(profile)
@@ -224,6 +247,41 @@ object LauncherHooker {
             Log.i(TAG, "Hooked DeviceProfile(13 args) for grid and Hotseat")
         }.onFailure {
             Log.e(TAG, "Failed to hook DeviceProfile(13 args)", it)
+        }
+    }
+
+    private fun isCoverScreenProfile(profile: Any, context: Context?): Boolean = runCatching {
+        val isTablet = runCatching { findField(profile.javaClass, "isTablet").getBoolean(profile) }.getOrDefault(false)
+        val isTwoPanels = runCatching { findField(profile.javaClass, "isTwoPanels").getBoolean(profile) }.getOrDefault(false)
+        if (isTablet || isTwoPanels) return@runCatching false
+
+        val widthPx = runCatching { getIntField(profile, "widthPx") }.getOrDefault(0)
+        val availableWidthPx = runCatching { getIntField(profile, "availableWidthPx") }.getOrDefault(0)
+        if (widthPx >= 1500 || availableWidthPx >= 1500) return@runCatching false
+
+        val swDp = context?.resources?.configuration?.smallestScreenWidthDp ?: 0
+        if (swDp >= 600) return@runCatching false
+
+        widthPx in 1 until 1500 || swDp in 1 until 600
+    }.getOrDefault(false)
+
+    private fun optimizeCoverDeviceProfileHotseat(profile: Any, dockIcons: Int) {
+        runCatching {
+            val currentBorder = runCatching { getIntField(profile, "hotseatBorderSpace") }.getOrDefault(0)
+            if (dockIcons >= 5) {
+                val maxBorderDp = if (dockIcons >= 6) 6f else 10f
+                val density = runCatching {
+                    val metrics = findField(profile.javaClass, "mMetrics").get(profile) as? android.util.DisplayMetrics
+                    metrics?.density
+                }.getOrNull() ?: 2.625f
+                val maxBorderPx = (maxBorderDp * density).toInt().coerceAtLeast(0)
+                val safeBorder = currentBorder.coerceIn(0, maxBorderPx)
+                if (currentBorder != safeBorder) {
+                    setIntField(profile, "hotseatBorderSpace", safeBorder)
+                }
+            } else if (currentBorder < 0) {
+                setIntField(profile, "hotseatBorderSpace", 0)
+            }
         }
     }
 

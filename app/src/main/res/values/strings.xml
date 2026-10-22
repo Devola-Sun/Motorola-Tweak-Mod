@@ -82,6 +82,10 @@
     <string name="section_cover_dock">カバースクリーンDock</string>
     <string name="cover_dock_enable_title">カバースクリーンにDockを表示</string>
     <string name="cover_dock_enable_summary">外側ディスプレイにHotseatを表示します。変更後はランチャーを再起動してください。</string>
+    <string name="cover_dock_floating_island_title">Floating Island Dock（左右マージン付き角丸ドック）</string>
+    <string name="cover_dock_floating_island_summary">カバースクリーンのみ。背景に左右20dp以上の余白と28dpの角丸を適用します。横幅・高さの設定を流用し、アイコン数と配置領域は変更しません。変更後はランチャーを再起動してください。</string>
+    <string name="cover_dock_frost_title">Dock Blur / Frost</string>
+    <string name="cover_dock_frost_summary">カバースクリーンのDock背景を半透明グラデーションと薄い境界線ですりガラス調にします。壁紙の実ブラーは行わず、アイコンもぼかしません。変更後はランチャーを再起動してください。</string>
     <string name="cover_dock_height_title">Dock背景の高さ</string>
     <string name="cover_dock_width_title">Dock背景の横幅</string>
     <string name="cover_dock_size_title">Dockのサイズ</string>
