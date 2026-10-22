@@ -281,7 +281,7 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 MENU_RESTART_LAUNCHER -> runRootAction(
                     getString(R.string.status_restarting),
-                    RESTART_LAUNCHER_COMMAND
+                    RESTART_COMMAND
                 )
 
                 MENU_RESTART_SYSTEMUI -> runRootAction(
@@ -1446,7 +1446,6 @@ class MainActivity : AppCompatActivity() {
         private const val MENU_REBOOT_DEVICE = 4
         private const val MENU_CLEAR_CACHE = 5
 
-        private val RESTART_LAUNCHER_COMMAND = "am force-stop ${HookConfig.TARGET_PACKAGE}"
         private val RESTART_SYSTEMUI_QUICK_COMMAND = "pkill -f ${HookConfig.SYSTEM_UI_PACKAGE}"
         private const val REBOOT_COMMAND = "reboot"
         private val CLEAR_CACHE_QUICK_COMMAND =
@@ -1496,16 +1495,28 @@ class MainActivity : AppCompatActivity() {
          * mode 660. The launcher (a different UID) then cannot read it, so the
          * host sees empty settings. Copy our directly-written XML into that
          * location and make it world-readable before restarting the launcher.
+         *
+         * The location differs between the LSPosed generations, so every known
+         * layout is covered: /data/misc/apexdata/<uuid>/prefs (older builds),
+         * /data/misc/apexdata/<x>/<uuid>/prefs and /data/misc/<uuid>/prefs
+         * (newer builds).
          */
+        private val PREFS_TARGET_DIRS = listOf(
+            "/data/misc/apexdata/*/prefs",
+            "/data/misc/apexdata/*/*/prefs",
+            "/data/misc/*/prefs",
+            "/data/misc/*/*/prefs"
+        )
+
         private val SYNC_PREFS_COMMAND = buildString {
             append("if [ -f $SOURCE_PREFS ]; then ")
-            append("for p in /data/misc/apexdata/*/prefs; do ")
+            append("for p in ${PREFS_TARGET_DIRS.joinToString(" ")}; do ")
             append("if [ -d \"\$p\" ]; then ")
             append("d=\"\$p/$MODULE_PACKAGE\"; ")
-            append("mkdir -p \"\$d\"; ")
-            append("cp $SOURCE_PREFS \"\$d/${HookConfig.PREFS_NAME}.xml\" && ")
+            append("mkdir -p \"\$d\" 2>/dev/null; ")
+            append("cp $SOURCE_PREFS \"\$d/${HookConfig.PREFS_NAME}.xml\" 2>/dev/null && ")
             append("chmod 644 \"\$d/${HookConfig.PREFS_NAME}.xml\"; ")
-            append("fi; done; fi")
+            append("fi; done; fi; true")
         }
 
         private val RESTART_COMMAND =

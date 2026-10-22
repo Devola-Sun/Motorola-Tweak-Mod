@@ -1,6 +1,7 @@
 package com.motolauncher.mod
 
 import android.content.Context
+import android.util.Log
 import android.util.Xml
 import org.xmlpull.v1.XmlPullParser
 import java.io.File
@@ -17,8 +18,13 @@ import java.io.StringWriter
  */
 class SettingsStore(context: Context) {
 
+    private val appContext: Context = context.applicationContext ?: context
+
+    /** The app's private data directory; holds the shared_prefs XML. */
+    private val dataDir = File(appContext.applicationInfo.dataDir)
+
     private val prefsFile = File(
-        context.applicationInfo.dataDir,
+        appContext.applicationInfo.dataDir,
         "shared_prefs/${HookConfig.PREFS_NAME}.xml"
     )
 
@@ -349,10 +355,45 @@ class SettingsStore(context: Context) {
                 temp.delete()
             }
 
+            // The XML file is the source of truth for the hooked processes,
+            // but the plain SharedPreferences instance is kept in sync as
+            // well: some readers (and the LSPosed prefs bridge) go through
+            // it instead of the file.
+            syncSharedPreferences()
+
             // LSPosed's daemon can read this regardless, but make the file
             // readable for a direct XSharedPreferences fallback as well.
             runCatching { prefsFile.setReadable(true, false) }
             runCatching { prefsFile.parentFile?.setExecutable(true, false) }
+            runCatching { dataDir.setExecutable(true, false) }
+        }
+    }
+
+    /**
+     * Mirrors the current values into the module's SharedPreferences.
+     *
+     * The file this writes is the same file the direct XML writer touches,
+     * so the values are identical either way; the extra write keeps the
+     * in-memory SharedPreferences of this process consistent with the file.
+     */
+    @Suppress("DEPRECATION")
+    private fun syncSharedPreferences() {
+        runCatching {
+            val prefs = appContext.getSharedPreferences(
+                HookConfig.PREFS_NAME,
+                Context.MODE_WORLD_READABLE
+            )
+            val editor = prefs.edit()
+            for ((key, value) in values) {
+                when (value) {
+                    is Boolean -> editor.putBoolean(key, value)
+                    is Int -> editor.putInt(key, value)
+                    is String -> editor.putString(key, value)
+                }
+            }
+            editor.commit()
+        }.onFailure {
+            Log.w("MotoLauncherMod", "SettingsStore: SharedPreferences sync failed", it)
         }
     }
 }

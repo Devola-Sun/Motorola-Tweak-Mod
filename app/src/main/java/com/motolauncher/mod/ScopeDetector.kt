@@ -38,7 +38,14 @@ object ScopeDetector {
 
     private const val LOGCAT_COMMAND = "logcat -d -t 3000 -s MotoLauncherMod"
 
-    private const val SCOPE_LOGCAT_COMMAND = "logcat -d -t 500 -s $SCOPE_LOG_TAG"
+    /**
+     * The scope markers are written under their own tag. The second command is
+     * a fallback for ROMs whose logcat ignores the `-s` filter: it dumps the
+     * tail of the buffer and greps the tag out of it.
+     */
+    private const val SCOPE_LOGCAT_COMMAND =
+        "logcat -d -t 1000 -s $SCOPE_LOG_TAG 2>/dev/null; " +
+            "logcat -d -t 1000 2>/dev/null | grep -F $SCOPE_LOG_TAG"
 
     /**
      * The processes that carry a hook. The framework scope is served by
@@ -90,6 +97,10 @@ object ScopeDetector {
                 val live = if (logOk) parseLive(output) else emptySet()
                 RootShell.run(SCOPE_LOGCAT_COMMAND) { scopeLogOk, scopeOutput ->
                     val markers = if (scopeLogOk) parseScopeMarkers(scopeOutput) else emptySet()
+                    // The markers are also parsed from the module tag output,
+                    // so a scope is detected even if the dedicated tag was
+                    // filtered out by the logcat implementation.
+                    val allMarkers = markers + parseScopeMarkers(output)
                     RootShell.run(PROCESS_COMMAND) { processOk, processOutput ->
                         // The logcat buffer rotates far too fast to be a
                         // reliable source (the launcher writes thousands of
@@ -103,9 +114,9 @@ object ScopeDetector {
                         val result = Result(
                             moduleEnabled = scoped?.enabled ?: true,
                             scopedPackages = scoped?.packages ?: emptySet(),
-                            livePackages = live + markers + active,
+                            livePackages = live + allMarkers + active,
                             resolved = scoped != null || live.isNotEmpty() ||
-                                markers.isNotEmpty() || active.isNotEmpty()
+                                allMarkers.isNotEmpty() || active.isNotEmpty()
                         )
                         Log.i(TAG, "ScopeDetector: enabled=${result.moduleEnabled} " +
                             "scoped=${result.scopedPackages} live=${result.livePackages} " +
@@ -117,32 +128,126 @@ object ScopeDetector {
         }
     }
 
+    /**
+     * Reads the module's scope from LSPosed's config database.
+     *
+     * Current LSPosed (and Vector) keep the module itself in the `modules`
+     * table (`module_pkg_name`, `enabled`) and the scoped packages in the
+     * `scope` table, which only refers to the module through the auto
+     * increment `mid` column. The scope rows are therefore read through a
+     * join on `mid`.
+     *
+     * Older LSPosed releases stored `module_pkg_name` inside the `scope` table
+     * and the enabled flag in `modules_state`; that layout is used as a
+     * fallback so both generations are supported.
+     */
     private fun readScopeDb(dbFile: File): DbScope? = runCatching {
         if (!dbFile.exists()) return@runCatching null
-        val db = SQLiteDatabase.openDatabase(
-            dbFile.absolutePath,
-            null,
-            SQLiteDatabase.OPEN_READONLY
-        )
-        db.use { database ->
-            val enabled = database.rawQuery(
-                "select enabled from modules_state where module_pkg_name = ? and user_id = 0",
-                arrayOf(MODULE_PACKAGE)
-            ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) != 0 else true }
-
-            val packages = mutableSetOf<String>()
-            database.rawQuery(
-                "select app_pkg_name from scope where module_pkg_name = ? and user_id = 0",
-                arrayOf(MODULE_PACKAGE)
-            ).use { cursor ->
-                while (cursor.moveToNext()) {
-                    val name = cursor.getString(0) ?: continue
-                    packages += normalize(name)
-                }
-            }
-            DbScope(enabled, packages)
+        val database = openDatabase(dbFile) ?: return@runCatching null
+        database.use { db ->
+            DbScope(
+                enabled = readEnabled(db),
+                packages = readPackages(db)
+            )
         }
     }.onFailure { Log.w(TAG, "ScopeDetector: db read failed", it) }.getOrNull()
+
+    /**
+     * Opens the copied database. A WAL database that was copied while the
+     * daemon was running may have to be recovered first, which a read-only
+     * handle cannot do, so the read-write attempt is the fallback (the copy
+     * lives in the app cache and may be modified safely).
+     */
+    private fun openDatabase(dbFile: File): SQLiteDatabase? {
+        val readOnly = runCatching {
+            SQLiteDatabase.openDatabase(
+                dbFile.absolutePath,
+                null,
+                SQLiteDatabase.OPEN_READONLY
+            )
+        }.getOrNull()
+        if (readOnly != null) return readOnly
+
+        return runCatching {
+            SQLiteDatabase.openDatabase(
+                dbFile.absolutePath,
+                null,
+                SQLiteDatabase.OPEN_READWRITE
+            )
+        }.getOrNull()
+    }
+
+    /** The module's enabled flag: `modules.enabled` (new) or `modules_state` (old). */
+    private fun readEnabled(db: SQLiteDatabase): Boolean {
+        val fromModules = runCatching {
+            db.rawQuery(
+                "select enabled from modules where module_pkg_name = ?",
+                arrayOf(MODULE_PACKAGE)
+            ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) != 0 else null }
+        }.getOrNull()
+        if (fromModules != null) return fromModules
+
+        val fromState = runCatching {
+            db.rawQuery(
+                "select enabled from modules_state where module_pkg_name = ? and user_id = 0",
+                arrayOf(MODULE_PACKAGE)
+            ).use { cursor -> if (cursor.moveToFirst()) cursor.getInt(0) != 0 else null }
+        }.getOrNull()
+        return fromState ?: true
+    }
+
+    /** The scoped packages of this module. */
+    private fun readPackages(db: SQLiteDatabase): Set<String> {
+        val names = mutableListOf<String>()
+
+        // Current LSPosed / Vector: the scope rows only hold the module id.
+        names += queryNames(
+            db,
+            "select scope.app_pkg_name from scope inner join modules on scope.mid = modules.mid " +
+                "where modules.module_pkg_name = ? and scope.user_id = 0",
+            arrayOf(MODULE_PACKAGE)
+        )
+        if (names.isEmpty()) {
+            names += queryNames(
+                db,
+                "select scope.app_pkg_name from scope inner join modules on scope.mid = modules.mid " +
+                    "where modules.module_pkg_name = ?",
+                arrayOf(MODULE_PACKAGE)
+            )
+        }
+
+        // Legacy LSPosed: the module package name was stored in the scope table.
+        if (names.isEmpty()) {
+            names += queryNames(
+                db,
+                "select app_pkg_name from scope where module_pkg_name = ? and user_id = 0",
+                arrayOf(MODULE_PACKAGE)
+            )
+        }
+        if (names.isEmpty()) {
+            names += queryNames(
+                db,
+                "select app_pkg_name from scope where module_pkg_name = ?",
+                arrayOf(MODULE_PACKAGE)
+            )
+        }
+
+        return names.map { normalize(it) }.toSet()
+    }
+
+    /** Runs a query and collects the first column; a failing query is not fatal. */
+    private fun queryNames(db: SQLiteDatabase, sql: String, args: Array<String>): List<String> =
+        runCatching {
+            val result = mutableListOf<String>()
+            db.rawQuery(sql, args).use { cursor ->
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(0) ?: continue
+                    result += name
+                }
+            }
+            result
+        }.onFailure { Log.w(TAG, "ScopeDetector: query failed: $sql", it) }
+            .getOrDefault(emptyList())
 
     /** LSPosed uses "system" for the system framework scope. */
     private fun normalize(scopeName: String): String =
@@ -167,8 +272,8 @@ object ScopeDetector {
             if (index < 0) return@forEach
             val name = line.substring(index + MARKER_PREFIX.length)
                 .trim()
-                .takeWhile { it.isLetterOrDigit() || it == '.' || it == '_' }
-            if (name.isNotEmpty()) markers += name
+                .takeWhile { it.isLetterOrDigit() || it == '.' || it == '_' || it == '-' }
+            if (name.isNotEmpty()) markers += normalize(name)
         }
         return markers
     }

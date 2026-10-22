@@ -56,23 +56,29 @@ object HookEntry : IYukiHookXposedInit {
         YukiHookAPI.encase {
             loadApp(name = LauncherHooker.TARGET_PACKAGE) {
                 runCatching {
-                    if (processName.isNotEmpty() && processName != LauncherHooker.TARGET_PACKAGE) {
+                    // YukiHookAPI falls back to "android" when it cannot
+                    // resolve the real process name, so an equality check
+                    // would skip the launcher process itself. Only secondary
+                    // processes ("pkg:sub") are left out.
+                    if (processName.contains(":")) {
                         return@loadApp
                     }
                     logScopeMarker(LauncherHooker.TARGET_PACKAGE)
                     val prefs = runCatching { prefs(HookConfig.PREFS_NAME) }.getOrNull()
 
-                    if (HookConfig.isBootCompleted()) {
-                        runCatching {
-                            Log.i(
-                                MODULE_TAG,
-                                "Settings loaded: hide_labels=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_HIDE_LABELS, HookConfig.DEFAULT_HIDE_LABELS)}, " +
-                                    "icon_shape=${HookConfig.safeGetString(prefs, HookConfig.KEY_ICON_SHAPE, HookConfig.DEFAULT_ICON_SHAPE)}, " +
-                                    "grid=${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_COLUMNS, HookConfig.DEFAULT_GRID_COLUMNS)}" +
-                                    "x${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_ROWS, HookConfig.DEFAULT_GRID_ROWS)}, " +
-                                    "dock=${HookConfig.safeGetInt(prefs, HookConfig.KEY_DOCK_ICONS, HookConfig.DEFAULT_DOCK_ICONS)}"
-                            )
-                        }
+                    // The log is written unconditionally (not only after the
+                    // boot completed) so the settings app can always read the
+                    // scope state from logcat.
+                    runCatching {
+                        Log.i(
+                            MODULE_TAG,
+                            "Settings loaded: hide_labels=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_HIDE_LABELS, HookConfig.DEFAULT_HIDE_LABELS)}, " +
+                                "icon_shape=${HookConfig.safeGetString(prefs, HookConfig.KEY_ICON_SHAPE, HookConfig.DEFAULT_ICON_SHAPE)}, " +
+                                "grid=${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_COLUMNS, HookConfig.DEFAULT_GRID_COLUMNS)}" +
+                                "x${HookConfig.safeGetInt(prefs, HookConfig.KEY_GRID_ROWS, HookConfig.DEFAULT_GRID_ROWS)}, " +
+                                "dock=${HookConfig.safeGetInt(prefs, HookConfig.KEY_DOCK_ICONS, HookConfig.DEFAULT_DOCK_ICONS)}, " +
+                                "bootCompleted=${HookConfig.isBootCompleted()}"
+                        )
                     }
 
                     runCatching { LauncherHooker.install(this, prefs) }.onFailure {
@@ -98,24 +104,29 @@ object HookEntry : IYukiHookXposedInit {
                     // Only hook the real SystemUI process; do not inject into other
                     // packages (like com.moto.dragdrop) that merely load SystemUI's
                     // APK resources via createPackageContext.
-                    if (processName.isNotEmpty() && processName != HookConfig.SYSTEM_UI_PACKAGE) {
+                    // YukiHookAPI reports "android" as the process name when it
+                    // cannot resolve it, so only secondary processes
+                    // ("pkg:sub") are excluded here.
+                    if (processName.contains(":")) {
                         return@loadApp
                     }
                     logScopeMarker(HookConfig.SYSTEM_UI_PACKAGE)
                     val prefs = runCatching { prefs(HookConfig.PREFS_NAME) }.getOrNull()
-                    if (HookConfig.isBootCompleted()) {
-                        runCatching {
-                            Log.i(
-                                MODULE_TAG,
-                                "SystemUI settings loaded: seconds=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_SHOW_SECONDS, HookConfig.DEFAULT_SB_SHOW_SECONDS)}, " +
-                                    "hideBatteryPercent=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_BATTERY_PERCENT, HookConfig.DEFAULT_SB_HIDE_BATTERY_PERCENT)}, " +
-                                    "hideVolte=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_VOLTE, HookConfig.DEFAULT_SB_HIDE_VOLTE)}, " +
-                                    "iosIcons=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_IOS_ICONS, HookConfig.DEFAULT_SB_IOS_ICONS)}, " +
-                                    "padding=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING, HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING)}, " +
-                                    "swapSliders=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)}, " +
-                                    "iosConnectivity=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)}"
-                            )
-                        }
+
+                    // Written unconditionally so the scope state is visible in
+                    // logcat even while the device is still booting.
+                    runCatching {
+                        Log.i(
+                            MODULE_TAG,
+                            "SystemUI settings loaded: seconds=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_SHOW_SECONDS, HookConfig.DEFAULT_SB_SHOW_SECONDS)}, " +
+                                "hideBatteryPercent=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_BATTERY_PERCENT, HookConfig.DEFAULT_SB_HIDE_BATTERY_PERCENT)}, " +
+                                "hideVolte=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_HIDE_VOLTE, HookConfig.DEFAULT_SB_HIDE_VOLTE)}, " +
+                                "iosIcons=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_IOS_ICONS, HookConfig.DEFAULT_SB_IOS_ICONS)}, " +
+                                "padding=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING, HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING)}, " +
+                                "swapSliders=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)}, " +
+                                "iosConnectivity=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)}, " +
+                                "bootCompleted=${HookConfig.isBootCompleted()}"
+                        )
                     }
 
                     runCatching { loadHooker(StatusBarHooks) }.onFailure {
@@ -145,14 +156,39 @@ object HookEntry : IYukiHookXposedInit {
                     // service binder, so do not force XSharedPreferences loading on
                     // the reference device during bootstrap.
                     val isReferenceDevice = HookConfig.isRazrFoldDevice()
+
+                    // On the reference device the prefs are not read during
+                    // the bootstrap (LSPosedBridge has no binder yet), so the
+                    // framework log falls back to the defaults there.
+                    val frameworkPrefs =
+                        if (isReferenceDevice) {
+                            null
+                        } else {
+                            runCatching { prefs(HookConfig.PREFS_NAME) }.getOrNull()
+                        }
+
                     val safeMode = if (isReferenceDevice) {
                         HookConfig.DEFAULT_SAFE_MODE
                     } else {
-                        val prefs = runCatching { prefs(HookConfig.PREFS_NAME) }.getOrNull()
                         HookConfig.safeGetBoolean(
-                            prefs,
+                            frameworkPrefs,
                             HookConfig.KEY_SAFE_MODE,
                             HookConfig.DEFAULT_SAFE_MODE
+                        )
+                    }
+
+                    // Written unconditionally so the scope state is visible in
+                    // logcat even while the device is still booting.
+                    runCatching {
+                        Log.i(
+                            MODULE_TAG,
+                            "System framework settings loaded: safeMode=$safeMode, " +
+                                "disableFlagSecure=${HookConfig.safeGetBoolean(frameworkPrefs, HookConfig.KEY_DISABLE_FLAG_SECURE, HookConfig.DEFAULT_DISABLE_FLAG_SECURE)}, " +
+                                "disableCameraSound=${HookConfig.safeGetBoolean(frameworkPrefs, HookConfig.KEY_DISABLE_CAMERA_SOUND, HookConfig.DEFAULT_DISABLE_CAMERA_SOUND)}, " +
+                                "corepatchBypassSignatures=${HookConfig.safeGetBoolean(frameworkPrefs, HookConfig.KEY_COREPATCH_BYPASS_SIGNATURES, HookConfig.DEFAULT_COREPATCH_BYPASS_SIGNATURES)}, " +
+                                "corepatchAllowDowngrade=${HookConfig.safeGetBoolean(frameworkPrefs, HookConfig.KEY_COREPATCH_ALLOW_DOWNGRADE, HookConfig.DEFAULT_COREPATCH_ALLOW_DOWNGRADE)}, " +
+                                "corepatchBypassDigest=${HookConfig.safeGetBoolean(frameworkPrefs, HookConfig.KEY_COREPATCH_BYPASS_DIGEST, HookConfig.DEFAULT_COREPATCH_BYPASS_DIGEST)}, " +
+                                "bootCompleted=${HookConfig.isBootCompleted()}"
                         )
                     }
 
