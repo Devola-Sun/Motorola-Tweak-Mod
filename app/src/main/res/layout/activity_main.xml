@@ -1028,6 +1028,99 @@
                     android:textColor="@color/app_text_secondary"
                     android:textSize="12sp" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/section_lock_shortcuts_title"
+                    android:textAppearance="@style/TextAppearance.Moto.Section" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="18dp">
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:paddingEnd="12dp">
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/pref_lock_shortcut_blur_title"
+                                android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="@string/pref_lock_shortcut_blur_desc"
+                                android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                        </LinearLayout>
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switch_lock_shortcut_blur"
+                            style="@style/Widget.Moto.Switch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="@string/pref_lock_shortcut_blur_title" />
+                    </LinearLayout>
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/app_outline" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/pref_lock_shortcut_size_title"
+                                android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                            <TextView
+                                android:id="@+id/text_lock_shortcut_size_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="100%"
+                                android:textColor="@color/brand_blue"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/pref_lock_shortcut_size_desc"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_lock_shortcut_size"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="@string/pref_lock_shortcut_size_title" />
+                    </LinearLayout>
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/lock_shortcut_hint"
+                    android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -1470,6 +1563,57 @@
                     android:layout_marginTop="10dp"
                     android:background="@drawable/bg_card"
                     android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:minHeight="76dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="18dp"
+                        android:paddingTop="10dp"
+                        android:paddingEnd="18dp"
+                        android:paddingBottom="10dp">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:paddingEnd="12dp">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/pref_cc_compact_layout_title"
+                                android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="@string/pref_cc_compact_layout_desc"
+                                android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="8dp"
+                                android:text="@string/pref_cc_compact_layout_hint"
+                                android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                        </LinearLayout>
+
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switch_cc_compact_layout"
+                            style="@style/Widget.Moto.Switch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/app_outline" />
 
                     <LinearLayout
                         android:layout_width="match_parent"

@@ -56,6 +56,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var disableCameraSoundSwitch: SwitchCompat
     private lateinit var ccSwapSliders: SwitchCompat
     private lateinit var ccIosConnectivity: SwitchCompat
+    private lateinit var ccCompactLayout: SwitchCompat
+    private lateinit var lockShortcutBlurSwitch: SwitchCompat
+    private lateinit var lockShortcutSizeSlider: Slider
+    private lateinit var lockShortcutSizeValue: TextView
     private lateinit var batteryIconStyleSpinner: Spinner
     private lateinit var batteryPercentStyleSpinner: Spinner
     private lateinit var batteryChargeLimitSwitch: SwitchCompat
@@ -152,6 +156,7 @@ class MainActivity : AppCompatActivity() {
         bindLayout()
         bindCoverDockSettings()
         bindSystemUiSettings()
+        bindLockShortcutSettings()
         bindBatterySettings()
         bindCorePatchSettings()
         bindCameraSettings()
@@ -224,6 +229,10 @@ class MainActivity : AppCompatActivity() {
         disableCameraSoundSwitch = findViewById(R.id.switch_disable_camera_sound)
         ccSwapSliders = findViewById(R.id.switch_cc_swap_sliders)
         ccIosConnectivity = findViewById(R.id.switch_cc_ios_connectivity)
+        ccCompactLayout = findViewById(R.id.switch_cc_compact_layout)
+        lockShortcutBlurSwitch = findViewById(R.id.switch_lock_shortcut_blur)
+        lockShortcutSizeSlider = findViewById(R.id.slider_lock_shortcut_size)
+        lockShortcutSizeValue = findViewById(R.id.text_lock_shortcut_size_value)
         batteryIconStyleSpinner = findViewById(R.id.spinner_battery_icon_style)
         batteryPercentStyleSpinner = findViewById(R.id.spinner_battery_percent_style)
         batteryChargeLimitSwitch = findViewById(R.id.switch_battery_charge_limit)
@@ -734,6 +743,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindSystemUiSettings() {
+        ccCompactLayout.isChecked = settings.ccCompactLayout
+        ccCompactLayout.setOnCheckedChangeListener { _, value ->
+            settings.ccCompactLayout = value
+            syncModulePrefs()
+        }
+
         sbShowSeconds.isChecked = settings.sbShowSeconds
         sbShowSeconds.setOnCheckedChangeListener { _, value ->
             settings.sbShowSeconds = value
@@ -776,6 +791,39 @@ class MainActivity : AppCompatActivity() {
             settings.ccIosConnectivity = value
             updateFeatureSummaries()
         }
+    }
+
+    private fun bindLockShortcutSettings() {
+        lockShortcutBlurSwitch.isChecked = settings.lockShortcutBlur
+        lockShortcutBlurSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.lockShortcutBlur = enabled
+            syncModulePrefs()
+        }
+        lockShortcutSizeSlider.valueTo = HookConfig.MAX_LOCK_SHORTCUT_SIZE_PERCENT.toFloat()
+        lockShortcutSizeSlider.value = HookConfig.MIN_LOCK_SHORTCUT_SIZE_PERCENT.toFloat()
+        lockShortcutSizeSlider.valueFrom = HookConfig.MIN_LOCK_SHORTCUT_SIZE_PERCENT.toFloat()
+        lockShortcutSizeSlider.stepSize = 1f
+        lockShortcutSizeSlider.value = settings.lockShortcutSizePercent.toFloat()
+        lockShortcutSizeValue.text = getString(R.string.cover_dock_percent_format, settings.lockShortcutSizePercent)
+        lockShortcutSizeSlider.addOnChangeListener { _, value, fromUser ->
+            val percent = HookConfig.coerceLockShortcutSize(value.toInt())
+            lockShortcutSizeValue.text = getString(R.string.cover_dock_percent_format, percent)
+            if (fromUser) {
+                settings.lockShortcutSizePercent = percent
+                // Also sync keyboard/accessibility changes, not only touch drags.
+                lockShortcutSizeSlider.removeCallbacks(syncLockShortcutPrefs)
+                lockShortcutSizeSlider.postDelayed(syncLockShortcutPrefs, 300L)
+            }
+        }
+    }
+
+    private val syncLockShortcutPrefs = Runnable { syncModulePrefs() }
+
+    override fun onDestroy() {
+        if (::lockShortcutSizeSlider.isInitialized) {
+            lockShortcutSizeSlider.removeCallbacks(syncLockShortcutPrefs)
+        }
+        super.onDestroy()
     }
 
     private fun bindBatterySettings() {

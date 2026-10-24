@@ -161,10 +161,27 @@ class SettingsStore(context: Context) {
             ?: HookConfig.DEFAULT_CC_SWAP_SLIDERS
         set(value) = update(HookConfig.KEY_CC_SWAP_SLIDERS, value)
 
+    var ccCompactLayout: Boolean
+        get() = values[HookConfig.KEY_CC_COMPACT_LAYOUT] as? Boolean
+            ?: HookConfig.DEFAULT_CC_COMPACT_LAYOUT
+        set(value) = update(HookConfig.KEY_CC_COMPACT_LAYOUT, value)
+
     var ccIosConnectivity: Boolean
         get() = values[HookConfig.KEY_CC_IOS_CONNECTIVITY] as? Boolean
             ?: HookConfig.DEFAULT_CC_IOS_CONNECTIVITY
         set(value) = update(HookConfig.KEY_CC_IOS_CONNECTIVITY, value)
+
+    var lockShortcutBlur: Boolean
+        get() = values[HookConfig.KEY_LOCK_SHORTCUT_BLUR] as? Boolean
+            ?: HookConfig.DEFAULT_LOCK_SHORTCUT_BLUR
+        set(value) = update(HookConfig.KEY_LOCK_SHORTCUT_BLUR, value)
+
+    var lockShortcutSizePercent: Int
+        get() = HookConfig.coerceLockShortcutSize(
+            values[HookConfig.KEY_LOCK_SHORTCUT_SIZE_PERCENT] as? Int
+                ?: HookConfig.DEFAULT_LOCK_SHORTCUT_SIZE_PERCENT
+        )
+        set(value) = update(HookConfig.KEY_LOCK_SHORTCUT_SIZE_PERCENT, HookConfig.coerceLockShortcutSize(value))
 
     var batteryIconStyle: String
         get() = values[HookConfig.KEY_BATTERY_ICON_STYLE] as? String
@@ -282,7 +299,10 @@ class SettingsStore(context: Context) {
             HookConfig.KEY_SB_IOS_ICONS to HookConfig.DEFAULT_SB_IOS_ICONS,
             HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING to HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING,
             HookConfig.KEY_CC_SWAP_SLIDERS to HookConfig.DEFAULT_CC_SWAP_SLIDERS,
+            HookConfig.KEY_CC_COMPACT_LAYOUT to HookConfig.DEFAULT_CC_COMPACT_LAYOUT,
             HookConfig.KEY_CC_IOS_CONNECTIVITY to HookConfig.DEFAULT_CC_IOS_CONNECTIVITY,
+            HookConfig.KEY_LOCK_SHORTCUT_BLUR to HookConfig.DEFAULT_LOCK_SHORTCUT_BLUR,
+            HookConfig.KEY_LOCK_SHORTCUT_SIZE_PERCENT to HookConfig.DEFAULT_LOCK_SHORTCUT_SIZE_PERCENT,
             HookConfig.KEY_BATTERY_ICON_STYLE to HookConfig.DEFAULT_BATTERY_ICON_STYLE,
             HookConfig.KEY_BATTERY_PERCENT_STYLE to HookConfig.DEFAULT_BATTERY_PERCENT_STYLE,
             HookConfig.KEY_BATTERY_CHARGE_LIMIT to HookConfig.DEFAULT_BATTERY_CHARGE_LIMIT,

@@ -25,6 +25,8 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import com.motolauncher.mod.HookConfig
+import com.motolauncher.mod.ErrorLogger
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import de.robv.android.xposed.XC_MethodHook
 import de.robv.android.xposed.XposedBridge
@@ -61,7 +63,16 @@ object ControlCenterHooks : YukiBaseHooker() {
 
         // 2. iOS 15 風 2×2 通信カード (2x2 グリッド + 機内モードボタン追加)
         hookConnectivityCard(classLoader)
+
+        CompactControlCenterLayout.install(classLoader, ::compactLayoutEnabled) { panel, height ->
+            reorderAndFixMargins(panel)
+            getSeekBarContainer(panel)?.let { updateSlidersAndBottomIcons(panel, it, height) }
+        }
     }
+
+    private fun compactLayoutEnabled(): Boolean = HookConfig.safeGetBoolean(
+        modulePrefs, HookConfig.KEY_CC_COMPACT_LAYOUT, HookConfig.DEFAULT_CC_COMPACT_LAYOUT
+    )
 
     // =========================================================================================
     // FEATURE 1: VOLUME & BRIGHTNESS SLIDERS SWAP + HEIGHT ALIGNMENT + MEDIA PUSH-DOWN
@@ -254,32 +265,47 @@ object ControlCenterHooks : YukiBaseHooker() {
                 "setTiles",
                 object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
-                        try {
+                        runCatching {
+                            if (!modulePrefs.getBoolean("cc_ios_connectivity", true) && !compactLayoutEnabled()) return@runCatching
                             val controller = param.thisObject ?: return
+                            val compactSpecs = if (compactLayoutEnabled()) {
+                                runCatching { CompactControlCenterLayout.bindTiles(controller) }
+                                    .onFailure { ErrorLogger.log(TAG, "Binding compact control-center tiles", it) }
+                                    .getOrDefault(emptySet())
+                            } else emptySet()
                             val host = XposedHelpers.getObjectField(controller, "mHost") ?: return
-                            val interactor = XposedHelpers.getObjectField(host, "interactor") ?: return
-                            val currentTiles = (XposedHelpers.callMethod(interactor, "getCurrentQSTiles") as? List<*>) ?: return
+                            val currentTiles = CompactControlCenterLayout.currentTiles(host)
 
                             if (currentTiles.isEmpty()) return
 
                             val wifiTile = currentTiles.firstOrNull { isTileSpec(it, "internet", "wifi") } ?: currentTiles.getOrNull(0)
                             val cellTile = currentTiles.firstOrNull { isTileSpec(it, "cell", "mobile", "cellular", "data") } ?: currentTiles.getOrNull(1)
                             val btTile = currentTiles.firstOrNull { isTileSpec(it, "bt", "bluetooth") } ?: currentTiles.getOrNull(2)
-                            val fixedSet = setOfNotNull(wifiTile, cellTile, btTile)
+                            val connectivityEnabled = modulePrefs.getBoolean("cc_ios_connectivity", true)
+                            val fixedSet = if (connectivityEnabled) setOfNotNull(wifiTile, cellTile, btTile) else emptySet()
 
                             val lowerTiles = ArrayList<Any>()
                             for (tile in currentTiles) {
-                                if (tile != null && !fixedSet.contains(tile) && !isTileSpec(tile, "airplane")) {
+                                if (!fixedSet.contains(tile) &&
+                                    !(connectivityEnabled && isTileSpec(tile, "airplane")) &&
+                                    safeTileSpec(tile) !in compactSpecs) {
                                     lowerTiles.add(tile)
                                 }
                             }
 
                             XposedHelpers.callMethod(controller, "setTiles", lowerTiles, false)
                             param.result = null
-                        } catch (t: Throwable) {
-                            XposedBridge.log("[$TAG] QSModernPanelContainerController.setTiles hook error: $t")
+                        }.onFailure {
+                            ErrorLogger.log(TAG, "QSModernPanelContainerController.setTiles hook error", it)
                         }
+                    }
+
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        runCatching {
+                            if (!compactLayoutEnabled()) return@runCatching
+                            // The native lower-tile rebuild may remove all callbacks from reused tiles.
+                            CompactControlCenterLayout.bindTiles(param.thisObject)
+                        }.onFailure { ErrorLogger.log(TAG, "Refreshing compact control-center tiles", it) }
                     }
                 }
             )
@@ -289,6 +315,7 @@ object ControlCenterHooks : YukiBaseHooker() {
     }
 
     private fun updateSquareDimensAndScrollMargin(panel: Any) {
+        if (CompactControlCenterLayout.isActive(panel)) return
         try {
             val panelView = panel as? View ?: return
             val orientation = try { XposedHelpers.getIntField(panel, "mOrientation") } catch (_: Throwable) { 1 }
@@ -330,6 +357,7 @@ object ControlCenterHooks : YukiBaseHooker() {
     }
 
     private fun enforceSquareAndSliderHeights(panel: Any) {
+        if (CompactControlCenterLayout.isActive(panel)) return
         try {
             val panelView = panel as? ViewGroup ?: return
             val fixedTileAndSeekBarPanel = XposedHelpers.getObjectField(panel, "mFixedTileAndSeekBarPanel") as? ViewGroup ?: return
@@ -495,6 +523,7 @@ object ControlCenterHooks : YukiBaseHooker() {
     }
 
     private fun ensureMediaPlayerBelowSliders(panel: ViewGroup) {
+        if (CompactControlCenterLayout.isActive(panel)) return
         try {
             val fixedTileAndSeekBarPanel = XposedHelpers.getObjectField(panel, "mFixedTileAndSeekBarPanel") as? View ?: return
             val scrollView = XposedHelpers.getObjectField(panel, "mScrollView") as? View ?: return
@@ -909,9 +938,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                             }
 
                             val host = XposedHelpers.getObjectField(controller, "mHost") ?: return
-                            val interactor = XposedHelpers.getObjectField(host, "interactor") ?: return
-                            val currentTiles = (XposedHelpers.callMethod(interactor, "getCurrentQSTiles") as? List<*>)
-                                ?: emptyList<Any>()
+                            val currentTiles = CompactControlCenterLayout.currentTiles(host)
 
                             if (currentTiles.isEmpty()) return
 

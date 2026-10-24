@@ -11,6 +11,7 @@ import com.motolauncher.mod.hooks.CoverDockHook
 import com.motolauncher.mod.hooks.CorePatchHooker
 import com.motolauncher.mod.hooks.FlagSecureFrameworkHook
 import com.motolauncher.mod.hooks.FolderPreviewHook
+import com.motolauncher.mod.hooks.LockShortcutHook
 import com.motolauncher.mod.hooks.StatusBarHooks
 import com.motolauncher.mod.hooks.WidgetResizeHook
 
@@ -134,6 +135,9 @@ object HookEntry : IYukiHookXposedInit {
                     }
                     runCatching { loadHooker(ControlCenterHooks) }.onFailure {
                         Log.w(MODULE_TAG, "ControlCenterHooks could not be loaded", it)
+                    }
+                    runCatching { loadHooker(LockShortcutHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "LockShortcutHook could not be loaded", it)
                     }
                     runCatching { FlagSecureFrameworkHook.hook(this) }.onFailure {
                         Log.w(MODULE_TAG, "FlagSecureFrameworkHook could not be loaded", it)

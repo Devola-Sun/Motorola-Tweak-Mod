@@ -58,6 +58,17 @@ object HookConfig {
     const val KEY_SB_IOS_ICONS: String = "sb_ios_icons"
     const val KEY_SB_ENABLE_CUSTOM_PADDING: String = "sb_enable_custom_padding"
 
+    /** Lock-screen corner shortcuts (SystemUI). Disabled/100% preserves stock. */
+    const val KEY_LOCK_SHORTCUT_BLUR = "lock_shortcut_blur"
+    const val KEY_LOCK_SHORTCUT_SIZE_PERCENT = "lock_shortcut_size_percent"
+    const val DEFAULT_LOCK_SHORTCUT_BLUR = false
+    const val DEFAULT_LOCK_SHORTCUT_SIZE_PERCENT = 100
+    const val MIN_LOCK_SHORTCUT_SIZE_PERCENT = 100
+    const val MAX_LOCK_SHORTCUT_SIZE_PERCENT = 175
+
+    fun coerceLockShortcutSize(value: Int): Int =
+        value.coerceIn(MIN_LOCK_SHORTCUT_SIZE_PERCENT, MAX_LOCK_SHORTCUT_SIZE_PERCENT)
+
     /** Battery (SystemUI status bar + system_server charging control). */
     const val KEY_BATTERY_ICON_STYLE: String = "battery_icon_style"
     const val KEY_BATTERY_PERCENT_STYLE: String = "battery_percent_style"
@@ -68,6 +79,8 @@ object HookConfig {
     /** SystemUI control center. */
     const val KEY_CC_SWAP_SLIDERS: String = "cc_swap_sliders"
     const val KEY_CC_IOS_CONNECTIVITY: String = "cc_ios_connectivity"
+    const val KEY_CC_COMPACT_LAYOUT: String = "cc_compact_layout"
+    const val DEFAULT_CC_COMPACT_LAYOUT: Boolean = false
 
     /** Status bar element order (comma-separated keys). */
     const val KEY_SB_LEFT_ORDER: String = "sb_left_order"

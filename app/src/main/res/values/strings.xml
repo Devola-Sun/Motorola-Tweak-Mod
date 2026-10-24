@@ -133,6 +133,9 @@
     <!-- SystemUI -->
     <string name="section_systemui_title">ステータスバー</string>
     <string name="section_control_center_title">コントロールセンター</string>
+    <string name="pref_cc_compact_layout_title">再生カードを上段に配置</string>
+    <string name="pref_cc_compact_layout_desc">通信カードの右に正方形の再生カードを配置し、その下に左：明るさ・右：音量のスライダーを並べます。左下は上段にフラッシュライト・自動回転、下段に2タイル幅のおやすみ時間モードを配置します。</string>
+    <string name="pref_cc_compact_layout_hint">適用・解除後は右上のメニューからSystemUIを再起動してください。LSPosedのSystemUIスコープが必要です。縦画面・テーブルモードが対象で、通信カードの2×2設定はSystemUIの項目で変更できます。</string>
     <string name="systemui_hint">ステータスバー設定はSystemUIの再起動後に反映されます。</string>
 
     <string name="pref_sb_show_seconds_title">時計の秒数を表示する</string>
@@ -252,6 +255,13 @@
     <string name="status_success">完了しました。ランチャーを確認してください。</string>
     <string name="status_failed">失敗しました: %1$s</string>
     <string name="status_root_unavailable">Root（su）が利用できません。</string>
+
+    <string name="section_lock_shortcuts_title">ロック画面のショートカット</string>
+    <string name="pref_lock_shortcut_blur_title">背景のブラーを強化</string>
+    <string name="pref_lock_shortcut_blur_desc">左下・右下のボタンの背景を強くぼかし、半透明の暗い背景と輪郭で見やすくします。アイコンはぼかしません。</string>
+    <string name="pref_lock_shortcut_size_title">ショートカットのサイズ</string>
+    <string name="pref_lock_shortcut_size_desc">左右共通。100%は標準サイズです。ボタンとアイコン、タッチ領域を拡大します。</string>
+    <string name="lock_shortcut_hint">変更後は画面を消灯し、ロック画面を再表示してください。反映されない場合はSystemUIを再起動してください。ブラー非対応・省電力時は暗い背景と輪郭のみ適用されます。</string>
 
     <!-- Language -->
     <string name="section_language_title">言語 / Language</string>
