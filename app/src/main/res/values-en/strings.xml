@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="section_updates_title">Updates</string>
+    <string name="pref_auto_update_check_title">Automatically check for updates</string>
+    <string name="pref_auto_update_check_desc">Check GitHub for stable releases when you open the app and suggest updating when a newer version is available.</string>
+    <string name="update_available_title">Update available</string>
+    <string name="update_available_message">A new stable release is available.\n\nInstalled: %1$s\nLatest: %2$s\n\nYou can update from the GitHub release page.</string>
+    <string name="update_open_release">View on GitHub</string>
+    <string name="update_later">Later</string>
+    <string name="update_open_failed">Could not open the release page. Please check that a browser is installed.</string>
     <string name="app_name">MockingBatwing</string>
     <string name="app_tagline">Launcher &amp; SystemUI</string>
     <string name="creator_credit">Created by Devola-Sun</string>
@@ -84,7 +92,15 @@
     <string name="cover_dock_enable_summary">Shows the Hotseat on the outer display. Restart the launcher after changing this setting.</string>
     <string name="cover_dock_floating_island_title">Floating Island Dock</string>
     <string name="cover_dock_floating_island_summary">Cover screen only. Adds at least 20dp side insets and 28dp rounded corners to the background. Reuses background width and height settings without changing the icon count or layout area. Restart the launcher after changing this setting.</string>
-    <string name="cover_dock_frost_title">Dock Blur / Frost</string>
+    <string name="cover_dock_frost_title">Frosted glass Dock</string>
+    <string name="cover_dock_liquid_glass_title">Liquid Glass Dock</string>
+    <string name="cover_dock_liquid_glass_summary">Adds a translucent gradient and reflective edges to the cover Dock. Mutually exclusive with frosted glass. Restart the launcher after changes.</string>
+    <string name="section_main_dock">Main-display Dock</string>
+    <string name="main_dock_frost_title">Frosted glass Dock</string>
+    <string name="main_dock_liquid_glass_title">Liquid Glass Dock</string>
+    <string name="main_dock_glass_summary">Enabling either style makes the stock Dock background transparent and displays glass at the same position and size. Only one style can be enabled at a time. Disable both to restore the stock background. Does not blur the wallpaper. Restart the launcher after changes.</string>
+    <string name="folder_liquid_glass_title">Liquid Glass folders</string>
+    <string name="folder_liquid_glass_summary">Adds translucent gradients and reflective edges to folder icons and open folder backgrounds. Restart the launcher after changes.</string>
     <string name="cover_dock_frost_summary">Gives the cover-screen Dock a frosted look using a translucent gradient and a subtle border. Does not blur the wallpaper or icons. Restart the launcher after changing this setting.</string>
     <string name="cover_dock_height_title">Dock background height</string>
     <string name="cover_dock_width_title">Dock background width</string>
@@ -125,9 +141,14 @@
     <string name="folder_preview_3x3_summary">Shows up to 9 app icons in a 3×3 preview. The opened folder uses a fixed 4×4 grid (max 16) aligned from the top-left.</string>
 
     <string name="section_layout">Home screen grid</string>
+    <string name="root_required_title">Root access required</string>
+    <string name="root_required_message">This app needs root access to apply settings, restart the launcher and read module scopes.\n\nGrant superuser access to this app (io.github.devola_sun.motorolatweak) in KernelSU / SukiSU / Magisk, then tap Check again.\n\nIf access is already granted, close and reopen this app.</string>
+    <string name="root_required_retry">Check again</string>
     <string name="layout_summary">Rows, columns and Dock icons range from 4 to 10. Restart the launcher after changing.</string>
     <string name="grid_rows_title">Desktop rows</string>
     <string name="grid_columns_title">Desktop columns</string>
+    <string name="square_grid_cells_title">Square grid cells</string>
+    <string name="square_grid_cells_summary">Makes each home screen cell a 1:1 square and balances the remaining space above/below and left/right. Restart the launcher after changing this setting.</string>
     <string name="dock_icons_title">Dock icons</string>
 
     <!-- SystemUI -->
@@ -204,6 +225,11 @@
     <string name="pref_cc_swap_sliders_title">Swap volume / brightness sliders</string>
     <string name="pref_cc_swap_sliders_desc">Swaps them to brightness on the left and volume on the right, and syncs their heights.</string>
     <string name="pref_cc_ios_connectivity_title">iOS 15 style 2×2 connectivity card</string>
+    <string name="pref_cc_liquid_glass_title">Liquid Glass control center</string>
+    <string name="pref_cc_background_blur_title">Control and notification center background blur</string>
+    <string name="pref_cc_background_blur_desc" formatted="false">Applies the same percentage to both backgrounds using the original system blur. 100% is the system strength; 0% disables blur. Independent of Liquid Glass. If the saved value is not applied, restart SystemUI from the top-right menu.</string>
+    <string name="pref_cc_liquid_glass_desc">Uses the notification cards’ backdrop blur, translucency and reflective edges without changing switch or slider sizes, positions or interactions. Independent of the notification blur setting.</string>
+    <string name="pref_cc_liquid_glass_hint">Off by default. Restart SystemUI from the top-right menu after enabling or disabling. Falls back to translucent glass when the device disables blur.</string>
     <string name="pref_cc_ios_connectivity_desc">A 2×2 grid of Wi-Fi, data, Bluetooth and airplane mode.</string>
 
     <!-- Status bar element order -->
@@ -256,12 +282,24 @@
     <string name="status_failed">Failed: %1$s</string>
     <string name="status_root_unavailable">Root (su) is not available.</string>
 
+    <string name="section_lock_clock_title">Lock screen clock</string>
+    <string name="section_notification_media_title">Notifications and media cards</string>
+    <string name="pref_lock_media_compact_title">Compact lock-screen playback card</string>
+    <string name="pref_lock_media_compact_desc">Uses a rounded card with small album art, track information, a seek bar and playback controls below. With Liquid glass off, the background uses plain dark blur; with it on, the background uses Liquid glass. Applies only to the lock screen; the control center is unchanged. Uses a translucent fallback when blur is unavailable. Restart SystemUI after changes. Turn off to restore the previous layout.</string>
+    <string name="pref_notification_media_frost_title">Liquid glass</string>
+    <string name="pref_notification_keep_silent_visible_title">Do not tuck away silent notifications</string>
+    <string name="pref_notification_keep_silent_visible_desc">Keeps silent notifications as cards in the notification center instead of an icon-only bar. Does not change sound, vibration or importance. Restart SystemUI after changes. Turn off to restore stock behavior.</string>
+    <string name="pref_notification_media_frost_desc">Gives notifications and lock-screen media cards translucent surfaces with subtle reflective edges. Control-center media cards keep stock background blur while retaining layout and size customizations. Notification placement and the normal unstacked shade list are unchanged. Turn off to restore stock backgrounds.</string>
+    <string name="notification_media_frost_hint">Requires the SystemUI scope in LSPosed. Restart SystemUI from the top-right menu after changes. Stock notification actions and privacy settings are preserved. Stacking is disabled during TalkBack touch exploration. When blur is unavailable or disabled by battery saver, a translucent surface and outline are used instead. Some ROMs are unsupported.</string>
+    <string name="pref_lock_keep_large_clock_title">Keep large clock (experimental)</string>
+    <string name="pref_lock_keep_large_clock_desc">Keeps the large clock and moves lock-screen notifications into a bottom stack. Scroll vertically to see two or more cards. Turn off to restore the stock clock behavior and notification position. Does not change notification shade placement.</string>
+    <string name="lock_clock_hint">This switch controls notification placement and stacking. Backgrounds are controlled separately by Liquid glass. Restart SystemUI from the top-right menu after changes. Touch exploration uses an unstacked list. Some ROMs are unsupported; placement, widget overlap and interaction require device testing.</string>
     <string name="section_lock_shortcuts_title">Lock screen shortcuts</string>
-    <string name="pref_lock_shortcut_blur_title">Stronger background blur</string>
-    <string name="pref_lock_shortcut_blur_desc">Blurs the background behind both corner buttons, with a dark translucent surface and outline for contrast. Icons stay sharp.</string>
+    <string name="pref_lock_shortcut_blur_title">Liquid glass shortcut backgrounds</string>
+    <string name="pref_lock_shortcut_blur_desc">Gives the bottom-left and bottom-right lock-screen buttons translucent backgrounds with reflective edges. Phone and Bluetooth device battery widgets below the clock use their stock backgrounds. Works independently of notification/playback card settings and keeps button icons sharp. Turn off to restore stock button backgrounds. Restart SystemUI after changes.</string>
     <string name="pref_lock_shortcut_size_title">Shortcut size</string>
     <string name="pref_lock_shortcut_size_desc">Applies to both sides. 100% is the system size. Enlarges the buttons, icons and touch targets.</string>
-    <string name="lock_shortcut_hint">Turn the screen off and show the lock screen again to apply. Restart SystemUI if needed. When blur is unavailable or disabled by battery saver, only the dark surface and outline are applied.</string>
+    <string name="lock_shortcut_hint">Turn the screen off and show the lock screen again to apply. Restart SystemUI if needed. When blur is unavailable or disabled by battery saver, uses the same translucent surface and outline as notification cards.</string>
 
     <!-- Language -->
     <string name="section_language_title">Language</string>
@@ -269,4 +307,10 @@
     <string name="pref_language_desc">Switches the display language of the app. Changes apply immediately.</string>
     <string name="language_ja">日本語</string>
     <string name="language_en">English</string>
+    <string name="section_lock_pin_title">Lock-screen PIN entry</string>
+    <string name="pref_lock_pin_auto_confirm_title">Auto-confirm at selected length</string>
+    <string name="pref_lock_pin_auto_confirm_desc">Hide the numeric device-lock PIN confirm button and authenticate only after the selected number of digits. Turn off to restore stock behavior.</string>
+    <string name="pref_lock_pin_length_title">PIN length for auto-confirm</string>
+    <string name="lock_pin_length_format">%1$d digits</string>
+    <string name="lock_pin_hint">Always select the length of your current PIN (4–16 digits). This does not change your PIN. Restart SystemUI after changes. SIM PINs and text passwords are excluded. A known length mismatch preserves stock behavior. If length metadata is unavailable, the selected value is used: an incorrect selection causes authentication failures. In that case, turn this off and restart SystemUI. Failed-attempt limits and lockout delays are unchanged.</string>
 </resources>

@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import java.util.concurrent.TimeUnit
+import java.io.IOException
 
 /**
  * Runs one of the fixed root commands off the main thread.
@@ -18,6 +19,20 @@ object RootShell {
 
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    private fun start(command: String, mergeErrors: Boolean = true): Process {
+        var failure: IOException? = null
+        // Some root managers omit su from the application's PATH.
+        for (binary in listOf("/system/bin/su", "/system/xbin/su", "/sbin/su", "/debug_ramdisk/su", "su")) {
+            try {
+                return ProcessBuilder(binary, "-M", "-c", command)
+                    .redirectErrorStream(mergeErrors).start()
+            } catch (error: IOException) {
+                failure = error
+            }
+        }
+        throw IOException("suを起動できません。KernelSU / SukiSU / Magiskでこのアプリのroot権限を許可し、アプリを開き直してください。", failure)
+    }
+
     fun run(command: String, callback: (success: Boolean, output: String) -> Unit) {
         Log.i(TAG, "Root command start: $command")
 
@@ -30,13 +45,30 @@ object RootShell {
                 // -M (KernelSU/Magisk) enters the global mount namespace.
                 // Without it, an app process's su cannot see another app's
                 // data directory (for example the launcher database).
-                val process = ProcessBuilder("su", "-M", "-c", command)
-                    .redirectErrorStream(true)
-                    .start()
+                val process = start(command)
+                val captured = StringBuilder()
+                // Drain while running: waiting before reading can deadlock on
+                // logcat output larger than the process pipe buffer.
+                val reader = Thread {
+                    runCatching {
+                        process.inputStream.bufferedReader().use { stream ->
+                            val buffer = CharArray(4096)
+                            while (true) {
+                                val count = stream.read(buffer)
+                                if (count < 0) break
+                                synchronized(captured) {
+                                    captured.append(buffer, 0, count)
+                                    if (captured.length > 1_048_576) captured.delete(0, captured.length - 1_048_576)
+                                }
+                            }
+                        }
+                    }
+                }.apply { isDaemon = true; start() }
 
                 if (process.waitFor(TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                     exitCode = process.exitValue()
-                    output = process.inputStream.bufferedReader().use { it.readText() }.trim()
+                    reader.join(1000)
+                    output = synchronized(captured) { captured.toString().trim() }
                     success = exitCode == 0
                 } else {
                     process.destroyForcibly()
@@ -74,7 +106,7 @@ object RootShell {
             var bytes = ByteArray(0)
 
             runCatching {
-                val process = ProcessBuilder("su", "-M", "-c", command).start()
+                val process = start(command, mergeErrors = false)
                 bytes = process.inputStream.readBytes()
                 output = process.errorStream.bufferedReader().use { it.readText() }.trim()
                 success = process.waitFor() == 0
@@ -103,9 +135,7 @@ object RootShell {
             var output = ""
 
             runCatching {
-                val process = ProcessBuilder("su", "-M", "-c", command)
-                    .redirectErrorStream(true)
-                    .start()
+                val process = start(command)
                 process.outputStream.use { it.write(input) }
                 output = process.inputStream.bufferedReader().use { it.readText() }.trim()
                 success = process.waitFor() == 0

@@ -8,10 +8,16 @@ import com.motolauncher.mod.hooks.BatteryServiceHook
 import com.motolauncher.mod.hooks.CameraHook
 import com.motolauncher.mod.hooks.ControlCenterHooks
 import com.motolauncher.mod.hooks.CoverDockHook
+import com.motolauncher.mod.hooks.MainDockGlassHook
+import com.motolauncher.mod.hooks.FolderGlassHook
 import com.motolauncher.mod.hooks.CorePatchHooker
 import com.motolauncher.mod.hooks.FlagSecureFrameworkHook
 import com.motolauncher.mod.hooks.FolderPreviewHook
 import com.motolauncher.mod.hooks.LockShortcutHook
+import com.motolauncher.mod.hooks.LockClockHook
+import com.motolauncher.mod.hooks.LockPinAutoConfirmHook
+import com.motolauncher.mod.hooks.NotificationMediaFrostHook
+import com.motolauncher.mod.hooks.SilentNotificationHook
 import com.motolauncher.mod.hooks.StatusBarHooks
 import com.motolauncher.mod.hooks.WidgetResizeHook
 
@@ -88,6 +94,12 @@ object HookEntry : IYukiHookXposedInit {
                     runCatching { loadHooker(CoverDockHook) }.onFailure {
                         Log.w(MODULE_TAG, "CoverDockHook could not be loaded", it)
                     }
+                    runCatching { loadHooker(MainDockGlassHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "MainDockGlassHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(FolderGlassHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "FolderGlassHook could not be loaded", it)
+                    }
                     runCatching { loadHooker(FolderPreviewHook) }.onFailure {
                         Log.w(MODULE_TAG, "FolderPreviewHook could not be loaded", it)
                     }
@@ -138,6 +150,18 @@ object HookEntry : IYukiHookXposedInit {
                     }
                     runCatching { loadHooker(LockShortcutHook) }.onFailure {
                         ErrorLogger.log(MODULE_TAG, "LockShortcutHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(LockClockHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "LockClockHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(LockPinAutoConfirmHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "LockPinAutoConfirmHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(NotificationMediaFrostHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "NotificationMediaFrostHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(SilentNotificationHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "SilentNotificationHook could not be loaded", it)
                     }
                     runCatching { FlagSecureFrameworkHook.hook(this) }.onFailure {
                         Log.w(MODULE_TAG, "FlagSecureFrameworkHook could not be loaded", it)

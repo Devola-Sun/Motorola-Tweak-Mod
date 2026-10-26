@@ -20,6 +20,7 @@ import android.view.WindowManager
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.motolauncher.mod.HookConfig
+import com.motolauncher.mod.ErrorLogger
 import java.lang.ref.WeakReference
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -152,10 +153,16 @@ object CoverDockHook : YukiBaseHooker() {
         private var minimumHorizontalInset: Int = 0
         private var frostAppearance: Boolean? = null
         private var borderWidth: Int = 0
+        private var liquidAppearance = false
+        private var liquidSurface: Drawable? = null
+        private var liquidRadius = -1f
+        private var liquidNight: Boolean? = null
 
-        fun updateAppearance(frost: Boolean, density: Float): Boolean {
+        fun updateAppearance(frost: Boolean, liquid: Boolean, density: Float): Boolean {
             val strokeWidth = if (frost) density.roundToInt().coerceAtLeast(1) else 0
-            if (frostAppearance == frost && borderWidth == strokeWidth) return false
+            if (frostAppearance == frost && borderWidth == strokeWidth && liquidAppearance == liquid) return false
+            liquidAppearance = liquid
+            if (!liquid) liquidSurface = null
             frostAppearance = frost
             borderWidth = strokeWidth
             // A surface approximation, not backdrop blur. RenderEffect on Hotseat
@@ -248,7 +255,24 @@ object CoverDockHook : YukiBaseHooker() {
             if (host != null && resolveEffectiveState(host, fullWidth) != ScreenState.COVER) {
                 return
             }
-            super.draw(canvas)
+            if (liquidAppearance && host != null) {
+                runCatching {
+                    val night = LauncherGlassSurface.isNight(host)
+                    if (liquidSurface == null || liquidRadius != cornerRadius || liquidNight != night) {
+                        liquidSurface = LauncherGlassSurface.create(host, cornerRadius, liquid = true)
+                        liquidRadius = cornerRadius
+                        liquidNight = night
+                    }
+                    liquidSurface?.let {
+                        it.bounds = bounds
+                        it.alpha = alpha
+                        it.draw(canvas)
+                    }
+                }.onFailure {
+                    ErrorLogger.log(TAG, "draw cover Dock glass", it)
+                    super.draw(canvas)
+                }
+            } else super.draw(canvas)
         }
 
         private fun applyCenteredBounds(left: Int, top: Int, right: Int, bottom: Int) {
@@ -937,6 +961,10 @@ object CoverDockHook : YukiBaseHooker() {
         }
     }
 
+    /** Physical display classification, independent of the cover-Dock enable switch. */
+    internal fun isMainDisplay(hotseat: View): Boolean =
+        resolveScreenState(hotseat) == ScreenState.INNER
+
     private fun invokeIsBgVisible(hotseat: View): Boolean? {
         return try {
             var method = cachedIsBgVisibleMethod
@@ -990,6 +1018,7 @@ object CoverDockHook : YukiBaseHooker() {
         val density = metrics.density.coerceAtLeast(1f)
         val floatingIsland = HookConfig.isCoverDockFloatingIslandEnabled(modulePrefs)
         val frost = HookConfig.isCoverDockFrostEnabled(modulePrefs)
+        val liquid = HookConfig.isCoverDockLiquidGlassEnabled(modulePrefs)
         val cornerRadiusPx = (if (floatingIsland) ISLAND_CORNER_RADIUS_DP else DOCK_CORNER_RADIUS_DP) * density
 
         val effectiveWidth = when {
@@ -1051,7 +1080,7 @@ object CoverDockHook : YukiBaseHooker() {
                     generatedBackgrounds[hotseat] = created
                 }
             }
-            val appearanceChanged = drawable.updateAppearance(frost, density)
+            val appearanceChanged = drawable.updateAppearance(frost, liquid, density)
             val dimsChanged = drawable.updateDimensions(
                 newWidthPercent = widthPercent,
                 newHeightPercent = heightPercent,

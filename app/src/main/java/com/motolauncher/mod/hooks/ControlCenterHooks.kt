@@ -68,6 +68,13 @@ object ControlCenterHooks : YukiBaseHooker() {
             reorderAndFixMargins(panel)
             getSeekBarContainer(panel)?.let { updateSlidersAndBottomIcons(panel, it, height) }
         }
+        ControlCenterGlassHook.install(classLoader, backgroundBlurPercent = {
+            HookConfig.safeGetInt(modulePrefs, HookConfig.KEY_CC_BACKGROUND_BLUR_PERCENT,
+                HookConfig.DEFAULT_CC_BACKGROUND_BLUR_PERCENT)
+        }) {
+            HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_CC_LIQUID_GLASS,
+                HookConfig.DEFAULT_CC_LIQUID_GLASS)
+        }
     }
 
     private fun compactLayoutEnabled(): Boolean = HookConfig.safeGetBoolean(

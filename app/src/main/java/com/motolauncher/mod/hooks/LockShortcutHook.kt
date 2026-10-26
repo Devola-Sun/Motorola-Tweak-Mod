@@ -4,7 +4,6 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.StateListDrawable
 import android.util.Log
@@ -135,27 +134,13 @@ object LockShortcutHook : YukiBaseHooker() {
     }
 
     private fun makeBackground(view: View, state: State, width: Int, height: Int, available: Boolean): Drawable {
-        val density = view.resources.displayMetrics.density
-        val surface = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(Color.argb(if (available) 115 else 175, 24, 24, 28))
-            setStroke(density.roundToInt().coerceAtLeast(1), Color.argb(115, 255, 255, 255))
-        }
         // RenderEffect on the ImageView would blur the icon, not the wallpaper.
-        // BackgroundBlurDrawable samples the actual surface behind this view.
-        val backdrop = if (available) runCatching {
-            val root = View::class.java.getDeclaredMethod("getViewRootImpl").apply { isAccessible = true }.invoke(view)
-                ?: error("ViewRootImpl unavailable")
-            val drawable = root.javaClass.getDeclaredMethod("createBackgroundBlurDrawable")
-                .apply { isAccessible = true }.invoke(root) as Drawable
-            drawable.javaClass.getMethod("setBlurRadius", Int::class.javaPrimitiveType)
-                .invoke(drawable, (32f * density).roundToInt())
-            drawable.javaClass.getMethod("setCornerRadius", Float::class.javaPrimitiveType)
-                .invoke(drawable, minOf(width, height) / 2f)
-            drawable
-        }.onFailure { report("backdrop blur (using contrast fallback)", it) }.getOrNull() else null
-        val content = if (backdrop != null) LayerDrawable(arrayOf(backdrop, surface)) else surface
-        val ripple = RippleDrawable(ColorStateList.valueOf(0x40ffffff), content,
+        // Use the same glass material as the notification cards, with a circular mask.
+        val content = LiquidGlassSurface.create(view, minOf(width, height) / 2f,
+            available, keyguard = true, night = true, oval = true) {
+            report("backdrop blur (using translucent fallback)", it)
+        }
+        val ripple = RippleDrawable(ColorStateList.valueOf(0x30ffffff), content,
             GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.WHITE) })
         // Keep stock activated-state feedback (e.g. flashlight on), including its tint.
         val activated = state.background?.constantState?.newDrawable()?.mutate()?.apply {

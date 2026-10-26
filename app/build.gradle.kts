@@ -21,7 +21,7 @@ android {
         minSdk = 36
         targetSdk = 36
         versionCode = 18
-        versionName = "2.5.4"
+        versionName = "2.5.5"
     }
 
     buildTypes {
@@ -62,6 +62,7 @@ android {
 }
 
 dependencies {
+    testImplementation("junit:junit:4.13.2")
     // YukiHookAPI module runtime + KSP entry-point generator.
     implementation("com.highcapable.yukihookapi:api:1.3.2")
     ksp("com.highcapable.yukihookapi:ksp-xposed:1.3.2")

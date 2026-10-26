@@ -1,7 +1,11 @@
 package com.motolauncher.mod
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.View
 import android.widget.AdapterView
@@ -13,6 +17,7 @@ import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -24,6 +29,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executors
+import java.util.concurrent.Future
 
 /**
  * Settings screen. [SettingsStore] writes the module's prefs XML directly; the
@@ -43,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var iconShapeSpinner: Spinner
     private lateinit var folderPreview3x3Switch: SwitchCompat
     private lateinit var gridRowsSeekBar: SeekBar
+    private lateinit var squareGridCellsSwitch: SwitchCompat
     private lateinit var gridColumnsSeekBar: SeekBar
     private lateinit var dockIconsSeekBar: SeekBar
     private lateinit var gridRowsValue: TextView
@@ -57,6 +65,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ccSwapSliders: SwitchCompat
     private lateinit var ccIosConnectivity: SwitchCompat
     private lateinit var ccCompactLayout: SwitchCompat
+    private lateinit var ccLiquidGlass: SwitchCompat
+    private lateinit var notificationMediaFrostSwitch: SwitchCompat
+    private lateinit var notificationKeepSilentVisibleSwitch: SwitchCompat
+    private lateinit var lockMediaCompactSwitch: SwitchCompat
+    private lateinit var lockKeepLargeClockSwitch: SwitchCompat
+    private lateinit var lockPinAutoConfirmSwitch: SwitchCompat
+    private lateinit var lockPinLengthSpinner: Spinner
     private lateinit var lockShortcutBlurSwitch: SwitchCompat
     private lateinit var lockShortcutSizeSlider: Slider
     private lateinit var lockShortcutSizeValue: TextView
@@ -74,6 +89,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var coverDockSwitch: SwitchCompat
     private lateinit var coverDockFloatingIslandSwitch: SwitchCompat
     private lateinit var coverDockFrostSwitch: SwitchCompat
+    private lateinit var coverDockLiquidGlassSwitch: SwitchCompat
+    private lateinit var mainDockFrostSwitch: SwitchCompat
+    private lateinit var mainDockLiquidGlassSwitch: SwitchCompat
+    private lateinit var folderLiquidGlassSwitch: SwitchCompat
     private lateinit var coverDockHeightSlider: Slider
     private lateinit var coverDockWidthSlider: Slider
     private lateinit var coverDockSizeSlider: Slider
@@ -129,6 +148,130 @@ class MainActivity : AppCompatActivity() {
     private lateinit var logContent: TextView
     private lateinit var logCount: TextView
     private var logsLoading = false
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private var scopeLoading = false
+    private var screenResumed = false
+    private var prefsSyncRunning = false
+    private var prefsSyncPending = false
+    private var rootCheckRunning = false
+    private var rootDialog: AlertDialog? = null
+    private var updateDialog: AlertDialog? = null
+    private var pendingUpdateTag: String? = null
+    private val updateExecutor = Executors.newSingleThreadExecutor()
+    private var updateCheck: Future<*>? = null
+    private var updateCheckGeneration = 0
+    private val syncPrefsTask = Runnable { flushModulePrefs() }
+    private val scopeRefreshTask = Runnable { refreshScopeList() }
+
+    override fun onResume() {
+        super.onResume()
+        screenResumed = true
+        checkRootAccess()
+        checkForUpdates()
+    }
+
+    private fun checkRootAccess() {
+        if (rootCheckRunning || rootDialog?.isShowing == true) return
+        rootCheckRunning = true
+        RootShell.run("id -u") { success, output ->
+            rootCheckRunning = false
+            if (!screenResumed || isFinishing || isDestroyed) return@run
+            if (success && output.lineSequence().any { it.trim() == "0" }) {
+                syncModulePrefs()
+                refreshScopeList()
+                showPendingUpdate()
+            } else {
+                showRootRequiredDialog()
+            }
+        }
+    }
+
+    private fun showRootRequiredDialog() {
+        if (!screenResumed || isFinishing || isDestroyed || rootDialog?.isShowing == true) return
+        refreshHandler.removeCallbacks(scopeRefreshTask)
+        rootDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.root_required_title)
+            .setMessage(R.string.root_required_message)
+            .setPositiveButton(R.string.root_required_retry) { _, _ ->
+                rootDialog = null
+                checkRootAccess()
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .create().also { dialog ->
+                dialog.setOnDismissListener {
+                    if (rootDialog === dialog) rootDialog = null
+                    showPendingUpdate()
+                }
+                dialog.show()
+            }
+    }
+
+    override fun onPause() {
+        screenResumed = false
+        refreshHandler.removeCallbacks(scopeRefreshTask)
+        super.onPause()
+    }
+
+    private fun bindUpdateSettings() {
+        findViewById<SwitchCompat>(R.id.switch_auto_update_check).apply {
+            isChecked = settings.autoUpdateCheck
+            setOnCheckedChangeListener { _, enabled ->
+                settings.autoUpdateCheck = enabled
+                if (enabled) {
+                    checkForUpdates()
+                } else {
+                    updateCheckGeneration++
+                    updateCheck?.cancel(true)
+                    updateCheck = null
+                    pendingUpdateTag = null
+                    updateDialog?.dismiss()
+                }
+            }
+        }
+    }
+
+    private fun checkForUpdates() {
+        if (!settings.autoUpdateCheck || !screenResumed || isFinishing || isDestroyed) return
+        showPendingUpdate()
+        if (updateCheck != null) return
+        val generation = ++updateCheckGeneration
+        updateCheck = updateExecutor.submit {
+            val tag = GitHubReleaseChecker.check()
+            runOnUiThread {
+                if (isFinishing || isDestroyed || generation != updateCheckGeneration) return@runOnUiThread
+                updateCheck = null
+                if (!settings.autoUpdateCheck) return@runOnUiThread
+                pendingUpdateTag = tag
+                showPendingUpdate()
+            }
+        }
+    }
+
+    private fun showPendingUpdate() {
+        val tag = pendingUpdateTag ?: return
+        if (!screenResumed || !settings.autoUpdateCheck || isFinishing || isDestroyed ||
+            updateDialog?.isShowing == true || rootCheckRunning || rootDialog?.isShowing == true ||
+            GitHubReleaseChecker.lastPromptedTag == tag) return
+        updateDialog = AlertDialog.Builder(this)
+            .setTitle(R.string.update_available_title)
+            .setMessage(getString(R.string.update_available_message, BuildConfig.VERSION_NAME, tag))
+            .setPositiveButton(R.string.update_open_release) { _, _ ->
+                runCatching {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(
+                        GitHubReleaseChecker.RELEASE_PAGE + Uri.encode(tag)
+                    )))
+                }.onFailure {
+                    Toast.makeText(this, R.string.update_open_failed, Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNegativeButton(R.string.update_later, null)
+            .create().also { dialog ->
+                dialog.setOnDismissListener { if (updateDialog === dialog) updateDialog = null }
+                dialog.show()
+                GitHubReleaseChecker.lastPromptedTag = tag
+                pendingUpdateTag = null
+            }
+    }
 
     private val backupRoot: File
         get() = getExternalFilesDir("launcher_backups") ?: File(filesDir, "launcher_backups")
@@ -148,6 +291,7 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.requestApplyInsets(root)
 
         settings = SettingsStore(this)
+        settings.onChanged = { syncModulePrefs() }
         Log.i(TAG, "Settings prefs: dir=${applicationInfo.dataDir}, all=${settings.snapshot()}")
 
         bindViews()
@@ -157,10 +301,12 @@ class MainActivity : AppCompatActivity() {
         bindCoverDockSettings()
         bindSystemUiSettings()
         bindLockShortcutSettings()
+        bindLockPinSettings()
         bindBatterySettings()
         bindCorePatchSettings()
         bindCameraSettings()
         bindLanguage()
+        bindUpdateSettings()
         bindStatusBarOrder()
         bindFeatures()
         bindLog()
@@ -169,7 +315,7 @@ class MainActivity : AppCompatActivity() {
         bindVersionLabels()
         updateOverview()
         loadAppIcons()
-        refreshScopeList()
+        syncModulePrefs()
         if (settings.safeMode) forceErrorLogDump(showToast = false)
     }
 
@@ -216,6 +362,7 @@ class MainActivity : AppCompatActivity() {
         iconShapeSpinner = findViewById(R.id.spinner_icon_shape)
         folderPreview3x3Switch = findViewById(R.id.switch_folder_preview_3x3)
         gridRowsSeekBar = findViewById(R.id.seek_grid_rows)
+        squareGridCellsSwitch = findViewById(R.id.switch_square_grid_cells)
         gridColumnsSeekBar = findViewById(R.id.seek_grid_columns)
         dockIconsSeekBar = findViewById(R.id.seek_dock_icons)
         gridRowsValue = findViewById(R.id.text_grid_rows_value)
@@ -230,6 +377,13 @@ class MainActivity : AppCompatActivity() {
         ccSwapSliders = findViewById(R.id.switch_cc_swap_sliders)
         ccIosConnectivity = findViewById(R.id.switch_cc_ios_connectivity)
         ccCompactLayout = findViewById(R.id.switch_cc_compact_layout)
+        ccLiquidGlass = findViewById(R.id.switch_cc_liquid_glass)
+        notificationMediaFrostSwitch = findViewById(R.id.switch_notification_media_frost)
+        notificationKeepSilentVisibleSwitch = findViewById(R.id.switch_notification_keep_silent_visible)
+        lockMediaCompactSwitch = findViewById(R.id.switch_lock_media_compact)
+        lockKeepLargeClockSwitch = findViewById(R.id.switch_lock_keep_large_clock)
+        lockPinAutoConfirmSwitch = findViewById(R.id.switch_lock_pin_auto_confirm)
+        lockPinLengthSpinner = findViewById(R.id.spinner_lock_pin_length)
         lockShortcutBlurSwitch = findViewById(R.id.switch_lock_shortcut_blur)
         lockShortcutSizeSlider = findViewById(R.id.slider_lock_shortcut_size)
         lockShortcutSizeValue = findViewById(R.id.text_lock_shortcut_size_value)
@@ -247,6 +401,10 @@ class MainActivity : AppCompatActivity() {
         coverDockSwitch = findViewById(R.id.switch_enable_cover_dock)
         coverDockFloatingIslandSwitch = findViewById(R.id.switch_cover_dock_floating_island)
         coverDockFrostSwitch = findViewById(R.id.switch_cover_dock_frost)
+        coverDockLiquidGlassSwitch = findViewById(R.id.switch_cover_dock_liquid_glass)
+        mainDockFrostSwitch = findViewById(R.id.switch_main_dock_frost)
+        mainDockLiquidGlassSwitch = findViewById(R.id.switch_main_dock_liquid_glass)
+        folderLiquidGlassSwitch = findViewById(R.id.switch_folder_liquid_glass)
         coverDockHeightSlider = findViewById(R.id.slider_cover_dock_height)
         coverDockWidthSlider = findViewById(R.id.slider_cover_dock_width)
         coverDockSizeSlider = findViewById(R.id.slider_cover_dock_size)
@@ -292,14 +450,11 @@ class MainActivity : AppCompatActivity() {
         popup.menu.add(0, MENU_CLEAR_CACHE, 4, getString(R.string.restart_menu_clear_cache))
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                MENU_RESTART_LAUNCHER -> runRootAction(
-                    getString(R.string.status_restarting),
-                    RESTART_COMMAND
-                )
+                MENU_RESTART_LAUNCHER -> restartButton.performClick()
 
                 MENU_RESTART_SYSTEMUI -> runRootAction(
                     getString(R.string.status_restarting_systemui),
-                    RESTART_SYSTEMUI_QUICK_COMMAND
+                    RESTART_SYSTEMUI_COMMAND
                 )
 
                 MENU_SOFT_REBOOT -> runRootAction(
@@ -312,10 +467,7 @@ class MainActivity : AppCompatActivity() {
                     REBOOT_COMMAND
                 )
 
-                MENU_CLEAR_CACHE -> runRootAction(
-                    getString(R.string.status_clearing_cache),
-                    CLEAR_CACHE_QUICK_COMMAND
-                )
+                MENU_CLEAR_CACHE -> clearCacheButton.performClick()
             }
             true
         }
@@ -385,8 +537,13 @@ class MainActivity : AppCompatActivity() {
      * are shown. "設定を開く" is grayed out for apps whose hooks are not active.
      */
     private fun refreshScopeList() {
+        if (!screenResumed || scopeLoading || isDestroyed) return
+        scopeLoading = true
+        refreshHandler.removeCallbacks(scopeRefreshTask)
         ScopeDetector.detect(this) { result ->
+            scopeLoading = false
             if (isFinishing || isDestroyed) return@detect
+            if (screenResumed) refreshHandler.postDelayed(scopeRefreshTask, 5000)
 
             if (!result.resolved) {
                 // Nothing detectable yet (no root output): keep the declared
@@ -598,6 +755,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindLayout() {
+        squareGridCellsSwitch.isChecked = settings.squareGridCells
+        squareGridCellsSwitch.setOnCheckedChangeListener { _, checked ->
+            settings.squareGridCells = checked
+        }
         bindSeekBar(
             gridRowsSeekBar,
             gridRowsValue,
@@ -631,9 +792,15 @@ class MainActivity : AppCompatActivity() {
             settings.coverDockFloatingIsland = enabled
             syncModulePrefs()
         }
-        coverDockFrostSwitch.isChecked = settings.coverDockFrost
-        coverDockFrostSwitch.setOnCheckedChangeListener { _, enabled ->
-            settings.coverDockFrost = enabled
+        bindExclusiveGlassSwitches(coverDockFrostSwitch, coverDockLiquidGlassSwitch,
+            settings.coverDockFrost, settings.coverDockLiquidGlass,
+            { settings.coverDockFrost = it }, { settings.coverDockLiquidGlass = it })
+        bindExclusiveGlassSwitches(mainDockFrostSwitch, mainDockLiquidGlassSwitch,
+            settings.mainDockFrost, settings.mainDockLiquidGlass,
+            { settings.mainDockFrost = it }, { settings.mainDockLiquidGlass = it })
+        folderLiquidGlassSwitch.isChecked = settings.folderLiquidGlass
+        folderLiquidGlassSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.folderLiquidGlass = enabled
             syncModulePrefs()
         }
 
@@ -666,9 +833,35 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateCoverDockControls() {
         val enabled = coverDockSwitch.isChecked
-        listOf(coverDockFloatingIslandSwitch, coverDockFrostSwitch).forEach { view ->
+        listOf(coverDockFloatingIslandSwitch, coverDockFrostSwitch, coverDockLiquidGlassSwitch).forEach { view ->
             view.isEnabled = enabled
             view.alpha = if (enabled) 1f else 0.4f
+        }
+    }
+
+    private fun bindExclusiveGlassSwitches(
+        frost: SwitchCompat, liquid: SwitchCompat,
+        frostEnabled: Boolean, liquidEnabled: Boolean,
+        saveFrost: (Boolean) -> Unit, saveLiquid: (Boolean) -> Unit
+    ) {
+        var updating = false
+        frost.isChecked = frostEnabled && !liquidEnabled
+        liquid.isChecked = liquidEnabled
+        frost.setOnCheckedChangeListener { _, enabled ->
+            if (updating) return@setOnCheckedChangeListener
+            saveFrost(enabled)
+            updating = true
+            if (enabled) liquid.isChecked = false
+            updating = false
+            syncModulePrefs()
+        }
+        liquid.setOnCheckedChangeListener { _, enabled ->
+            if (updating) return@setOnCheckedChangeListener
+            saveLiquid(enabled)
+            updating = true
+            if (enabled) frost.isChecked = false
+            updating = false
+            syncModulePrefs()
         }
     }
 
@@ -743,6 +936,52 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindSystemUiSettings() {
+        val backgroundBlur = findViewById<Slider>(R.id.slider_cc_background_blur)
+        val backgroundBlurValue = findViewById<TextView>(R.id.value_cc_background_blur)
+        backgroundBlur.value = settings.ccBackgroundBlurPercent.toFloat()
+        fun showBackgroundBlur(value: Int) {
+            backgroundBlurValue.text = getString(R.string.cover_dock_percent_format, value)
+        }
+        showBackgroundBlur(settings.ccBackgroundBlurPercent)
+        var trackingBlur = false
+        fun saveBackgroundBlur() {
+            val value = backgroundBlur.value.toInt()
+            if (settings.ccBackgroundBlurPercent == value) return
+            settings.ccBackgroundBlurPercent = value
+            syncModulePrefs()
+        }
+        backgroundBlur.addOnChangeListener { _, value, fromUser ->
+            showBackgroundBlur(value.toInt())
+            // Commit once per drag; accessibility/keyboard changes commit immediately.
+            if (fromUser && !trackingBlur) saveBackgroundBlur()
+        }
+        backgroundBlur.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
+            override fun onStartTrackingTouch(slider: Slider) { trackingBlur = true }
+            override fun onStopTrackingTouch(slider: Slider) {
+                trackingBlur = false
+                saveBackgroundBlur()
+            }
+        })
+        ccLiquidGlass.isChecked = settings.ccLiquidGlass
+        ccLiquidGlass.setOnCheckedChangeListener { _, enabled ->
+            settings.ccLiquidGlass = enabled
+            syncModulePrefs()
+        }
+        notificationKeepSilentVisibleSwitch.isChecked = settings.notificationKeepSilentVisible
+        notificationKeepSilentVisibleSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.notificationKeepSilentVisible = enabled
+            syncModulePrefs()
+        }
+        lockMediaCompactSwitch.isChecked = settings.lockMediaCompact
+        lockMediaCompactSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.lockMediaCompact = enabled
+            syncModulePrefs()
+        }
+        notificationMediaFrostSwitch.isChecked = settings.notificationMediaFrost
+        notificationMediaFrostSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.notificationMediaFrost = enabled
+            syncModulePrefs()
+        }
         ccCompactLayout.isChecked = settings.ccCompactLayout
         ccCompactLayout.setOnCheckedChangeListener { _, value ->
             settings.ccCompactLayout = value
@@ -794,6 +1033,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindLockShortcutSettings() {
+        lockKeepLargeClockSwitch.isChecked = settings.lockKeepLargeClock
+        lockKeepLargeClockSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.lockKeepLargeClock = enabled
+            syncModulePrefs()
+        }
         lockShortcutBlurSwitch.isChecked = settings.lockShortcutBlur
         lockShortcutBlurSwitch.setOnCheckedChangeListener { _, enabled ->
             settings.lockShortcutBlur = enabled
@@ -819,7 +1063,43 @@ class MainActivity : AppCompatActivity() {
 
     private val syncLockShortcutPrefs = Runnable { syncModulePrefs() }
 
+    private fun bindLockPinSettings() {
+        val lengths = (HookConfig.MIN_LOCK_PIN_LENGTH..HookConfig.MAX_LOCK_PIN_LENGTH).toList()
+        lockPinLengthSpinner.adapter = ArrayAdapter(
+            this, R.layout.item_spinner,
+            lengths.map { getString(R.string.lock_pin_length_format, it) }
+        ).apply { setDropDownViewResource(R.layout.item_spinner_dropdown) }
+        lockPinLengthSpinner.setSelection(lengths.indexOf(settings.lockPinLength), false)
+        lockPinLengthSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                if (settings.lockPinLength != lengths[position]) {
+                    settings.lockPinLength = lengths[position]
+                    syncModulePrefs()
+                }
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
+        lockPinAutoConfirmSwitch.isChecked = settings.lockPinAutoConfirm
+        lockPinLengthSpinner.isEnabled = settings.lockPinAutoConfirm
+        lockPinLengthSpinner.alpha = if (settings.lockPinAutoConfirm) 1f else 0.4f
+        lockPinAutoConfirmSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.lockPinAutoConfirm = enabled
+            lockPinLengthSpinner.isEnabled = enabled
+            lockPinLengthSpinner.alpha = if (enabled) 1f else 0.4f
+            syncModulePrefs()
+        }
+    }
+
     override fun onDestroy() {
+        updateCheckGeneration++
+        updateCheck?.cancel(true)
+        updateExecutor.shutdownNow()
+        updateDialog?.dismiss()
+        updateDialog = null
+        rootDialog?.dismiss()
+        rootDialog = null
+        settings.onChanged = null
+        refreshHandler.removeCallbacks(scopeRefreshTask)
         if (::lockShortcutSizeSlider.isInitialized) {
             lockShortcutSizeSlider.removeCallbacks(syncLockShortcutPrefs)
         }
@@ -996,8 +1276,19 @@ class MainActivity : AppCompatActivity() {
      * values through XSharedPreferences without a reboot.
      */
     private fun syncModulePrefs() {
+        prefsSyncPending = true
+        refreshHandler.removeCallbacks(syncPrefsTask)
+        refreshHandler.postDelayed(syncPrefsTask, 250)
+    }
+
+    private fun flushModulePrefs() {
+        if (prefsSyncRunning || !prefsSyncPending) return
+        prefsSyncRunning = true
+        prefsSyncPending = false
         RootShell.run(SYNC_PREFS_COMMAND) { success, output ->
+            prefsSyncRunning = false
             if (!success) Log.w(TAG, "Prefs sync failed: $output")
+            if (prefsSyncPending) syncModulePrefs()
         }
     }
 
@@ -1469,6 +1760,7 @@ class MainActivity : AppCompatActivity() {
                 successMessage
             } else {
                 val detail = output.take(500).ifBlank { getString(R.string.status_root_unavailable) }
+                checkRootAccess()
                 getString(R.string.status_failed, detail)
             }
             statusText.text = message
@@ -1499,7 +1791,7 @@ class MainActivity : AppCompatActivity() {
         private const val PAGE_FRAMEWORK = 6
 
         private const val HOME_START =
-            "am start -a android.intent.action.MAIN -c android.intent.category.HOME"
+            "am start --user current -a android.intent.action.MAIN -c android.intent.category.HOME -p ${HookConfig.TARGET_PACKAGE}"
 
         /** Restarts the Zygote processes (= soft reboot) so system_server reloads the module. */
         private const val SOFT_REBOOT_COMMAND = "setprop ctl.restart zygote"
@@ -1519,11 +1811,7 @@ class MainActivity : AppCompatActivity() {
         private const val MENU_REBOOT_DEVICE = 4
         private const val MENU_CLEAR_CACHE = 5
 
-        private val RESTART_SYSTEMUI_QUICK_COMMAND = "pkill -f ${HookConfig.SYSTEM_UI_PACKAGE}"
         private const val REBOOT_COMMAND = "reboot"
-        private val CLEAR_CACHE_QUICK_COMMAND =
-            "rm -f /data/data/${HookConfig.TARGET_PACKAGE}/databases/app_icons.db* " +
-                "&& am force-stop ${HookConfig.TARGET_PACKAGE}"
 
         private val BACKUP_NAME_PATTERN = Regex("^\\d{8}_\\d{6}$")
         private val STOP_LAUNCHER_COMMAND = "am force-stop ${HookConfig.TARGET_PACKAGE}"
@@ -1582,18 +1870,21 @@ class MainActivity : AppCompatActivity() {
         )
 
         private val SYNC_PREFS_COMMAND = buildString {
-            append("if [ -f $SOURCE_PREFS ]; then ")
+            append("[ -f $SOURCE_PREFS ] || { echo 'Settings file missing'; exit 1; }; ")
+            append("synced=0; ")
             append("for p in ${PREFS_TARGET_DIRS.joinToString(" ")}; do ")
-            append("if [ -d \"\$p\" ]; then ")
             append("d=\"\$p/$MODULE_PACKAGE\"; ")
-            append("mkdir -p \"\$d\" 2>/dev/null; ")
-            append("cp $SOURCE_PREFS \"\$d/${HookConfig.PREFS_NAME}.xml\" 2>/dev/null && ")
-            append("chmod 644 \"\$d/${HookConfig.PREFS_NAME}.xml\"; ")
-            append("fi; done; fi; true")
+            // Only touch a module directory provisioned by LSPosed. Broad
+            // */prefs globs also match Android's update_engine directory.
+            append("if [ -d \"\$d\" ] && [ \"\$p\" != /data/misc/update_engine/prefs ]; then ")
+            append("cp $SOURCE_PREFS \"\$d/${HookConfig.PREFS_NAME}.xml\" && ")
+            append("chmod 644 \"\$d/${HookConfig.PREFS_NAME}.xml\" && synced=1; ")
+            append("fi; done; ")
+            append("[ \"\$synced\" = 1 ] || { echo 'LSPosed prefs directory unavailable'; exit 1; }")
         }
 
         private val RESTART_COMMAND =
-            "$SYNC_PREFS_COMMAND; am force-stop ${HookConfig.TARGET_PACKAGE}; $HOME_START"
+            "$SYNC_PREFS_COMMAND && am force-stop --user current ${HookConfig.TARGET_PACKAGE} && $HOME_START"
 
         private val RESTART_SYSTEMUI_COMMAND = buildString {
             append("$SYNC_PREFS_COMMAND; ")

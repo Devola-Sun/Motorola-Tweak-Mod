@@ -18,6 +18,8 @@ import java.io.StringWriter
  */
 class SettingsStore(context: Context) {
 
+    var onChanged: (() -> Unit)? = null
+
     private val appContext: Context = context.applicationContext ?: context
 
     /** The app's private data directory; holds the shared_prefs XML. */
@@ -83,6 +85,11 @@ class SettingsStore(context: Context) {
         get() = gridValue(HookConfig.KEY_DOCK_ICONS, HookConfig.DEFAULT_DOCK_ICONS)
         set(value) = update(HookConfig.KEY_DOCK_ICONS, value)
 
+    var squareGridCells: Boolean
+        get() = values[HookConfig.KEY_SQUARE_GRID_CELLS] as? Boolean
+            ?: HookConfig.DEFAULT_SQUARE_GRID_CELLS
+        set(value) = update(HookConfig.KEY_SQUARE_GRID_CELLS, value)
+
     var coverDockEnabled: Boolean
         get() = values[HookConfig.KEY_COVER_DOCK_ENABLED] as? Boolean
             ?: HookConfig.DEFAULT_COVER_DOCK_ENABLED
@@ -94,9 +101,25 @@ class SettingsStore(context: Context) {
         set(value) = update(HookConfig.KEY_COVER_DOCK_FLOATING_ISLAND, value)
 
     var coverDockFrost: Boolean
-        get() = values[HookConfig.KEY_COVER_DOCK_FROST] as? Boolean
-            ?: HookConfig.DEFAULT_COVER_DOCK_FROST
-        set(value) = update(HookConfig.KEY_COVER_DOCK_FROST, value)
+        get() = (values[HookConfig.KEY_COVER_DOCK_FROST] as? Boolean
+            ?: HookConfig.DEFAULT_COVER_DOCK_FROST) && !coverDockLiquidGlass
+        set(value) = updateExclusive(HookConfig.KEY_COVER_DOCK_FROST, HookConfig.KEY_COVER_DOCK_LIQUID_GLASS, value)
+
+    var coverDockLiquidGlass: Boolean
+        get() = values[HookConfig.KEY_COVER_DOCK_LIQUID_GLASS] as? Boolean ?: false
+        set(value) = updateExclusive(HookConfig.KEY_COVER_DOCK_LIQUID_GLASS, HookConfig.KEY_COVER_DOCK_FROST, value)
+
+    var mainDockFrost: Boolean
+        get() = (values[HookConfig.KEY_MAIN_DOCK_FROST] as? Boolean ?: false) && !mainDockLiquidGlass
+        set(value) = updateExclusive(HookConfig.KEY_MAIN_DOCK_FROST, HookConfig.KEY_MAIN_DOCK_LIQUID_GLASS, value)
+
+    var mainDockLiquidGlass: Boolean
+        get() = values[HookConfig.KEY_MAIN_DOCK_LIQUID_GLASS] as? Boolean ?: false
+        set(value) = updateExclusive(HookConfig.KEY_MAIN_DOCK_LIQUID_GLASS, HookConfig.KEY_MAIN_DOCK_FROST, value)
+
+    var folderLiquidGlass: Boolean
+        get() = values[HookConfig.KEY_FOLDER_LIQUID_GLASS] as? Boolean ?: false
+        set(value) = update(HookConfig.KEY_FOLDER_LIQUID_GLASS, value)
 
     var coverDockHeightPercent: Int
         get() = HookConfig.coerceCoverDockHeightPercent(
@@ -166,15 +189,56 @@ class SettingsStore(context: Context) {
             ?: HookConfig.DEFAULT_CC_COMPACT_LAYOUT
         set(value) = update(HookConfig.KEY_CC_COMPACT_LAYOUT, value)
 
+    var ccLiquidGlass: Boolean
+        get() = values[HookConfig.KEY_CC_LIQUID_GLASS] as? Boolean
+            ?: HookConfig.DEFAULT_CC_LIQUID_GLASS
+        set(value) = update(HookConfig.KEY_CC_LIQUID_GLASS, value)
+
+    var ccBackgroundBlurPercent: Int
+        get() = HookConfig.coerceCcBackgroundBlur(values[HookConfig.KEY_CC_BACKGROUND_BLUR_PERCENT] as? Int
+            ?: HookConfig.DEFAULT_CC_BACKGROUND_BLUR_PERCENT)
+        set(value) = update(HookConfig.KEY_CC_BACKGROUND_BLUR_PERCENT, HookConfig.coerceCcBackgroundBlur(value))
+
+    var notificationMediaFrost: Boolean
+        get() = values[HookConfig.KEY_NOTIFICATION_MEDIA_FROST] as? Boolean
+            ?: HookConfig.DEFAULT_NOTIFICATION_MEDIA_FROST
+        set(value) = update(HookConfig.KEY_NOTIFICATION_MEDIA_FROST, value)
+
+    var notificationKeepSilentVisible: Boolean
+        get() = values[HookConfig.KEY_NOTIFICATION_KEEP_SILENT_VISIBLE] as? Boolean
+            ?: HookConfig.DEFAULT_NOTIFICATION_KEEP_SILENT_VISIBLE
+        set(value) = update(HookConfig.KEY_NOTIFICATION_KEEP_SILENT_VISIBLE, value)
+
     var ccIosConnectivity: Boolean
         get() = values[HookConfig.KEY_CC_IOS_CONNECTIVITY] as? Boolean
             ?: HookConfig.DEFAULT_CC_IOS_CONNECTIVITY
         set(value) = update(HookConfig.KEY_CC_IOS_CONNECTIVITY, value)
 
+    var lockKeepLargeClock: Boolean
+        get() = values[HookConfig.KEY_LOCK_KEEP_LARGE_CLOCK] as? Boolean
+            ?: HookConfig.DEFAULT_LOCK_KEEP_LARGE_CLOCK
+        set(value) = update(HookConfig.KEY_LOCK_KEEP_LARGE_CLOCK, value)
+
     var lockShortcutBlur: Boolean
         get() = values[HookConfig.KEY_LOCK_SHORTCUT_BLUR] as? Boolean
             ?: HookConfig.DEFAULT_LOCK_SHORTCUT_BLUR
         set(value) = update(HookConfig.KEY_LOCK_SHORTCUT_BLUR, value)
+
+    var lockMediaCompact: Boolean
+        get() = values[HookConfig.KEY_LOCK_MEDIA_COMPACT] as? Boolean
+            ?: HookConfig.DEFAULT_LOCK_MEDIA_COMPACT
+        set(value) = update(HookConfig.KEY_LOCK_MEDIA_COMPACT, value)
+
+    var lockPinAutoConfirm: Boolean
+        get() = values[HookConfig.KEY_LOCK_PIN_AUTO_CONFIRM] as? Boolean
+            ?: HookConfig.DEFAULT_LOCK_PIN_AUTO_CONFIRM
+        set(value) = update(HookConfig.KEY_LOCK_PIN_AUTO_CONFIRM, value)
+
+    var lockPinLength: Int
+        get() = HookConfig.coerceLockPinLength(
+            values[HookConfig.KEY_LOCK_PIN_LENGTH] as? Int ?: HookConfig.DEFAULT_LOCK_PIN_LENGTH
+        )
+        set(value) = update(HookConfig.KEY_LOCK_PIN_LENGTH, HookConfig.coerceLockPinLength(value))
 
     var lockShortcutSizePercent: Int
         get() = HookConfig.coerceLockShortcutSize(
@@ -253,6 +317,11 @@ class SettingsStore(context: Context) {
             ?: HookConfig.DEFAULT_SAFE_MODE
         set(value) = update(HookConfig.KEY_SAFE_MODE, value)
 
+    var autoUpdateCheck: Boolean
+        get() = values[HookConfig.KEY_AUTO_UPDATE_CHECK] as? Boolean
+            ?: HookConfig.DEFAULT_AUTO_UPDATE_CHECK
+        set(value) = update(HookConfig.KEY_AUTO_UPDATE_CHECK, value)
+
     var appLanguage: String
         get() = values[HookConfig.KEY_APP_LANGUAGE] as? String
             ?: HookConfig.DEFAULT_APP_LANGUAGE
@@ -273,8 +342,19 @@ class SettingsStore(context: Context) {
 
     @Synchronized
     private fun update(key: String, value: Any) {
+        if (values[key] == value) return
         values[key] = value
         write()
+        onChanged?.invoke()
+    }
+
+    /** Commit both switches together so the launcher never reads two active styles. */
+    @Synchronized
+    private fun updateExclusive(key: String, otherKey: String, enabled: Boolean) {
+        values[key] = enabled
+        if (enabled) values[otherKey] = false
+        write()
+        onChanged?.invoke()
     }
 
     private fun load(): MutableMap<String, Any> {
@@ -286,10 +366,15 @@ class SettingsStore(context: Context) {
             HookConfig.KEY_WIDGET_FREE_RESIZE to HookConfig.DEFAULT_WIDGET_FREE_RESIZE,
             HookConfig.KEY_GRID_ROWS to HookConfig.DEFAULT_GRID_ROWS,
             HookConfig.KEY_GRID_COLUMNS to HookConfig.DEFAULT_GRID_COLUMNS,
+            HookConfig.KEY_SQUARE_GRID_CELLS to HookConfig.DEFAULT_SQUARE_GRID_CELLS,
             HookConfig.KEY_DOCK_ICONS to HookConfig.DEFAULT_DOCK_ICONS,
             HookConfig.KEY_COVER_DOCK_ENABLED to HookConfig.DEFAULT_COVER_DOCK_ENABLED,
             HookConfig.KEY_COVER_DOCK_FLOATING_ISLAND to HookConfig.DEFAULT_COVER_DOCK_FLOATING_ISLAND,
             HookConfig.KEY_COVER_DOCK_FROST to HookConfig.DEFAULT_COVER_DOCK_FROST,
+            HookConfig.KEY_COVER_DOCK_LIQUID_GLASS to false,
+            HookConfig.KEY_MAIN_DOCK_FROST to false,
+            HookConfig.KEY_MAIN_DOCK_LIQUID_GLASS to false,
+            HookConfig.KEY_FOLDER_LIQUID_GLASS to false,
             HookConfig.KEY_COVER_DOCK_HEIGHT_PERCENT to HookConfig.DEFAULT_COVER_DOCK_HEIGHT_PERCENT,
             HookConfig.KEY_COVER_DOCK_WIDTH to HookConfig.DEFAULT_COVER_DOCK_WIDTH_PERCENT,
             HookConfig.KEY_COVER_DOCK_SIZE_PERCENT to HookConfig.DEFAULT_COVER_DOCK_SIZE_PERCENT,
@@ -300,7 +385,15 @@ class SettingsStore(context: Context) {
             HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING to HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING,
             HookConfig.KEY_CC_SWAP_SLIDERS to HookConfig.DEFAULT_CC_SWAP_SLIDERS,
             HookConfig.KEY_CC_COMPACT_LAYOUT to HookConfig.DEFAULT_CC_COMPACT_LAYOUT,
+            HookConfig.KEY_CC_LIQUID_GLASS to HookConfig.DEFAULT_CC_LIQUID_GLASS,
+            HookConfig.KEY_CC_BACKGROUND_BLUR_PERCENT to HookConfig.DEFAULT_CC_BACKGROUND_BLUR_PERCENT,
+            HookConfig.KEY_NOTIFICATION_MEDIA_FROST to HookConfig.DEFAULT_NOTIFICATION_MEDIA_FROST,
+            HookConfig.KEY_NOTIFICATION_KEEP_SILENT_VISIBLE to HookConfig.DEFAULT_NOTIFICATION_KEEP_SILENT_VISIBLE,
             HookConfig.KEY_CC_IOS_CONNECTIVITY to HookConfig.DEFAULT_CC_IOS_CONNECTIVITY,
+            HookConfig.KEY_LOCK_KEEP_LARGE_CLOCK to HookConfig.DEFAULT_LOCK_KEEP_LARGE_CLOCK,
+            HookConfig.KEY_LOCK_PIN_AUTO_CONFIRM to HookConfig.DEFAULT_LOCK_PIN_AUTO_CONFIRM,
+            HookConfig.KEY_LOCK_PIN_LENGTH to HookConfig.DEFAULT_LOCK_PIN_LENGTH,
+            HookConfig.KEY_LOCK_MEDIA_COMPACT to HookConfig.DEFAULT_LOCK_MEDIA_COMPACT,
             HookConfig.KEY_LOCK_SHORTCUT_BLUR to HookConfig.DEFAULT_LOCK_SHORTCUT_BLUR,
             HookConfig.KEY_LOCK_SHORTCUT_SIZE_PERCENT to HookConfig.DEFAULT_LOCK_SHORTCUT_SIZE_PERCENT,
             HookConfig.KEY_BATTERY_ICON_STYLE to HookConfig.DEFAULT_BATTERY_ICON_STYLE,
@@ -316,7 +409,8 @@ class SettingsStore(context: Context) {
             HookConfig.KEY_COREPATCH_ALLOW_DOWNGRADE to HookConfig.DEFAULT_COREPATCH_ALLOW_DOWNGRADE,
             HookConfig.KEY_COREPATCH_BYPASS_DIGEST to HookConfig.DEFAULT_COREPATCH_BYPASS_DIGEST,
             HookConfig.KEY_SAFE_MODE to HookConfig.DEFAULT_SAFE_MODE,
-            HookConfig.KEY_APP_LANGUAGE to HookConfig.DEFAULT_APP_LANGUAGE
+            HookConfig.KEY_APP_LANGUAGE to HookConfig.DEFAULT_APP_LANGUAGE,
+            HookConfig.KEY_AUTO_UPDATE_CHECK to HookConfig.DEFAULT_AUTO_UPDATE_CHECK
         )
         if (!prefsFile.exists()) return result
 

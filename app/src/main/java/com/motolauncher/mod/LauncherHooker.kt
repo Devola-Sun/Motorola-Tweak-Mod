@@ -2,11 +2,15 @@ package com.motolauncher.mod
 
 import android.content.Context
 import android.graphics.Path
+import android.graphics.Point
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.util.Log
+import android.view.View
 import com.highcapable.kavaref.KavaRef.Companion.resolve
 import com.highcapable.yukihookapi.hook.param.PackageParam
 import com.highcapable.yukihookapi.hook.xposed.prefs.YukiHookPrefsBridge
+import de.robv.android.xposed.XposedHelpers
 import java.lang.reflect.Field
 
 /**
@@ -36,6 +40,7 @@ object LauncherHooker {
         hookAppLabels(prefs)
         hookWorkspaceGrid(prefs)
         hookDeviceProfile(prefs)
+        hookSquareGridCells(prefs)
         hookIconShape(prefs)
     }
 
@@ -248,6 +253,152 @@ object LauncherHooker {
         }.onFailure {
             Log.e(TAG, "Failed to hook DeviceProfile(13 args)", it)
         }
+    }
+
+    /**
+     * CellLayout recomputes its dimensions on every measure. Apply the square
+     * immediately before its child container measures, after that calculation,
+     * so both hit testing and child layout use the same dimensions. Never pin
+     * mFixedCellWidth/Height: the next measure must adapt to fold/rotation.
+     */
+    private fun PackageParam.hookSquareGridCells(prefs: YukiHookPrefsBridge?) {
+        fun enabled() = HookConfig.safeGetBoolean(
+            prefs, HookConfig.KEY_SQUARE_GRID_CELLS, HookConfig.DEFAULT_SQUARE_GRID_CELLS
+        )
+
+        runCatching {
+            // Widget span/scale calculations use this terminal overload.
+            loadClass(CLASS_DEVICE_PROFILE).resolve().firstMethod {
+                name = "getCellSize"
+                parameterCount = 4
+            }.hook {
+                after {
+                    runCatching {
+                        if (!enabled()) return@runCatching
+                        val size = result as? Point ?: return@runCatching
+                        val side = minOf(size.x, size.y)
+                        if (side > 0) size.set(side, side)
+                    }.onFailure { ErrorLogger.log(TAG, "Square grid profile size failed", it) }
+                }
+            }
+        }.onFailure { ErrorLogger.log(TAG, "Could not hook square grid profile size", it) }
+
+        runCatching {
+            val cellClass = loadClass("com.android.launcher3.CellLayout")
+            val containerClass = loadClass("com.android.launcher3.ShortcutAndWidgetContainer")
+            val cellWidth = findField(cellClass, "mCellWidth")
+            val cellHeight = findField(cellClass, "mCellHeight")
+            val containerWidth = findField(containerClass, "mCellWidth")
+            val containerHeight = findField(containerClass, "mCellHeight")
+            val containerType = findField(containerClass, "mContainerType")
+            val originalHeightKey = "moto_square_grid_original_height"
+            val paddingKey = "moto_square_grid_padding"
+            val appliedPaddingKey = "moto_square_grid_applied_padding"
+            val naturalHeightKey = "moto_square_grid_natural_height"
+
+            cellClass.resolve().firstMethod {
+                name = "onMeasure"
+                parameters(Int::class, Int::class)
+            }.hook {
+                before {
+                    runCatching {
+                        if (getIntField(instance, "mContainerType") != 0) return@runCatching
+                        val cell = instance as View
+                        val current = Rect(cell.paddingLeft, cell.paddingTop, cell.paddingRight, cell.paddingBottom)
+                        val applied = XposedHelpers.getAdditionalInstanceField(cell, appliedPaddingKey) as? Rect
+                        val saved = XposedHelpers.getAdditionalInstanceField(cell, paddingKey) as? Rect
+                        val base = if (current == applied && saved != null) saved else current
+                        val target = Rect(base)
+                        if (enabled()) {
+                            // Keep visual bounds and drag coordinates together by
+                            // changing CellLayout padding, never translating icons.
+                            val width = View.MeasureSpec.getSize(args[0] as Int) - base.left - base.right
+                            val height = View.MeasureSpec.getSize(args[1] as Int) - base.top - base.bottom
+                            val columns = getIntField(cell, "mCountX")
+                            val rows = getIntField(cell, "mCountY")
+                            val gap = findField(cellClass, "mBorderSpace").get(cell) as Point
+                            val callback = findField(cellClass, "mShortcutsAndWidgetLayoutCallback").get(cell)
+                            if (columns > 0 && rows > 0 && callback == null) {
+                                val naturalWidth = (width - (columns - 1) * gap.x) / columns
+                                val naturalHeight = (height - (rows - 1) * gap.y) / rows
+                                val side = minOf(naturalWidth, naturalHeight)
+                                if (side > 0) {
+                                    val extraX = (width - columns * side - (columns - 1) * gap.x).coerceAtLeast(0)
+                                    val extraY = (height - rows * side - (rows - 1) * gap.y).coerceAtLeast(0)
+                                    target.left += extraX / 2
+                                    target.right += extraX - extraX / 2
+                                    target.top += extraY / 2
+                                    target.bottom += extraY - extraY / 2
+                                    XposedHelpers.setAdditionalInstanceField(cell, naturalHeightKey, naturalHeight)
+                                }
+                            }
+                        }
+                        XposedHelpers.setAdditionalInstanceField(cell, paddingKey, base)
+                        XposedHelpers.setAdditionalInstanceField(cell, appliedPaddingKey, target)
+                        if (current != target) cell.setPadding(target.left, target.top, target.right, target.bottom)
+                    }.onFailure { ErrorLogger.log(TAG, "Square grid padding failed", it) }
+                }
+            }
+
+            containerClass.resolve().firstMethod {
+                name = "onMeasure"
+                parameters(Int::class, Int::class)
+            }.hook {
+                before {
+                    runCatching {
+                        if (!enabled() || containerType.getInt(instance) != 0) return@runCatching
+                        val container = instance as View
+                        val cell = container.parent ?: return@runCatching
+                        if (!cellClass.isInstance(cell)) return@runCatching
+                        val width = cellWidth.getInt(cell)
+                        val height = cellHeight.getInt(cell)
+                        val side = minOf(width, height)
+                        if (side <= 0) return@runCatching
+                        val naturalHeight = XposedHelpers.getAdditionalInstanceField(cell, naturalHeightKey) as? Int
+                        XposedHelpers.setAdditionalInstanceField(container, originalHeightKey, naturalHeight ?: height)
+                        cellWidth.setInt(cell, side)
+                        cellHeight.setInt(cell, side)
+                        containerWidth.setInt(container, side)
+                        containerHeight.setInt(container, side)
+                    }.onFailure { ErrorLogger.log(TAG, "Square grid cell measure failed", it) }
+                }
+            }
+
+            val iconClass = loadClass(CLASS_BUBBLE_TEXT_VIEW)
+            val folderClass = loadClass("com.android.launcher3.folder.FolderIcon")
+            val activityField = findField(containerClass, "mActivity")
+            containerClass.resolve().firstMethod {
+                name = "measureChild"
+                parameters(View::class)
+            }.hook {
+                after {
+                    runCatching {
+                        if (!enabled() || containerType.getInt(instance) != 0) return@runCatching
+                        val child = args[0] as? View ?: return@runCatching
+                        if (!iconClass.isInstance(child) && !folderClass.isInstance(child)) return@runCatching
+                        val originalHeight = XposedHelpers.getAdditionalInstanceField(
+                            instance, originalHeightKey
+                        ) as? Int ?: return@runCatching
+                        val activity = activityField.get(instance) ?: return@runCatching
+                        val profile = XposedHelpers.callMethod(activity, "getDeviceProfile")
+                            ?: return@runCatching
+                        // Negative padding means stock already centered using the
+                        // actual (now square) layout height. Do not subtract twice.
+                        if (getIntField(profile, "cellYPaddingPx") < 0) return@runCatching
+                        val reduction = (originalHeight - containerHeight.getInt(instance)).coerceAtLeast(0)
+                        val top = (child.paddingTop - reduction / 2).coerceAtLeast(0)
+                        if (top == child.paddingTop) return@runCatching
+                        val width = child.measuredWidth
+                        val height = child.measuredHeight
+                        child.setPadding(child.paddingLeft, top, child.paddingRight, child.paddingBottom)
+                        child.measure(
+                            View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                            View.MeasureSpec.makeMeasureSpec(height, View.MeasureSpec.EXACTLY)
+                        )
+                    }.onFailure { ErrorLogger.log(TAG, "Square grid icon padding failed", it) }
+                }
+            }
+        }.onFailure { ErrorLogger.log(TAG, "Could not hook square grid cells", it) }
     }
 
     private fun isCoverScreenProfile(profile: Any, context: Context?): Boolean = runCatching {

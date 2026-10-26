@@ -65,15 +65,13 @@ object ScopeDetector {
         /**
          * Packages whose hooks are (or will be after a restart) active.
          *
-         * The scope stored by LSPosed is the authoritative source; the log
-         * markers are an additional signal. Both are merged, otherwise a
-         * scope whose marker rotated out of the logcat buffer would be shown
-         * as inactive even though the hook is installed.
+         * The latest LSPosed configuration is authoritative. Old log markers
+         * must not re-enable scopes the user has just removed.
          */
         val hooked: Set<String>
             get() = when {
                 !moduleEnabled -> emptySet()
-                else -> scopedPackages + livePackages
+                else -> scopedPackages
             }
     }
 
@@ -93,6 +91,12 @@ object ScopeDetector {
             if (!copyOk) Log.w(TAG, "ScopeDetector: db copy failed: $copyOutput")
             val scoped = if (copyOk) readScopeDb(dbFile) else null
 
+            if (scoped != null) {
+                Log.i(TAG, "ScopeDetector: enabled=${scoped.enabled} scoped=${scoped.packages}")
+                callback(Result(scoped.enabled, scoped.packages, emptySet(), true))
+                return@run
+            }
+
             RootShell.run(LOGCAT_COMMAND) { logOk, output ->
                 val live = if (logOk) parseLive(output) else emptySet()
                 RootShell.run(SCOPE_LOGCAT_COMMAND) { scopeLogOk, scopeOutput ->
@@ -102,21 +106,13 @@ object ScopeDetector {
                     // filtered out by the logcat implementation.
                     val allMarkers = markers + parseScopeMarkers(output)
                     RootShell.run(PROCESS_COMMAND) { processOk, processOutput ->
-                        // The logcat buffer rotates far too fast to be a
-                        // reliable source (the launcher writes thousands of
-                        // lines per second), so the running processes decide
-                        // whether a scoped hook is actually active.
                         val running = if (processOk) parseProcesses(processOutput) else emptySet()
-                        val active = scoped?.packages
-                            ?.filter { isProcessRunning(it, running) }
-                            ?.toSet()
-                            .orEmpty()
+                        val active = (live + allMarkers).filter { isProcessRunning(it, running) }.toSet()
                         val result = Result(
-                            moduleEnabled = scoped?.enabled ?: true,
-                            scopedPackages = scoped?.packages ?: emptySet(),
-                            livePackages = live + allMarkers + active,
-                            resolved = scoped != null || live.isNotEmpty() ||
-                                allMarkers.isNotEmpty() || active.isNotEmpty()
+                            moduleEnabled = true,
+                            scopedPackages = active,
+                            livePackages = active,
+                            resolved = active.isNotEmpty()
                         )
                         Log.i(TAG, "ScopeDetector: enabled=${result.moduleEnabled} " +
                             "scoped=${result.scopedPackages} live=${result.livePackages} " +
@@ -198,6 +194,19 @@ object ScopeDetector {
 
     /** The scoped packages of this module. */
     private fun readPackages(db: SQLiteDatabase): Set<String> {
+        val columns = db.rawQuery("PRAGMA table_info(scope)", null).use { cursor ->
+            buildSet {
+                val nameIndex = cursor.getColumnIndexOrThrow("name")
+                while (cursor.moveToNext()) add(cursor.getString(nameIndex))
+            }
+        }
+        if ("module_pkg_name" in columns) {
+            return queryNames(
+                db,
+                "select app_pkg_name from scope where module_pkg_name = ? and user_id = 0",
+                arrayOf(MODULE_PACKAGE)
+            ).map { normalize(it) }.toSet()
+        }
         val names = mutableListOf<String>()
 
         // Current LSPosed / Vector: the scope rows only hold the module id.

@@ -28,12 +28,18 @@ object HookConfig {
     /** Layout. */
     const val KEY_GRID_ROWS: String = "grid_rows"
     const val KEY_GRID_COLUMNS: String = "grid_columns"
+    const val KEY_SQUARE_GRID_CELLS: String = "square_grid_cells"
+    const val DEFAULT_SQUARE_GRID_CELLS: Boolean = false
     const val KEY_DOCK_ICONS: String = "dock_icons"
 
     /** Cover-screen Hotseat (Dock). */
     const val KEY_COVER_DOCK_ENABLED: String = "cover_dock_enabled"
     const val KEY_COVER_DOCK_FLOATING_ISLAND: String = "cover_dock_floating_island"
     const val KEY_COVER_DOCK_FROST: String = "cover_dock_frost"
+    const val KEY_COVER_DOCK_LIQUID_GLASS = "cover_dock_liquid_glass"
+    const val KEY_MAIN_DOCK_FROST = "main_dock_frost"
+    const val KEY_MAIN_DOCK_LIQUID_GLASS = "main_dock_liquid_glass"
+    const val KEY_FOLDER_LIQUID_GLASS = "folder_liquid_glass"
     const val KEY_COVER_DOCK_HEIGHT_PERCENT: String = "cover_dock_height_percent"
     const val KEY_COVER_DOCK_WIDTH: String = "cover_dock_width_percent"
     const val KEY_COVER_DOCK_WIDTH_PERCENT: String = KEY_COVER_DOCK_WIDTH
@@ -58,7 +64,26 @@ object HookConfig {
     const val KEY_SB_IOS_ICONS: String = "sb_ios_icons"
     const val KEY_SB_ENABLE_CUSTOM_PADDING: String = "sb_enable_custom_padding"
 
-    /** Lock-screen corner shortcuts (SystemUI). Disabled/100% preserves stock. */
+    /** Keep the stock large clock instead of switching to the notification clock. */
+    const val KEY_LOCK_KEEP_LARGE_CLOCK = "lock_keep_large_clock"
+    const val DEFAULT_LOCK_KEEP_LARGE_CLOCK = false
+
+    /** Opt-in PIN submission; never applies to SIM PIN or text passwords. */
+    const val KEY_LOCK_PIN_AUTO_CONFIRM = "lock_pin_auto_confirm"
+    const val KEY_LOCK_PIN_LENGTH = "lock_pin_length"
+    const val DEFAULT_LOCK_PIN_AUTO_CONFIRM = false
+    const val DEFAULT_LOCK_PIN_LENGTH = 6
+    const val MIN_LOCK_PIN_LENGTH = 4
+    const val MAX_LOCK_PIN_LENGTH = 16
+
+    fun coerceLockPinLength(value: Int): Int =
+        if (value in MIN_LOCK_PIN_LENGTH..MAX_LOCK_PIN_LENGTH) value else DEFAULT_LOCK_PIN_LENGTH
+
+    /** Compact dark playback card, strictly limited to the keyguard media host. */
+    const val KEY_LOCK_MEDIA_COMPACT = "lock_media_compact"
+    const val DEFAULT_LOCK_MEDIA_COMPACT = false
+
+    /** Shared glass for keyguard shortcuts/battery widgets; size applies to shortcuts only. */
     const val KEY_LOCK_SHORTCUT_BLUR = "lock_shortcut_blur"
     const val KEY_LOCK_SHORTCUT_SIZE_PERCENT = "lock_shortcut_size_percent"
     const val DEFAULT_LOCK_SHORTCUT_BLUR = false
@@ -81,6 +106,19 @@ object HookConfig {
     const val KEY_CC_IOS_CONNECTIVITY: String = "cc_ios_connectivity"
     const val KEY_CC_COMPACT_LAYOUT: String = "cc_compact_layout"
     const val DEFAULT_CC_COMPACT_LAYOUT: Boolean = false
+    const val KEY_CC_LIQUID_GLASS: String = "cc_liquid_glass"
+    const val DEFAULT_CC_LIQUID_GLASS: Boolean = false
+    const val KEY_CC_BACKGROUND_BLUR_PERCENT = "cc_background_blur_percent"
+    const val DEFAULT_CC_BACKGROUND_BLUR_PERCENT = 100
+
+    fun coerceCcBackgroundBlur(value: Int): Int = value.coerceIn(0, 100)
+
+    /** Shared glass surface for keyguard/shade notification and media cards. */
+    const val KEY_NOTIFICATION_MEDIA_FROST = "notification_media_frost"
+    const val DEFAULT_NOTIFICATION_MEDIA_FROST = false
+
+    const val KEY_NOTIFICATION_KEEP_SILENT_VISIBLE = "notification_keep_silent_visible"
+    const val DEFAULT_NOTIFICATION_KEEP_SILENT_VISIBLE = false
 
     /** Status bar element order (comma-separated keys). */
     const val KEY_SB_LEFT_ORDER: String = "sb_left_order"
@@ -112,6 +150,9 @@ object HookConfig {
     /** Display language ("ja" / "en"). */
     const val KEY_APP_LANGUAGE: String = "app_language"
     const val DEFAULT_APP_LANGUAGE: String = "ja"
+
+    const val KEY_AUTO_UPDATE_CHECK: String = "auto_update_check"
+    const val DEFAULT_AUTO_UPDATE_CHECK: Boolean = true
     const val LANGUAGE_JA: String = "ja"
     const val LANGUAGE_EN: String = "en"
 
@@ -378,7 +419,17 @@ object HookConfig {
         safeGetBoolean(prefs, KEY_COVER_DOCK_FLOATING_ISLAND, DEFAULT_COVER_DOCK_FLOATING_ISLAND)
 
     fun isCoverDockFrostEnabled(prefs: YukiHookPrefsBridge?): Boolean =
-        safeGetBoolean(prefs, KEY_COVER_DOCK_FROST, DEFAULT_COVER_DOCK_FROST)
+        safeGetBoolean(prefs, KEY_COVER_DOCK_FROST, DEFAULT_COVER_DOCK_FROST) &&
+            !isCoverDockLiquidGlassEnabled(prefs)
+
+    fun isCoverDockLiquidGlassEnabled(prefs: YukiHookPrefsBridge?): Boolean =
+        safeGetBoolean(prefs, KEY_COVER_DOCK_LIQUID_GLASS, false)
+
+    fun isMainDockLiquidGlassEnabled(prefs: YukiHookPrefsBridge?): Boolean =
+        safeGetBoolean(prefs, KEY_MAIN_DOCK_LIQUID_GLASS, false)
+
+    fun isMainDockFrostEnabled(prefs: YukiHookPrefsBridge?): Boolean =
+        safeGetBoolean(prefs, KEY_MAIN_DOCK_FROST, false) && !isMainDockLiquidGlassEnabled(prefs)
 
     fun coverDockHeightPercent(prefs: YukiHookPrefsBridge?): Int =
         coerceCoverDockHeightPercent(

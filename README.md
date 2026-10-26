@@ -27,6 +27,18 @@ The **機能** tab is the per-app hub for `com.motorola.launcher3` and
 The **ログ** tab reads the module's logcat output through root and can refresh
 or clear the displayed view.
 
+### Update suggestions
+
+**その他 → アップデート → アップデートを自動確認** is enabled by default,
+including for existing installs. On opening/resuming the settings app, it checks
+the latest stable release of `Devola-Sun/Motorola-Tweak-Mod` on GitHub. A newer
+version offers **GitHubで確認** or **あとで**; the former opens that release page.
+Version tags are compared numerically, with prerelease precedence; drafts and
+GitHub prereleases are excluded. Offline/API failures are silent.
+Checks are cached in memory for six hours (15 minutes after failures), and each
+version is suggested only once per app process. Disabling the switch persists
+across restarts and suppresses checks and pending suggestions immediately.
+
 ### Launcher
 
 | Key | Default | Description |
@@ -36,10 +48,25 @@ or clear the displayed view.
 | `folder_preview_3x3` | `false` | Launcher folder icon previews up to 9 apps in a 3x3 grid; the opened folder uses a fixed 4x4 grid (max 16 apps) |
 | `widget_free_resize` | `true` | Removes widget resize restrictions and exposes all four handles (1-cell steps) |
 | `grid_rows` / `grid_columns` | `6` | Workspace grid, 4..10 |
+| `square_grid_cells` | `false` | Make workspace cells 1:1 squares using the smaller available cell dimension; restart the launcher after toggling |
 | `dock_icons` | `6` | Left-side dock slots, 4..10 (the right 3 recent icons are separate) |
 
 The restart action automatically clears the icon cache when `icon_shape`
 changed since the last applied value.
+
+**ホーム画面グリッド → グリッドのセルを正方形にする** uses square home-screen
+cells for icons, folders and widget spans. The selected row/column counts are
+preserved; unused space is balanced above/below and beside the grid. Dock, app drawer
+and opened-folder cells retain their own layout. Fold/unfold, dragging, labels
+and widget resizing still require device verification.
+
+Settings writes now queue an automatic, coalesced LSPosed preference sync.
+The scope list refreshes on resume and every five seconds while the settings
+screen is visible; current LSPosed scope configuration takes precedence over
+old log markers. Layout/icon construction changes still require the restart
+action. Root actions try absolute `su` paths and drain command output while
+running to avoid log-output pipe deadlocks. Grant this app root access in
+KernelSU/SukiSU/Magisk if `su` is hidden from its process.
 
 ### SystemUI
 
@@ -55,6 +82,88 @@ changed since the last applied value.
 | `sb_left_order` | `clock,ongoing,notifications` | Left status bar element order |
 | `sb_right_order` | `user_switcher,wifi,mobile,battery` | Right status bar element order |
 | `disable_flag_secure` | `false` | Ignore FLAG_SECURE for system screenshots / screen recording |
+| `lock_keep_large_clock` | `false` | Experimental: keep the stock large keyguard clock when notifications/media are present |
+| `lock_media_compact` | `false` | Dark rounded keyguard-only playback card with small artwork, track information, seek bar and native controls; control-center cards are excluded |
+| `lock_pin_auto_confirm` | `false` | Hide device PIN confirmation and submit only at the selected length; known length mismatches stay stock |
+| `lock_pin_length` | `6` | Selected numeric device PIN length, 4..16 |
+
+**ロック画面のPIN入力 → 指定桁数で自動確定** is opt-in. Select the length of
+the existing PIN, enable the switch and restart SystemUI. This does not change
+the device credential. Only the AOSP `KeyguardPINViewController` path is supported;
+SIM PIN/PUK and text-password controllers are excluded. Known mismatched
+stored PIN lengths retain stock behavior. When metadata is unavailable (notably
+for four-digit PINs or when native auto-confirm is disabled), the explicitly
+selected length is used. Always match the current PIN length: a wrong selection
+can cause failed attempts. Disable and restart SystemUI if misconfigured.
+The confirm key becomes
+invisible without shifting keypad positions. Exact-length appends call stock
+verification once; deleting, resetting, short/long input and duplicate native
+auto-confirm calls do not submit. Android credential checks, lockout and
+failed-attempt accounting are unchanged. Disable and restart SystemUI to restore
+stock behavior. Device verification is still required for 4/6-digit PINs,
+incorrect PINs, lockout, reboot, user changes and fold/unfold.
+
+**通知・メディアカード → ロック画面の再生カードをコンパクト化** is opt-in.
+Restart SystemUI after changing it. Supported AOSP lock-screen playback cards use
+plain dark backdrop blur (without reflective edges) when Liquid glass is off,
+and the Liquid glass surface when it is on, with the same compact layout in both
+cases. When blur is unavailable, a translucent tint is used instead. Notifications
+keep their selected appearance. Unsupported layouts/recommendations stay unchanged. Native host size,
+media actions, session binding and privacy remain in charge. Leaving keyguard or
+moving the shared media card to QS restores the original appearance. The visual
+match, seeking, output picker, track changes, fold/unfold and QS transitions still
+require device verification.
+
+The compact card now uses only the innermost playback backdrop to avoid stacking
+glass tints in Motorola's wrapper views. Native TransitionLayout state changes are
+restyled immediately during seeking. The output picker has a separate 40dp header
+target, and playback/custom actions occupy non-overlapping bottom-row slots.
+The output target is now 48dp; nested containers are positioned outside-in with
+native pill padding/outline clipping removed and a centered, fit-scaled icon.
+Media styling also runs at the draw boundary to cover late/inlined native state
+updates that bypass the TransitionLayout method hooks.
+Opening Modern QS over keyguard temporarily restores the stock notification
+viewport/stack even when the status-bar controller remains in keyguard state.
+
+Expanded dynamic-notification playback popups also use the notification/media
+Liquid glass option. Their native layout is preserved; a rounded artwork overlay
+is placed 8dp beside the app icon at 1.25 times its size. The artwork follows the
+card's bound album drawable, occupies no layout/input space, and is removed when
+the card is detached, moved to another host, or the option is disabled. This path
+requires an identified dynamic host or a separate popup window with the expected
+playback controls; verify vendor popup recognition and artwork on the device.
+
+The **ロック画面の時計 → 大きな時計を維持（試験的）** option supports the
+reference ROM's reactive `KeyguardClockInteractor` / `KeyguardClockViewModel`
+size streams, with legacy controller fallbacks. Restart SystemUI after enabling
+or disabling it. Only explicitly registered clock-size/centering StateFlows are
+mapped at the synchronized write boundary (including initial state seeding);
+unrelated flows are passed through. Getter-only overrides are insufficient on
+the reference ROM because optimized collectors read backing state directly.
+Derived visibility remains stock so shade/AOD visibility policy is preserved.
+It does not replace the selected
+clock design or modify notification privacy, media controls, or authentication.
+The earlier getter-only build logged `ClockSize.SMALL -> LARGE`, but the user
+confirmed that the visible clock still became small. The revised build targets
+`StateFlowImpl.updateState` and logs actual writes and stored values separately.
+Notification spacing starts the stack at 37% of the current keyguard
+window height. It adjusts the actual stack viewport, accounting for native top
+padding when available; it does not depend on clock view IDs or ROM padding
+setters. Recalculation is event-driven (layout, screen/configuration and status
+bar state changes), with no pre-draw polling, tree scans or recurring timers.
+Leaving keyguard, expanding the locked shade or entering AOD restores the stock
+bounds. Notification rows themselves are not translated. While this layout is
+active, the native scrolling flag is enabled, the keyguard display-count cap is
+removed, and the scroll range includes content overflowing the smaller viewport.
+Native notification privacy and gesture/fling handling are preserved. Device
+testing is still needed for scrolling, media overflow and input handling.
+Visual layout, widgets, and media placement still require **device verification**.
+If content overlaps or the option has no effect, disable it and restart SystemUI.
+
+Device verification still required: notifications arriving/being dismissed,
+media play/pause, expanded notifications and scrolling, unlock/bouncer,
+always-on display, and fold/unfold. Check `LockClock` log entries for missing
+compatibility entry points; missing hooks leave the original behavior intact.
 
 The **通知バーの並び替え** section lets you drag status bar elements within the
 left or right group and move them to the other side with the ⇄ button. The
@@ -64,6 +173,26 @@ status icon cluster, while the battery is placed independently. Restart
 SystemUI after changing the order.
 
 Use **SystemUIを再起動して反映** after changing SystemUI options.
+
+**通知・メディアカード → サイレント通知を格納しない** is opt-in. It moves
+the ROM's minimized notification section into the regular silent-card section
+and disables minimized row presentation. Notification sound/vibration, channel
+importance, DND, privacy and dismissal policies are unchanged. Restart SystemUI
+after toggling; off restores stock behavior. While the unlocked shade is open,
+it also releases the vendor's notification-count cap, which can otherwise keep
+silent cards in the shelf even after their minimized classification is removed.
+The saved cap is restored on leaving the shade or disabling the option; a fresh
+native limit takes precedence. Keyguard and doze limits are not lifted by this
+option. This does not prevent ordinary
+off-screen notifications from entering the scrolling notification shelf.
+
+**ロック画面のショートカット → ショートカットの背景をリキッドグラスにする**
+controls the bottom-left and bottom-right shortcut backgrounds. Phone and Bluetooth
+device battery widgets below the clock use their stock backgrounds regardless of
+this switch. Turning the switch off restores the stock shortcut backgrounds.
+Restart SystemUI after updating or toggling. Notification/playback glass remains a
+separate setting. Playback backdrop blur explicitly uses a transparent fill, and compact
+cards suppress native full-card visual-effect overlays without hiding controls.
 
 ### Launcher layout backup / restore
 

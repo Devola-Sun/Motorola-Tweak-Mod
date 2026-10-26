@@ -6,8 +6,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.app.AutomaticZenRule
 import android.app.NotificationManager
-import android.hardware.camera2.CameraCharacteristics
-import android.hardware.camera2.CameraManager
+import android.media.AudioManager
 import android.database.ContentObserver
 import android.os.Handler
 import android.os.Looper
@@ -164,7 +163,7 @@ internal object CompactControlCenterLayout {
         val mediaParams = media.layoutParams ?: return null
         val overlay = FrameLayout(panel.context)
         val shortcuts = FrameLayout(panel.context)
-        val buttons = listOf("flashlight", "rotation", "bedtime").associateWith { TileButton(panel.context, it) }
+        val buttons = listOf("rotation", "silent", "bedtime").associateWith { TileButton(panel.context, it) }
         buttons.values.forEach { shortcuts.addView(it, FrameLayout.LayoutParams(1, 1)) }
         overlay.addView(shortcuts, FrameLayout.LayoutParams(1, 1))
         panel.addView(overlay, ViewGroup.LayoutParams(1, 1))
@@ -304,8 +303,8 @@ internal object CompactControlCenterLayout {
         state.overlay.layout(left, top, left + state.top.width, top + total)
         place(state.shortcuts, fixedLeft, square + gap, square, square)
         val cell = (square - gap) / 2
-        place(state.buttons.getValue("flashlight"), 0, 0, cell, cell)
-        place(state.buttons.getValue("rotation"), cell + gap, 0, cell, cell)
+        place(state.buttons.getValue("rotation"), 0, 0, cell, cell)
+        place(state.buttons.getValue("silent"), cell + gap, 0, cell, cell)
         place(state.buttons.getValue("bedtime"), 0, cell + gap, square, cell)
         syncTileBackgrounds(state)
 
@@ -638,35 +637,17 @@ internal object CompactControlCenterLayout {
 
     private class TileButton(context: Context, private val spec: String) : LinearLayout(context) {
         private val mainHandler = Handler(Looper.getMainLooper())
-        private var cameraManager: CameraManager? = null
-        private var cameraId: String? = null
-        private var torchCallbackRegistered = false
-        private var torchAvailable = false
-        private var torchEnabled = false
+        private var ringerReceiverRegistered = false
+        private var previousRingerMode = AudioManager.RINGER_MODE_NORMAL
+        private val ringerReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                runCatching { renderSilent() }.onFailure { report("Updating silent switch", it) }
+            }
+        }
         private var rotationObserverRegistered = false
         private val rotationObserver = object : ContentObserver(mainHandler) {
             override fun onChange(selfChange: Boolean) {
                 runCatching { renderRotation() }.onFailure { report("Updating automatic rotation", it) }
-            }
-        }
-        private val torchCallback = object : CameraManager.TorchCallback() {
-            override fun onTorchModeChanged(id: String, enabled: Boolean) {
-                runCatching {
-                    if (id != cameraId) return@runCatching
-                    torchAvailable = true
-                    torchEnabled = enabled
-                    renderTorch()
-                    Log.i(TAG, "CC independent flashlight state: enabled=$enabled available=true")
-                }.onFailure { report("Updating flashlight state", it) }
-            }
-
-            override fun onTorchModeUnavailable(id: String) {
-                runCatching {
-                    if (id != cameraId) return@runCatching
-                    torchAvailable = false
-                    torchEnabled = false
-                    renderTorch()
-                }.onFailure { report("Updating flashlight availability", it) }
             }
         }
         private var bedtimeObserverRegistered = false
@@ -728,13 +709,19 @@ internal object CompactControlCenterLayout {
                         check(Settings.System.putInt(resolver, Settings.System.ACCELEROMETER_ROTATION, if (autoRotate) 0 else 1))
                         renderRotation()
                         Log.i(TAG, "CC independent rotation clicked: autoRotate=${!autoRotate}")
-                    } else if (spec == "flashlight") {
-                        val id = cameraId ?: return@runCatching
-                        if (torchAvailable) {
-                            cameraManager?.setTorchMode(id, !torchEnabled)
-                            // Confirmed state comes from TorchCallback, including failures/unavailability.
-                            Log.i(TAG, "CC independent flashlight clicked: requested=${!torchEnabled}")
+                    } else if (spec == "silent") {
+                        val manager = context.getSystemService(AudioManager::class.java)
+                        val currentMode = XposedHelpers.callMethod(manager, "getRingerModeInternal") as Int
+                        val nextMode = if (currentMode == AudioManager.RINGER_MODE_SILENT) {
+                            previousRingerMode
+                        } else {
+                            previousRingerMode = currentMode
+                            AudioManager.RINGER_MODE_SILENT
                         }
+                        // Use SystemUI's internal ringer API, independently of Zen/bedtime mode.
+                        XposedHelpers.callMethod(manager, "setRingerModeInternal", nextMode)
+                        renderSilent()
+                        Log.i(TAG, "CC independent silent switch clicked: requested=$nextMode")
                     }
                 }
                     .onFailure { report("Clicking $spec", it) }
@@ -753,20 +740,15 @@ internal object CompactControlCenterLayout {
                         rotationObserverRegistered = true
                     }
                 }
-                "flashlight" -> {
-                    val manager = cameraManager ?: context.getSystemService(CameraManager::class.java).also { cameraManager = it }
-                    if (cameraId == null) {
-                        cameraId = manager.cameraIdList.firstOrNull {
-                            val characteristics = manager.getCameraCharacteristics(it)
-                            characteristics.get(CameraCharacteristics.FLASH_INFO_AVAILABLE) == true &&
-                                characteristics.get(CameraCharacteristics.LENS_FACING) == CameraCharacteristics.LENS_FACING_BACK
-                        }
+                "silent" -> {
+                    if (isAttachedToWindow && !ringerReceiverRegistered) {
+                        context.registerReceiver(ringerReceiver, IntentFilter().apply {
+                            addAction("android.media.INTERNAL_RINGER_MODE_CHANGED_ACTION")
+                            addAction(AudioManager.RINGER_MODE_CHANGED_ACTION)
+                        }, null, mainHandler, Context.RECEIVER_EXPORTED)
+                        ringerReceiverRegistered = true
                     }
-                    renderTorch()
-                    if (isAttachedToWindow && !torchCallbackRegistered && cameraId != null) {
-                        manager.registerTorchCallback(torchCallback, mainHandler)
-                        torchCallbackRegistered = true
-                    }
+                    renderSilent()
                 }
             }
         }
@@ -780,13 +762,19 @@ internal object CompactControlCenterLayout {
             updateBackground()
         }
 
-        private fun renderTorch() {
-            isEnabled = cameraId != null && torchAvailable
-            isSelected = torchEnabled
+        private fun renderSilent() {
+            val manager = context.getSystemService(AudioManager::class.java)
+            val mode = XposedHelpers.callMethod(manager, "getRingerModeInternal") as Int
+            isEnabled = !manager.isVolumeFixed
+            isSelected = mode == AudioManager.RINGER_MODE_SILENT
+            if (!isSelected) previousRingerMode = mode
             alpha = if (isEnabled) 1f else 0.4f
-            setControlLabel("quick_settings_flashlight_label", "フラッシュライト")
-            setControlIcon(if (isSelected) listOf("ic_qs_flashlight_on", "qs_flashlight_icon_on")
-                else listOf("ic_qs_flashlight_off", "qs_flashlight_icon_off"))
+            label.text = if (resources.configuration.locales[0].language == "ja")
+                "サイレントスイッチ" else "Silent switch"
+            contentDescription = label.text
+            stateDescription = if (isSelected) "ON" else "OFF"
+            setControlIcon(if (isSelected) listOf("ic_qs_silent_on", "ic_volume_ringer_mute")
+                else listOf("ic_qs_silent_off", "ic_volume_ringer"))
             updateBackground()
         }
 
@@ -801,7 +789,7 @@ internal object CompactControlCenterLayout {
             val id = names.firstNotNullOfOrNull {
                 resources.getIdentifier(it, "drawable", "com.android.systemui").takeIf { value -> value != 0 }
             }
-            icon.setImageDrawable(if (id != null) context.getDrawable(id)?.mutate() else ShortcutDrawable(spec))
+            icon.setImageDrawable(if (id != null) context.getDrawable(id)?.mutate() else ShortcutDrawable(spec, isSelected))
         }
 
         private fun findBedtime(manager: NotificationManager): Map.Entry<String, AutomaticZenRule>? {
@@ -920,9 +908,9 @@ internal object CompactControlCenterLayout {
             .onFailure { report("Pausing $spec", it) }
 
         private fun stopListening() {
-            if (torchCallbackRegistered) {
-                cameraManager?.unregisterTorchCallback(torchCallback)
-                torchCallbackRegistered = false
+            if (ringerReceiverRegistered) {
+                context.unregisterReceiver(ringerReceiver)
+                ringerReceiverRegistered = false
             }
             if (rotationObserverRegistered) {
                 context.contentResolver.unregisterContentObserver(rotationObserver)
@@ -954,7 +942,7 @@ internal object CompactControlCenterLayout {
     }
 
     /** Fallback for ROMs whose native QS drawable resource names differ. */
-    private class ShortcutDrawable(private val spec: String) : Drawable() {
+    private class ShortcutDrawable(private val spec: String, private val selected: Boolean) : Drawable() {
         private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             strokeWidth = 2f
@@ -966,15 +954,15 @@ internal object CompactControlCenterLayout {
             val save = canvas.save()
             canvas.translate(bounds.left.toFloat(), bounds.top.toFloat())
             canvas.scale(bounds.width() / 24f, bounds.height() / 24f)
-            if (spec == "flashlight") {
-                val body = android.graphics.Path().apply {
-                    moveTo(7f, 3f); lineTo(17f, 3f); lineTo(17f, 7f)
-                    lineTo(14f, 11f); lineTo(14f, 21f); lineTo(10f, 21f)
-                    lineTo(10f, 11f); lineTo(7f, 7f); close()
+            if (spec == "silent") {
+                val bell = android.graphics.Path().apply {
+                    moveTo(5f, 17f); lineTo(7f, 14f); lineTo(7f, 9f)
+                    cubicTo(7f, 2f, 17f, 2f, 17f, 9f)
+                    lineTo(17f, 14f); lineTo(19f, 17f); close()
                 }
-                canvas.drawPath(body, paint)
-                canvas.drawLine(7f, 7f, 17f, 7f, paint)
-                canvas.drawLine(12f, 12f, 12f, 15f, paint)
+                canvas.drawPath(bell, paint)
+                canvas.drawArc(10f, 17f, 14f, 21f, 0f, 180f, false, paint)
+                if (selected) canvas.drawLine(3f, 3f, 21f, 21f, paint)
             } else {
                 canvas.save()
                 canvas.rotate(-35f, 12f, 12f)
