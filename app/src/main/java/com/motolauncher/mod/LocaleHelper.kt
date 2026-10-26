@@ -5,7 +5,7 @@ import android.content.res.Configuration
 import java.util.Locale
 
 /**
- * Applies the in-app display language selection ("ja" / "en") to the base
+ * Applies the in-app display language selection ("ja" / "en" / "zh-CN" / "ru") to the base
  * context of every activity, so all string resources resolve in the selected
  * language regardless of the system locale.
  */
@@ -18,6 +18,8 @@ object LocaleHelper {
         val locale = when (language) {
             HookConfig.LANGUAGE_JA -> Locale(JAPANESE)
             HookConfig.LANGUAGE_EN -> Locale(ENGLISH)
+            HookConfig.LANGUAGE_ZH_CN -> Locale.SIMPLIFIED_CHINESE
+            HookConfig.LANGUAGE_RU -> Locale.forLanguageTag(HookConfig.LANGUAGE_RU)
             else -> return context
         }
 

@@ -1145,6 +1145,7 @@
                     android:textColor="@color/app_text_secondary"
                     android:textSize="12sp" />
 
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -1152,39 +1153,6 @@
                     android:text="@string/section_notification_media_title"
                     android:textAppearance="@style/TextAppearance.Moto.Section" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_card"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="18dp">
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:paddingEnd="12dp">
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/pref_lock_media_compact_title"
-                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="@string/pref_lock_media_compact_desc"
-                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
-                    </LinearLayout>
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switch_lock_media_compact"
-                        style="@style/Widget.Moto.Switch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:contentDescription="@string/pref_lock_media_compact_title" />
-                </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1262,210 +1230,6 @@
                     android:text="@string/notification_media_frost_hint"
                     android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/section_lock_clock_title"
-                    android:textAppearance="@style/TextAppearance.Moto.Section" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_card"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="18dp">
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical"
-                        android:paddingEnd="12dp">
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/pref_lock_keep_large_clock_title"
-                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="@string/pref_lock_keep_large_clock_desc"
-                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
-                    </LinearLayout>
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switch_lock_keep_large_clock"
-                        style="@style/Widget.Moto.Switch"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:contentDescription="@string/pref_lock_keep_large_clock_title" />
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/lock_clock_hint"
-                    android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/section_lock_pin_title"
-                    android:textAppearance="@style/TextAppearance.Moto.Section" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_card"
-                    android:orientation="vertical"
-                    android:padding="18dp">
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:paddingEnd="12dp">
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_lock_pin_auto_confirm_title"
-                                android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="3dp"
-                                android:text="@string/pref_lock_pin_auto_confirm_desc"
-                                android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
-                        </LinearLayout>
-                        <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/switch_lock_pin_auto_confirm"
-                            style="@style/Widget.Moto.Switch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:contentDescription="@string/pref_lock_pin_auto_confirm_title" />
-                    </LinearLayout>
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:labelFor="@id/spinner_lock_pin_length"
-                        android:text="@string/pref_lock_pin_length_title"
-                        android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
-                    <Spinner
-                        android:id="@+id/spinner_lock_pin_length"
-                        android:layout_width="match_parent"
-                        android:layout_height="48dp"
-                        android:contentDescription="@string/pref_lock_pin_length_title" />
-                </LinearLayout>
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/lock_pin_hint"
-                    android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
-                    android:text="@string/section_lock_shortcuts_title"
-                    android:textAppearance="@style/TextAppearance.Moto.Section" />
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:background="@drawable/bg_card"
-                    android:orientation="vertical">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="18dp">
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:paddingEnd="12dp">
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_lock_shortcut_blur_title"
-                                android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="3dp"
-                                android:text="@string/pref_lock_shortcut_blur_desc"
-                                android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
-                        </LinearLayout>
-                        <androidx.appcompat.widget.SwitchCompat
-                            android:id="@+id/switch_lock_shortcut_blur"
-                            style="@style/Widget.Moto.Switch"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:contentDescription="@string/pref_lock_shortcut_blur_title" />
-                    </LinearLayout>
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/app_outline" />
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="18dp">
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-                            <TextView
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/pref_lock_shortcut_size_title"
-                                android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
-                            <TextView
-                                android:id="@+id/text_lock_shortcut_size_value"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="100%"
-                                android:textColor="@color/brand_blue"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="@string/pref_lock_shortcut_size_desc"
-                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
-                        <com.google.android.material.slider.Slider
-                            android:id="@+id/slider_lock_shortcut_size"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:contentDescription="@string/pref_lock_shortcut_size_title" />
-                    </LinearLayout>
-                </LinearLayout>
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/lock_shortcut_hint"
-                    android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -2232,6 +1996,379 @@
             </LinearLayout>
         </ScrollView>
 
+        <!-- LOCK SCREEN -->
+        <ScrollView
+            android:id="@+id/page_lock_screen"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="28dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/section_lock_screen_title"
+                    android:textAppearance="@style/TextAppearance.Moto.Section" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingEnd="12dp">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_lock_edge_camera_title"
+                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/pref_lock_edge_camera_desc"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                    </LinearLayout>
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_lock_edge_camera"
+                        style="@style/Widget.Moto.Switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/pref_lock_edge_camera_title" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingEnd="12dp">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_lock_media_compact_title"
+                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/pref_lock_media_compact_desc"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                    </LinearLayout>
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_lock_media_compact"
+                        style="@style/Widget.Moto.Switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/pref_lock_media_compact_title" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/section_lock_clock_title"
+                    android:textAppearance="@style/TextAppearance.Moto.Section" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingEnd="12dp">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_lock_keep_large_clock_title"
+                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/pref_lock_keep_large_clock_desc"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                    </LinearLayout>
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_lock_keep_large_clock"
+                        style="@style/Widget.Moto.Switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/pref_lock_keep_large_clock_title" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:labelFor="@id/slider_lock_clock_size"
+                            android:text="@string/pref_lock_clock_size_title"
+                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                        <TextView
+                            android:id="@+id/text_lock_clock_size_value"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/brand_blue"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:text="@string/pref_lock_clock_size_desc"
+                        android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                    <com.google.android.material.slider.Slider
+                        android:id="@+id/slider_lock_clock_size"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/pref_lock_clock_size_title" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingEnd="12dp">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_lock_clock_liquid_glass_title"
+                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/pref_lock_clock_liquid_glass_desc"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                    </LinearLayout>
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_lock_clock_liquid_glass"
+                        style="@style/Widget.Moto.Switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/pref_lock_clock_liquid_glass_title" />
+                </LinearLayout>
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/lock_clock_hint"
+                    android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/section_lock_pin_title"
+                    android:textAppearance="@style/TextAppearance.Moto.Section" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:paddingEnd="12dp">
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/pref_lock_pin_auto_confirm_title"
+                                android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="@string/pref_lock_pin_auto_confirm_desc"
+                                android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                        </LinearLayout>
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switch_lock_pin_auto_confirm"
+                            style="@style/Widget.Moto.Switch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="@string/pref_lock_pin_auto_confirm_title" />
+                    </LinearLayout>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:labelFor="@id/spinner_lock_pin_length"
+                        android:text="@string/pref_lock_pin_length_title"
+                        android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                    <Spinner
+                        android:id="@+id/spinner_lock_pin_length"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:contentDescription="@string/pref_lock_pin_length_title" />
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/lock_pin_hint"
+                    android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/section_lock_shortcuts_title"
+                    android:textAppearance="@style/TextAppearance.Moto.Section" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="18dp">
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical"
+                            android:paddingEnd="12dp">
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/pref_lock_shortcut_blur_title"
+                                android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="3dp"
+                                android:text="@string/pref_lock_shortcut_blur_desc"
+                                android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                        </LinearLayout>
+                        <androidx.appcompat.widget.SwitchCompat
+                            android:id="@+id/switch_lock_shortcut_blur"
+                            style="@style/Widget.Moto.Switch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="@string/pref_lock_shortcut_blur_title" />
+                    </LinearLayout>
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/app_outline" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="18dp">
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
+                            <TextView
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:text="@string/pref_lock_shortcut_size_title"
+                                android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                            <TextView
+                                android:id="@+id/text_lock_shortcut_size_value"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="100%"
+                                android:textColor="@color/brand_blue"
+                                android:textSize="14sp" />
+                        </LinearLayout>
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/pref_lock_shortcut_size_desc"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                        <com.google.android.material.slider.Slider
+                            android:id="@+id/slider_lock_shortcut_size"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="@string/pref_lock_shortcut_size_title" />
+                    </LinearLayout>
+                </LinearLayout>
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/lock_shortcut_hint"
+                    android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+            </LinearLayout>
+        </ScrollView>
+
         <!-- FEATURES -->
         <ScrollView
             android:id="@+id/page_features"
@@ -2457,6 +2594,85 @@
                         <ImageView
                             android:layout_width="42dp"
                             android:layout_height="42dp"
+                            android:background="@drawable/bg_icon_orange"
+                            android:contentDescription="@string/section_lock_screen_title"
+                            android:padding="9dp"
+                            android:src="@drawable/ic_lock_screen"
+                            app:tint="@color/app_text" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:fontFamily="sans-serif-medium"
+                                android:text="@string/section_lock_screen_title"
+                                android:textColor="@color/app_text"
+                                android:textSize="18sp" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:fontFamily="monospace"
+                                android:text="@string/feature_systemui_package"
+                                android:textColor="@color/app_text_secondary"
+                                android:textSize="11sp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:background="@drawable/bg_pill"
+                            android:fontFamily="sans-serif-medium"
+                            android:paddingStart="9dp"
+                            android:paddingTop="4dp"
+                            android:paddingEnd="9dp"
+                            android:paddingBottom="4dp"
+                            android:text="@string/home_badge"
+                            android:textColor="@color/brand_blue"
+                            android:textSize="9sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/feature_lock_screen_desc"
+                        android:textColor="@color/app_text_secondary"
+                        android:textSize="12sp" />
+
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/button_open_lock_screen_settings"
+                        style="@style/Widget.Moto.Button.Primary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="@string/feature_open_settings" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
                             android:background="@drawable/bg_icon_purple"
                             android:contentDescription="@string/feature_framework_title"
                             android:padding="9dp"
@@ -2530,6 +2746,60 @@
                         android:text="@string/feature_open_settings" />
                 </LinearLayout>
 
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+                        <ImageView
+                            android:id="@+id/icon_moto_widget_app"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
+                            android:background="@drawable/bg_icon_blue"
+                            android:contentDescription="@string/section_moto_widget_title"
+                            android:padding="9dp"
+                            android:src="@drawable/ic_clock"
+                            app:tint="@color/app_text" />
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/section_moto_widget_title"
+                            android:textColor="@color/app_text"
+                            android:textSize="18sp" />
+                    </LinearLayout>
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:fontFamily="monospace"
+                        android:text="@string/feature_moto_widget_package"
+                        android:textColor="@color/app_text_secondary"
+                        android:textSize="11sp" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/page_moto_widget_subtitle"
+                        android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                    <androidx.appcompat.widget.AppCompatButton
+                        android:id="@+id/button_open_moto_widget_settings"
+                        style="@style/Widget.Moto.Button.Primary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="@string/feature_open_settings" />
+                </LinearLayout>
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -2563,6 +2833,59 @@
                         android:textColor="@color/app_text_secondary"
                         android:textSize="12sp" />
                 </LinearLayout>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- MOTO WIDGET -->
+        <ScrollView
+            android:id="@+id/page_moto_widget"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:scrollbars="none"
+            android:visibility="gone">
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingTop="8dp"
+                android:paddingEnd="20dp"
+                android:paddingBottom="28dp">
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/section_moto_widget_title"
+                    android:textAppearance="@style/TextAppearance.Moto.Section" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_moto_widget_clock_liquid_glass"
+                        style="@style/Widget.Moto.Switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/moto_widget_clock_liquid_glass_title"
+                        android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/moto_widget_clock_liquid_glass_summary"
+                        android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                </LinearLayout>
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/button_restart_moto_widget"
+                    style="@style/Widget.Moto.Button.Secondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/restart_moto_widget_button" />
             </LinearLayout>
         </ScrollView>
 

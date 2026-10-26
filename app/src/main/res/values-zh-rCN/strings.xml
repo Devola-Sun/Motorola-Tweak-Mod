@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="section_updates_title">更新</string>
+    <string name="pref_auto_update_check_title">自动检查更新</string>
+    <string name="pref_auto_update_check_desc">打开应用时检查 GitHub 上的正式版本，发现新版本时提示更新。</string>
+    <string name="update_available_title">有可用更新</string>
+    <string name="update_available_message">新的正式版本已发布。\n\n当前版本：%1$s\n最新版本：%2$s\n\n可前往 GitHub 发布页面更新。</string>
+    <string name="update_open_release">在 GitHub 上查看</string>
+    <string name="update_later">稍后</string>
+    <string name="update_open_failed">无法打开发布页面。请检查是否已安装浏览器。</string>
+    <string name="app_name">MockingBatwing</string>
+    <string name="app_tagline">启动器与 SystemUI</string>
+    <string name="creator_credit">作者：Devola-Sun</string>
+    <string name="creator_credit_short">Devola-Sun</string>
+    <string name="xposed_description">MockingBatwing — 适用于 Motorola Razr 的启动器、SystemUI 和系统框架定制模块（LSPosed）：图标、网格、标签、状态栏、控制中心、CorePatch 以及启动器布局备份与恢复。</string>
+
+    <string name="settings_title">MockingBatwing</string>
+    <string name="settings_subtitle">在同一界面管理启动器和 SystemUI 设置。设置保存在共享偏好设置中。</string>
+    <string name="settings_activation_hint">在 LSPosed 中启用模块，并将 com.motorola.launcher3、com.android.systemui 和 android 添加到作用域。首次使用需重启设备。</string>
+
+    <!-- Bottom navigation and page headers -->
+    <string name="nav_home">首页</string>
+    <string name="nav_features">功能</string>
+    <string name="nav_log">日志</string>
+    <string name="nav_appearance">外观</string>
+    <string name="nav_systemui">SystemUI</string>
+    <string name="nav_more">更多</string>
+
+    <string name="page_home_title">MockingBatwing</string>
+    <string name="page_home_subtitle">启动器与 SystemUI 定制</string>
+    <string name="page_features_title">功能</string>
+    <string name="page_features_subtitle">按类别设置</string>
+    <string name="section_lock_screen_title">锁屏</string>
+    <string name="page_lock_screen_subtitle">时钟、媒体卡片、PIN 码输入与快捷方式</string>
+    <string name="feature_lock_screen_desc">时钟、通知位置、媒体卡片、PIN 码自动确认、快捷方式与相机手势</string>
+    <string name="page_log_title">日志</string>
+    <string name="page_log_subtitle">模块运行日志</string>
+    <string name="page_launcher_title">Moto 启动器</string>
+    <string name="page_launcher_subtitle">图标、标签、文件夹与网格</string>
+    <string name="page_appearance_title">外观</string>
+    <string name="page_appearance_subtitle">图标、标签、文件夹与网格</string>
+    <string name="page_systemui_title">SystemUI</string>
+    <string name="page_systemui_subtitle">状态栏与控制中心</string>
+    <string name="page_more_title">更多</string>
+    <string name="page_more_subtitle">备份、缓存与模块信息</string>
+
+    <!-- Features / per-app settings -->
+    <string name="features_intro">选择要配置的类别。点击卡片可打开对应的设置页面。</string>
+    <string name="feature_launcher_title">Moto 启动器</string>
+    <string name="feature_launcher_package">com.motorola.launcher3</string>
+    <string name="feature_launcher_desc">图标形状、标签、文件夹、桌面网格与小组件大小调整</string>
+    <string name="feature_systemui_title">SystemUI</string>
+    <string name="feature_systemui_package">com.android.systemui</string>
+    <string name="feature_systemui_desc">状态栏、通知栏排序与控制中心</string>
+    <string name="feature_open_settings">打开设置</string>
+    <string name="feature_scope_title">LSPosed 作用域</string>
+    <string name="feature_scope_summary">com.motorola.launcher3\ncom.android.systemui\nandroid</string>
+    <string name="feature_scope_hint">显示已检测到实际加载 Hook 的作用域。</string>
+    <string name="feature_scope_none">当前没有已启用 Hook 的作用域（模块未启用或未配置作用域）</string>
+    <string name="icon_shape_system">系统默认</string>
+    <string name="icon_shape_squircle">圆角方形</string>
+    <string name="icon_shape_circle">圆形</string>
+    <string name="icon_shape_square">正方形</string>
+    <string name="icon_shape_diamond">菱形</string>
+
+    <string name="feature_launcher_summary">网格 %1$s · Dock %2$d · 文件夹 %3$s</string>
+    <string name="feature_systemui_summary">秒数 %1$s · iOS 图标 %2$s · 排序 %3$s</string>
+    <string name="feature_framework_title">系统框架</string>
+    <string name="feature_framework_package">android</string>
+    <string name="feature_framework_desc">禁用 FLAG_SECURE、禁用快门声、绕过签名验证、允许降级</string>
+    <string name="feature_framework_summary">FLAG_SECURE %1$s · 禁用快门声 %2$s · 绕过签名 %3$s · 降级 %4$s</string>
+    <string name="page_framework_title">系统框架</string>
+    <string name="page_framework_subtitle">系统框架设置</string>
+    <string name="feature_order_custom">自定义</string>
+    <string name="feature_order_default">默认</string>
+
+    <!-- Log -->
+    <string name="log_section_title">模块日志</string>
+    <string name="log_section_desc">显示启动器和 SystemUI 的 Hook 日志。点击刷新可加载最新内容。</string>
+    <string name="log_refresh">刷新</string>
+    <string name="log_clear_view">清空显示</string>
+    <string name="log_empty">暂无日志。</string>
+    <string name="log_loading">正在加载日志…</string>
+    <string name="log_root_hint">读取日志需要 root（su）权限。</string>
+    <string name="log_root_error">无法读取日志：%1$s</string>
+    <string name="log_line_count">%1$d 行</string>
+
+    <!-- Widget resize -->
+    <string name="widget_free_resize_title">自由调整小组件大小</string>
+    <string name="widget_free_resize_summary">解除长按时的大小调整限制，允许以一格为单位调整大小。</string>
+
+    <!-- Cover-screen Dock -->
+    <string name="section_cover_dock">外屏 Dock</string>
+    <string name="cover_dock_enable_title">在外屏显示 Dock</string>
+    <string name="cover_dock_enable_summary">在外屏显示底部快捷栏。更改后请重启启动器。</string>
+    <string name="cover_dock_floating_island_title">悬浮岛 Dock</string>
+    <string name="cover_dock_floating_island_summary">仅适用于外屏。为背景添加至少 20dp 的左右边距和 28dp 圆角。沿用背景宽度和高度设置，不改变图标数量或布局区域。更改后请重启启动器。</string>
+    <string name="cover_dock_frost_title">磨砂玻璃 Dock</string>
+    <string name="cover_dock_liquid_glass_title">液态玻璃 Dock</string>
+    <string name="cover_dock_liquid_glass_summary">为外屏 Dock 添加半透明渐变和边缘反光。不能与磨砂玻璃同时启用。更改后请重启启动器。</string>
+    <string name="section_main_dock">内屏 Dock</string>
+    <string name="main_dock_frost_title">磨砂玻璃 Dock</string>
+    <string name="main_dock_liquid_glass_title">液态玻璃 Dock</string>
+    <string name="main_dock_glass_summary">启用任一样式后，原生 Dock 背景将变为透明，并在相同位置显示同等大小的玻璃效果。两种样式不能同时启用。全部关闭可恢复原生背景。不会对壁纸进行实际模糊处理。更改后请重启启动器。</string>
+    <string name="folder_liquid_glass_title">液态玻璃文件夹</string>
+    <string name="folder_liquid_glass_summary">为文件夹图标和展开后的文件夹背景添加半透明渐变与边缘反光。更改后请重启启动器。</string>
+    <string name="cover_dock_frost_summary">通过半透明渐变和细微边框，为外屏 Dock 添加磨砂玻璃效果。不会模糊壁纸或图标。更改后请重启启动器。</string>
+    <string name="cover_dock_height_title">Dock 背景高度</string>
+    <string name="cover_dock_width_title">Dock 背景宽度</string>
+    <string name="cover_dock_size_title">Dock 大小</string>
+    <string name="cover_dock_percent_format">%1$d%%</string>
+
+    <!-- Home -->
+    <string name="home_badge">LSPOSED 模块</string>
+    <string name="home_status_title">模块已就绪</string>
+    <string name="home_status_summary">设置会立即保存。重启目标进程后生效。</string>
+    <string name="home_scope_title">LSPosed 作用域</string>
+    <string name="home_scope_summary">com.motorola.launcher3\ncom.android.systemui\nandroid</string>
+    <string name="home_scope_hint">显示已检测到实际加载 Hook 的作用域。</string>
+    <string name="about_scope_body_dynamic">LSPosed 作用域（已检测）\n%1$s</string>
+    <string name="home_overview_title">当前设置</string>
+    <string name="home_overview_grid">网格</string>
+    <string name="home_overview_dock">Dock</string>
+    <string name="home_overview_folder">文件夹</string>
+    <string name="home_quick_actions">快捷操作</string>
+    <string name="home_open_appearance">打开外观设置</string>
+    <string name="home_open_systemui">打开 SystemUI 设置</string>
+    <string name="home_footer">MockingBatwing %1$s · LSPosed 模块 · Devola-Sun</string>
+    <string name="app_version_format">v%1$s</string>
+    <string name="value_on">开启</string>
+    <string name="value_off">关闭</string>
+    <string name="value_grid_format">%1$d × %2$d</string>
+    <string name="value_dock_format">%1$d 个</string>
+
+    <!-- Appearance -->
+    <string name="section_appearance">图标与标签</string>
+    <string name="hide_labels_title">隐藏图标标签</string>
+    <string name="hide_labels_summary">将桌面、应用抽屉、文件夹和 Dock 中的图标标签设为透明。</string>
+
+    <string name="icon_shape_title">图标形状</string>
+    <string name="icon_shape_summary">选择系统默认可恢复原生图标蒙版。更改形状后建议清除图标缓存。</string>
+
+    <string name="folder_preview_3x3_title">文件夹图标 3×3 预览</string>
+    <string name="folder_preview_3x3_summary">以 3×3 网格预览最多 9 个应用图标。展开后的文件夹使用固定 4×4 网格（最多 16 个），从左上角开始排列。</string>
+
+    <string name="section_layout">桌面网格</string>
+    <string name="root_required_title">需要 root 权限</string>
+    <string name="root_required_message">此应用需要 root 权限才能应用设置、重启启动器和读取模块作用域。\n\n请在 KernelSU / SukiSU / Magisk 中授予本应用（io.github.devola_sun.motorolatweak）超级用户权限，然后点击“重新检查”。\n\n如果已授权，请关闭并重新打开此应用。</string>
+    <string name="root_required_retry">重新检查</string>
+    <string name="layout_summary">行数、列数和 Dock 图标数量的范围均为 4 至 10。更改后请重启启动器。</string>
+    <string name="grid_rows_title">桌面行数</string>
+    <string name="grid_columns_title">桌面列数</string>
+    <string name="square_grid_cells_title">正方形网格单元格</string>
+    <string name="square_grid_cells_summary">将桌面每格设为 1:1 正方形，并均匀分配上下、左右剩余空间。更改后请重启启动器。</string>
+    <string name="dock_icons_title">Dock 图标数量</string>
+
+    <!-- SystemUI -->
+    <string name="section_systemui_title">状态栏</string>
+    <string name="section_control_center_title">控制中心</string>
+    <string name="pref_cc_compact_layout_title">将媒体卡片移至顶部</string>
+    <string name="pref_cc_compact_layout_desc">在连接卡片右侧放置正方形媒体卡片，下方排列亮度（左）和音量（右）滑块。左下区域上排为手电筒和自动旋转，下排为占两格宽的就寝模式按钮。</string>
+    <string name="pref_cc_compact_layout_hint">启用或关闭后，请通过右上角菜单重启 SystemUI。需要 LSPosed 的 SystemUI 作用域。适用于竖屏和桌面模式。连接卡片的 2×2 布局可在 SystemUI 设置中配置。</string>
+    <string name="systemui_hint">状态栏设置在重启 SystemUI 后生效。</string>
+
+    <string name="pref_sb_show_seconds_title">显示时钟秒数</string>
+    <string name="pref_sb_show_seconds_desc">在状态栏时钟中显示秒数（hh:mm:ss）。</string>
+    <string name="pref_sb_hide_battery_percent_title">隐藏电池百分比</string>
+    <string name="pref_sb_hide_battery_percent_desc">隐藏电量百分比，仅显示电池图标。</string>
+    <string name="pref_sb_hide_volte_title">隐藏 VoLTE / VoWiFi / NFC 图标</string>
+    <string name="pref_sb_hide_volte_desc">隐藏 VoLTE、高清通话、VoWiFi、NFC 和双 SIM 卡指示图标。</string>
+    <string name="pref_sb_ios_icons_title">iOS 风格图标（Wi-Fi / 信号）</string>
+    <string name="pref_sb_ios_icons_desc">将 Wi-Fi 图标替换为扇形，将信号图标替换为 iOS 风格的四格信号条。</string>
+    <string name="pref_sb_custom_padding_title">应用 razr fold 优化边距</string>
+    <string name="pref_sb_custom_padding_desc">调整内屏（挖孔屏）和外屏的边距。</string>
+
+    <!-- Battery -->
+    <string name="section_battery_title">电池</string>
+    <string name="battery_hint">状态栏显示更改在重启 SystemUI 后生效；充电控制在重启设备后生效。</string>
+    <string name="battery_icon_style_title">电池图标</string>
+    <string name="battery_icon_style_summary">更改状态栏电池图标形状。</string>
+    <string name="battery_icon_style_system">系统默认</string>
+    <string name="battery_icon_style_circle">圆形</string>
+    <string name="battery_icon_style_pill">胶囊形</string>
+    <string name="battery_icon_style_hidden">隐藏</string>
+    <string name="battery_percent_style_title">电池百分比</string>
+    <string name="battery_percent_style_summary">在始终显示、隐藏和图标内显示之间切换。“图标内显示”使用胶囊形图标。</string>
+    <string name="battery_percent_style_system">系统默认</string>
+    <string name="battery_percent_style_always">始终显示</string>
+    <string name="battery_percent_style_hidden">隐藏</string>
+    <string name="battery_percent_style_in_icon">图标内显示</string>
+    <string name="battery_charge_limit_title">启用充电至 80% 停止</string>
+    <string name="battery_charge_limit_desc">通过 Motorola 自适应充电机制，在电量达到指定值时停止充电。</string>
+    <string name="battery_charge_limit_value_title">停止充电阈值</string>
+    <string name="battery_charge_limit_value_desc">可设置为 60–100%。不支持 Motorola 充电控制的设备不会应用此设置。</string>
+    <string name="battery_charge_limit_value_format">%1$d%%</string>
+    <string name="battery_disable_overheat_title">移除电池温度控制</string>
+    <string name="battery_disable_overheat_desc">禁用电池过热关机保护。使用风险自负。</string>
+    <string name="battery_reboot_hint">充电和温度控制由 system_server 管理，更改后请重启设备。</string>
+
+    <string name="section_screenshot_title">屏幕截图</string>
+    <string name="disable_flag_secure_title">禁用 FLAG_SECURE（允许截屏）</string>
+    <string name="disable_flag_secure_desc">忽略 FLAG_SECURE，允许对受保护的屏幕截屏和录屏。</string>
+    <string name="disable_flag_secure_warning">银行应用等受安全保护的屏幕也将可以截屏。请仅在需要时启用。</string>
+
+    <string name="section_framework_title">系统框架</string>
+    <string name="restart_menu_title">重启菜单</string>
+    <string name="restart_menu_launcher">重启启动器</string>
+    <string name="restart_menu_systemui">重启 SystemUI</string>
+    <string name="restart_menu_soft_reboot">软重启（Zygote）</string>
+    <string name="restart_menu_device">重启设备</string>
+    <string name="restart_menu_clear_cache">清除图标缓存并重启</string>
+    <string name="status_rebooting">正在重启设备…</string>
+    <string name="pref_corepatch_bypass_signatures_title">绕过签名验证</string>
+    <string name="pref_corepatch_bypass_signatures_desc">允许使用不同签名的 APK 覆盖安装已安装的应用</string>
+    <string name="pref_disable_camera_sound_title">禁用相机快门声</string>
+    <string name="pref_disable_camera_sound_desc">禁用在日本地区或插入日本 SIM 卡时强制启用的快门声。</string>
+    <string name="pref_corepatch_allow_downgrade_title">允许降级</string>
+    <string name="pref_corepatch_allow_downgrade_desc">允许使用较低 versionCode 的 APK 覆盖安装已安装的应用</string>
+    <string name="pref_corepatch_bypass_digest_title">跳过损坏或测试签名检查</string>
+    <string name="pref_corepatch_bypass_digest_desc">忽略摘要验证错误并继续安装</string>
+    <string name="corepatch_reboot_note">※ 系统框架设置更改需要重启设备或软重启（重启 Zygote）后才能生效。</string>
+    <string name="pref_safe_mode_title">安全模式（不支持的设备保护）</string>
+    <string name="pref_safe_mode_desc">在 razr fold 以外的设备启用相关选项时，避免崩溃和循环重启。错误日志将强制写入 /sdcard/Download/Errorlog。</string>
+    <string name="status_safe_mode_log">错误日志已写入 /sdcard/Download/Errorlog</string>
+    <string name="button_soft_reboot">软重启并应用</string>
+    <string name="status_soft_rebooting">正在执行软重启…</string>
+
+    <string name="pref_cc_swap_sliders_title">交换音量与亮度滑块</string>
+    <string name="pref_cc_swap_sliders_desc">将亮度置于左侧、音量置于右侧，并同步两者高度。</string>
+    <string name="pref_cc_ios_connectivity_title">iOS 15 风格 2×2 连接卡片</string>
+    <string name="pref_cc_liquid_glass_title">液态玻璃控制中心</string>
+    <string name="pref_cc_background_blur_title">控制中心与通知中心背景模糊</string>
+    <string name="pref_cc_background_blur_desc" formatted="false">使用系统原生模糊，为两处背景整体应用相同比例。100% 为系统默认强度，0% 为不模糊。与液态玻璃开关相互独立。保存后若未生效，请通过右上角菜单重启 SystemUI。</string>
+    <string name="pref_cc_liquid_glass_desc">应用与通知卡片相同的背景模糊、透明感和边缘反光，不改变开关或滑块的大小、位置和操作。与通知模糊设置相互独立。</string>
+    <string name="pref_cc_liquid_glass_hint">默认关闭。启用或关闭后，请通过右上角菜单重启 SystemUI。设备禁用模糊时将使用半透明玻璃效果。</string>
+    <string name="pref_cc_ios_connectivity_desc">将 Wi-Fi、移动数据、蓝牙和飞行模式排列为 2×2 网格。</string>
+
+    <!-- Status bar element order -->
+    <string name="section_status_bar_order_title">通知栏排序</string>
+    <string name="status_bar_order_summary">长按并拖动可更改顺序。使用 ⇄ 按钮可在左右分组之间移动。</string>
+    <string name="status_bar_order_left">左侧</string>
+    <string name="status_bar_order_right">右侧</string>
+    <string name="status_bar_order_hint">更改后请点击“重启 SystemUI 并应用”。</string>
+    <string name="status_bar_order_move">移至另一侧</string>
+    <string name="status_bar_order_reset">恢复默认顺序</string>
+    <string name="status_bar_element_clock">时钟</string>
+    <string name="status_bar_element_ongoing">进行中的活动</string>
+    <string name="status_bar_element_notifications">通知图标</string>
+    <string name="status_bar_element_user_switcher">用户图标</string>
+    <string name="status_bar_element_wifi">Wi-Fi</string>
+    <string name="status_bar_element_mobile">移动信号</string>
+    <string name="status_bar_element_battery">电池</string>
+    <string name="status_bar_element_system_icons">状态图标（Wi-Fi / 信号 / 电池）</string>
+
+    <!-- Maintenance and backup -->
+    <string name="restart_button">重启启动器并应用</string>
+    <string name="clear_cache_button">清除图标缓存</string>
+    <string name="restart_systemui_button">重启 SystemUI 并应用</string>
+    <string name="status_restarting_systemui">正在重启 SystemUI…</string>
+
+    <string name="section_backup_title">启动器布局</string>
+    <string name="backup_section_title">启动器布局备份</string>
+    <string name="backup_section_desc">保存桌面、Dock 和文件夹布局。恢复时会停止启动器并替换其数据库。</string>
+    <string name="backup_button">备份当前布局</string>
+    <string name="restore_button">恢复所选备份</string>
+    <string name="backup_select_hint">请选择要恢复的备份。</string>
+    <string name="backup_empty">暂无备份</string>
+    <string name="backup_none_selected">未选择备份。</string>
+    <string name="status_backing_up">正在备份启动器布局…</string>
+    <string name="status_restoring">正在恢复启动器布局…</string>
+    <string name="status_backup_success">启动器布局备份已创建。</string>
+    <string name="status_restore_success">启动器布局已恢复。</string>
+
+    <string name="section_actions_title">维护</string>
+    <string name="section_info_title">模块信息</string>
+    <string name="about_scope_body">LSPosed 作用域\n• com.motorola.launcher3\n• com.android.systemui\n• android</string>
+    <string name="about_restart_body">首次安装或更新模块后请重启设备。更改设置后请使用相应的重启按钮。</string>
+    <string name="about_credits_title">致谢与许可证</string>
+    <string name="about_credits_body">MockingBatwing © 2026 Devola-Sun\n\n使用的开源软件（排名不分先后）\n• YukiHookAPI 1.3.2 — Apache License 2.0 © HighCapable\n• KavaRef — Apache License 2.0 © HighCapable\n• AndroidX / AppCompat — Apache License 2.0 © The Android Open Source Project\n• LSPosed Framework — GPLv3 © LSPosed\n\nMockingBatwing 本身采用 GPLv3 许可证。\n可免费使用。</string>
+
+    <string name="status_idle">更改设置后，请点击“重启启动器并应用”。</string>
+    <string name="status_restarting">正在重启启动器…</string>
+    <string name="status_clearing_cache">正在清除图标缓存并重启启动器以应用形状…</string>
+    <string name="status_success">已完成。请检查启动器。</string>
+    <string name="status_failed">失败：%1$s</string>
+    <string name="status_root_unavailable">root（su）不可用。</string>
+
+    <string name="section_lock_clock_title">锁屏时钟</string>
+    <string name="pref_lock_clock_size_title">时钟放大比例</string>
+    <string name="pref_lock_clock_size_desc" formatted="false">可在 100–200% 之间以 1% 为单位调整。100% 恢复原始大小。与“保持大时钟”和液态玻璃相互独立，不会放大息屏显示。更改后请通过右上角菜单重启 SystemUI。较高比例或某些时钟样式可能导致内容裁切，或与通知、小组件重叠。</string>
+    <string name="pref_lock_clock_liquid_glass_title">液态玻璃时钟</string>
+    <string name="pref_lock_clock_liquid_glass_desc">为时钟数字添加透明感、渐变和边缘反光，不进行实际的壁纸折射或模糊。不改变时钟大小、字体和位置，与“保持大时钟”相互独立。关闭或息屏显示时恢复原生绘制。更改后请通过右上角菜单重启 SystemUI。部分时钟样式不受支持。</string>
+    <string name="section_notification_media_title">通知与媒体卡片</string>
+    <string name="pref_lock_media_compact_title">紧凑锁屏媒体卡片</string>
+    <string name="pref_lock_media_compact_desc">使用圆角卡片，包含小尺寸专辑封面、曲目信息、进度条和下方播放控件。液态玻璃关闭时使用深色普通模糊背景，开启时使用液态玻璃背景。仅适用于锁屏，不改变控制中心。模糊不可用时使用半透明背景。更改后请重启 SystemUI。关闭可恢复原有布局。</string>
+    <string name="pref_notification_media_frost_title">液态玻璃效果</string>
+    <string name="pref_notification_keep_silent_visible_title">不收起静默通知</string>
+    <string name="pref_notification_keep_silent_visible_desc">在通知中心将静默通知保留为卡片，而非收起为仅含图标的横栏。不改变声音、振动或重要程度。更改后请重启 SystemUI。关闭可恢复原生行为。</string>
+    <string name="pref_notification_media_frost_desc">为通知和锁屏媒体卡片添加半透明表面与细微的边缘反光。控制中心的媒体卡片保留原生背景模糊，同时保留布局和大小定制。不改变通知位置和通知中心的普通列表。关闭可恢复原生背景。</string>
+    <string name="notification_media_frost_hint">需要 LSPosed 的 SystemUI 作用域。更改后请通过右上角菜单重启 SystemUI。保留原生通知操作和隐私设置。TalkBack 触摸探索启用时不使用堆叠。模糊不可用或被省电模式禁用时，使用半透明表面与轮廓线。部分 ROM 不受支持。</string>
+    <string name="pref_lock_keep_large_clock_title">保持大时钟（实验性）</string>
+    <string name="pref_lock_keep_large_clock_desc">在有通知或媒体播放时仍保持大时钟，并将锁屏通知移至底部堆叠。两张及以上卡片可通过纵向滚动查看。关闭可恢复原生时钟行为和通知位置。不改变通知中心布局。</string>
+    <string name="lock_clock_hint">此开关控制通知位置与堆叠。背景由液态玻璃效果单独控制。更改后请通过右上角菜单重启 SystemUI。触摸探索启用时使用普通列表。部分 ROM 不受支持，位置、与小组件的重叠及交互需要实机测试。</string>
+    <string name="section_lock_shortcuts_title">锁屏快捷方式</string>
+    <string name="pref_lock_shortcut_blur_title">液态玻璃快捷方式背景</string>
+    <string name="pref_lock_edge_camera_title">从右边缘滑动打开相机</string>
+    <string name="pref_lock_edge_camera_desc">从锁屏右边缘向左滑动可打开锁屏相机。</string>
+    <string name="pref_lock_shortcut_blur_desc">为锁屏左下角和右下角按钮添加半透明背景与边缘反光。时钟下方的手机与蓝牙设备电量小组件保留原生背景。与通知及媒体卡片设置相互独立，不会模糊按钮图标。关闭可恢复原生按钮背景。更改后请重启 SystemUI。</string>
+    <string name="pref_lock_shortcut_size_title">快捷方式大小</string>
+    <string name="pref_lock_shortcut_size_desc">同时应用于两侧。100% 为系统默认大小。放大按钮、图标及触摸区域。</string>
+    <string name="lock_shortcut_hint">熄屏后重新显示锁屏以应用更改。必要时请重启 SystemUI。模糊不可用或被省电模式禁用时，使用与通知卡片相同的半透明表面和轮廓线。</string>
+
+    <!-- Language -->
+    <string name="section_language_title">语言</string>
+    <string name="pref_language_title">显示语言</string>
+    <string name="pref_language_desc">切换应用的显示语言。更改立即生效。</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_en">English</string>
+    <string name="language_zh_cn">简体中文（中国大陆）</string>
+    <string name="language_ru">Русский</string>
+    <string name="section_lock_pin_title">锁屏 PIN 码输入</string>
+    <string name="pref_lock_pin_auto_confirm_title">达到指定长度后自动确认</string>
+    <string name="pref_lock_pin_auto_confirm_desc">隐藏数字锁屏 PIN 码的确认按钮，仅在输入达到指定长度时自动验证。关闭可恢复原生行为。</string>
+    <string name="pref_lock_pin_length_title">自动确认的 PIN 码长度</string>
+    <string name="lock_pin_length_format">%1$d 位</string>
+    <string name="lock_pin_hint">请务必选择与当前 PIN 码相同的长度（4–16 位）。此设置不会更改 PIN 码。更改后请重启 SystemUI。不适用于 SIM 卡 PIN 码和文本密码。若检测到实际长度与设置不符，将保留原生行为。若无法获取长度，则使用所选值：选错会导致验证失败，此时请关闭此功能并重启 SystemUI。失败次数限制和锁定等待时间不会改变。</string>
+    <string name="section_moto_widget_title">Moto 小组件</string>
+    <string name="feature_moto_widget_package">com.motorola.timeweatherwidget</string>
+    <string name="page_moto_widget_subtitle">定制桌面 Moto 小组件的时钟、日期与天气</string>
+    <string name="moto_widget_clock_liquid_glass_title">液态玻璃时钟、日期与天气</string>
+    <string name="moto_widget_clock_liquid_glass_summary">为桌面 Moto 小组件的时钟、日期、天气图标与说明、温度、城市名称等信息添加透明感、渐变和边缘反光。默认关闭。不改变大小、布局、背景或锁屏时钟。不进行实际的壁纸折射或模糊。关闭可恢复原生绘制。需要 LSPosed 的 com.motorola.launcher3 作用域。更改后请使用下方按钮重启小组件和启动器。无法识别的显示元素保留原生绘制。</string>
+    <string name="restart_moto_widget_button">重启 Moto 小组件与启动器并应用</string>
+    <string name="status_restarting_moto_widget">正在重启 Moto 小组件与启动器…</string>
+</resources>

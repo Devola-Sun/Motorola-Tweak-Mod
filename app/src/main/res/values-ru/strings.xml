@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="section_updates_title">Обновления</string>
+    <string name="pref_auto_update_check_title">Автоматическая проверка обновлений</string>
+    <string name="pref_auto_update_check_desc">При открытии приложения проверяет стабильные выпуски на GitHub и предлагает обновление, если доступна новая версия.</string>
+    <string name="update_available_title">Доступно обновление</string>
+    <string name="update_available_message">Вышла новая стабильная версия.\n\nУстановлена: %1$s\nПоследняя: %2$s\n\nОбновление доступно на странице выпуска на GitHub.</string>
+    <string name="update_open_release">Открыть на GitHub</string>
+    <string name="update_later">Позже</string>
+    <string name="update_open_failed">Не удалось открыть страницу выпуска. Проверьте, установлен ли браузер.</string>
+    <string name="app_name">MockingBatwing</string>
+    <string name="app_tagline">Лаунчер и SystemUI</string>
+    <string name="creator_credit">Автор: Devola-Sun</string>
+    <string name="creator_credit_short">Devola-Sun</string>
+    <string name="xposed_description">MockingBatwing — настройка лаунчера, SystemUI и системной платформы Motorola Razr через LSPosed: значки, сетка, подписи, строка состояния, центр управления, CorePatch, резервное копирование и восстановление расположения элементов лаунчера.</string>
+
+    <string name="settings_title">MockingBatwing</string>
+    <string name="settings_subtitle">Управляйте настройками лаунчера и SystemUI на одном экране. Настройки сохраняются в общих параметрах приложения.</string>
+    <string name="settings_activation_hint">Включите модуль в LSPosed и добавьте com.motorola.launcher3, com.android.systemui и android в область действия. При первом использовании требуется перезагрузка устройства.</string>
+
+    <!-- Bottom navigation and page headers -->
+    <string name="nav_home">Главная</string>
+    <string name="nav_features">Функции</string>
+    <string name="nav_log">Журнал</string>
+    <string name="nav_appearance">Оформление</string>
+    <string name="nav_systemui">SystemUI</string>
+    <string name="nav_more">Ещё</string>
+
+    <string name="page_home_title">MockingBatwing</string>
+    <string name="page_home_subtitle">Настройка лаунчера и SystemUI</string>
+    <string name="page_features_title">Функции</string>
+    <string name="page_features_subtitle">Настройки по категориям</string>
+    <string name="section_lock_screen_title">Экран блокировки</string>
+    <string name="page_lock_screen_subtitle">Часы, медиакарточка, ввод PIN-кода и ярлыки</string>
+    <string name="feature_lock_screen_desc">Часы, расположение уведомлений, медиакарточка, автоподтверждение PIN-кода, ярлыки и жест камеры</string>
+    <string name="page_log_title">Журнал</string>
+    <string name="page_log_subtitle">Журнал работы модуля</string>
+    <string name="page_launcher_title">Лаунчер Moto</string>
+    <string name="page_launcher_subtitle">Значки, подписи, папки и сетка</string>
+    <string name="page_appearance_title">Оформление</string>
+    <string name="page_appearance_subtitle">Значки, подписи, папки и сетка</string>
+    <string name="page_systemui_title">SystemUI</string>
+    <string name="page_systemui_subtitle">Строка состояния и центр управления</string>
+    <string name="page_more_title">Ещё</string>
+    <string name="page_more_subtitle">Резервные копии, кэш и сведения о модуле</string>
+
+    <!-- Features / per-app settings -->
+    <string name="features_intro">Выберите категорию для настройки. Каждая карточка открывает отдельный экран настроек.</string>
+    <string name="feature_launcher_title">Лаунчер Moto</string>
+    <string name="feature_launcher_package">com.motorola.launcher3</string>
+    <string name="feature_launcher_desc">Форма значков, подписи, папки, сетка рабочего стола и размер виджетов</string>
+    <string name="feature_systemui_title">SystemUI</string>
+    <string name="feature_systemui_package">com.android.systemui</string>
+    <string name="feature_systemui_desc">Строка состояния, порядок элементов панели уведомлений и центр управления</string>
+    <string name="feature_open_settings">Открыть настройки</string>
+    <string name="feature_scope_title">Область действия LSPosed</string>
+    <string name="feature_scope_summary">com.motorola.launcher3\ncom.android.systemui\nandroid</string>
+    <string name="feature_scope_hint">Показаны области действия, в которых обнаружены загруженные хуки.</string>
+    <string name="feature_scope_none">Нет областей с активными хуками (модуль отключён или область действия не настроена)</string>
+    <string name="icon_shape_system">По умолчанию</string>
+    <string name="icon_shape_squircle">Скруглённый квадрат</string>
+    <string name="icon_shape_circle">Круг</string>
+    <string name="icon_shape_square">Квадрат</string>
+    <string name="icon_shape_diamond">Ромб</string>
+
+    <string name="feature_launcher_summary">Сетка %1$s · Док %2$d · Папки %3$s</string>
+    <string name="feature_systemui_summary">Секунды %1$s · Значки iOS %2$s · Порядок %3$s</string>
+    <string name="feature_framework_title">Системная платформа</string>
+    <string name="feature_framework_package">android</string>
+    <string name="feature_framework_desc">Отключение FLAG_SECURE и звука затвора, обход проверки подписей, разрешение понижения версии</string>
+    <string name="feature_framework_summary">FLAG_SECURE %1$s · Без звука затвора %2$s · Обход подписей %3$s · Понижение версии %4$s</string>
+    <string name="page_framework_title">Системная платформа</string>
+    <string name="page_framework_subtitle">Настройки системной платформы</string>
+    <string name="feature_order_custom">Свой</string>
+    <string name="feature_order_default">По умолчанию</string>
+
+    <!-- Log -->
+    <string name="log_section_title">Журнал модуля</string>
+    <string name="log_section_desc">Показывает журнал хуков лаунчера и SystemUI. Нажмите «Обновить», чтобы загрузить свежие записи.</string>
+    <string name="log_refresh">Обновить</string>
+    <string name="log_clear_view">Очистить экран</string>
+    <string name="log_empty">Нет записей.</string>
+    <string name="log_loading">Загрузка журнала…</string>
+    <string name="log_root_hint">Для чтения журнала требуются root-права (su).</string>
+    <string name="log_root_error">Не удалось прочитать журнал: %1$s</string>
+    <string name="log_line_count">Строк: %1$d</string>
+
+    <!-- Widget resize -->
+    <string name="widget_free_resize_title">Свободный размер виджетов</string>
+    <string name="widget_free_resize_summary">Снимает ограничения изменения размера при долгом нажатии и позволяет менять размер с шагом в одну ячейку.</string>
+
+    <!-- Cover-screen Dock -->
+    <string name="section_cover_dock">Док внешнего экрана</string>
+    <string name="cover_dock_enable_title">Показывать док на внешнем экране</string>
+    <string name="cover_dock_enable_summary">Показывает панель избранных приложений на внешнем дисплее. После изменения перезапустите лаунчер.</string>
+    <string name="cover_dock_floating_island_title">Парящий док-остров</string>
+    <string name="cover_dock_floating_island_summary">Только для внешнего экрана. Добавляет фону боковые отступы не менее 20dp и скругления 28dp. Использует настройки ширины и высоты фона, не меняя число значков и область размещения. После изменения перезапустите лаунчер.</string>
+    <string name="cover_dock_frost_title">Док из матового стекла</string>
+    <string name="cover_dock_liquid_glass_title">Док Liquid Glass</string>
+    <string name="cover_dock_liquid_glass_summary">Добавляет доку внешнего экрана полупрозрачный градиент и блики по краям. Нельзя включить одновременно с матовым стеклом. После изменения перезапустите лаунчер.</string>
+    <string name="section_main_dock">Док основного экрана</string>
+    <string name="main_dock_frost_title">Док из матового стекла</string>
+    <string name="main_dock_liquid_glass_title">Док Liquid Glass</string>
+    <string name="main_dock_glass_summary">Любой из стилей делает штатный фон дока прозрачным и добавляет стеклянный фон того же размера на том же месте. Стили взаимоисключающие. Отключите оба, чтобы вернуть штатный фон. Обои не размываются. После изменения перезапустите лаунчер.</string>
+    <string name="folder_liquid_glass_title">Папки Liquid Glass</string>
+    <string name="folder_liquid_glass_summary">Добавляет полупрозрачные градиенты и блики по краям значков папок и фона открытых папок. После изменения перезапустите лаунчер.</string>
+    <string name="cover_dock_frost_summary">Придаёт доку внешнего экрана вид матового стекла с помощью полупрозрачного градиента и тонкой рамки. Обои и значки не размываются. После изменения перезапустите лаунчер.</string>
+    <string name="cover_dock_height_title">Высота фона дока</string>
+    <string name="cover_dock_width_title">Ширина фона дока</string>
+    <string name="cover_dock_size_title">Размер дока</string>
+    <string name="cover_dock_percent_format">%1$d%%</string>
+
+    <!-- Home -->
+    <string name="home_badge">МОДУЛЬ LSPOSED</string>
+    <string name="home_status_title">Модуль готов к работе</string>
+    <string name="home_status_summary">Настройки сохраняются сразу. Для применения перезапустите соответствующий процесс.</string>
+    <string name="home_scope_title">Область действия LSPosed</string>
+    <string name="home_scope_summary">com.motorola.launcher3\ncom.android.systemui\nandroid</string>
+    <string name="home_scope_hint">Показаны области действия, в которых обнаружены загруженные хуки.</string>
+    <string name="about_scope_body_dynamic">Область действия LSPosed (обнаружена)\n%1$s</string>
+    <string name="home_overview_title">Текущие настройки</string>
+    <string name="home_overview_grid">Сетка</string>
+    <string name="home_overview_dock">Док</string>
+    <string name="home_overview_folder">Папки</string>
+    <string name="home_quick_actions">Быстрые действия</string>
+    <string name="home_open_appearance">Настройки оформления</string>
+    <string name="home_open_systemui">Настройки SystemUI</string>
+    <string name="home_footer">MockingBatwing %1$s · Модуль LSPosed · Devola-Sun</string>
+    <string name="app_version_format">v%1$s</string>
+    <string name="value_on">ВКЛ</string>
+    <string name="value_off">ВЫКЛ</string>
+    <string name="value_grid_format">%1$d × %2$d</string>
+    <string name="value_dock_format">%1$d</string>
+
+    <!-- Appearance -->
+    <string name="section_appearance">Значки и подписи</string>
+    <string name="hide_labels_title">Скрыть подписи значков</string>
+    <string name="hide_labels_summary">Делает подписи прозрачными на рабочем столе, в списке приложений, папках и доке.</string>
+
+    <string name="icon_shape_title">Форма значков</string>
+    <string name="icon_shape_summary">Выберите «По умолчанию», чтобы вернуть стандартную маску. После изменения формы рекомендуется очистить кэш значков.</string>
+
+    <string name="folder_preview_3x3_title">Предпросмотр папки 3×3</string>
+    <string name="folder_preview_3x3_summary">Показывает до 9 значков приложений в сетке 3×3. Открытая папка использует фиксированную сетку 4×4 (до 16 значков) с выравниванием от верхнего левого угла.</string>
+
+    <string name="section_layout">Сетка рабочего стола</string>
+    <string name="root_required_title">Требуются root-права</string>
+    <string name="root_required_message">Для применения настроек, перезапуска лаунчера и чтения области действия модуля нужны root-права.\n\nПредоставьте этому приложению (io.github.devola_sun.motorolatweak) права суперпользователя в KernelSU / SukiSU / Magisk, затем нажмите «Проверить снова».\n\nЕсли права уже предоставлены, закройте и снова откройте приложение.</string>
+    <string name="root_required_retry">Проверить снова</string>
+    <string name="layout_summary">Число строк, столбцов и значков дока — от 4 до 10. После изменения перезапустите лаунчер.</string>
+    <string name="grid_rows_title">Строки рабочего стола</string>
+    <string name="grid_columns_title">Столбцы рабочего стола</string>
+    <string name="square_grid_cells_title">Квадратные ячейки сетки</string>
+    <string name="square_grid_cells_summary">Делает ячейки рабочего стола квадратными (1:1) и равномерно распределяет свободное место сверху, снизу и по бокам. После изменения перезапустите лаунчер.</string>
+    <string name="dock_icons_title">Число значков в доке</string>
+
+    <!-- SystemUI -->
+    <string name="section_systemui_title">Строка состояния</string>
+    <string name="section_control_center_title">Центр управления</string>
+    <string name="pref_cc_compact_layout_title">Медиакарточка в верхнем ряду</string>
+    <string name="pref_cc_compact_layout_desc">Размещает квадратную медиакарточку справа от карточки подключений, а ниже — яркость слева и громкость справа. Внизу слева находятся фонарик и автоповорот, под ними — кнопка режима сна шириной в две плитки.</string>
+    <string name="pref_cc_compact_layout_hint">После включения или отключения перезапустите SystemUI через меню справа вверху. Нужна область действия SystemUI в LSPosed. Работает в портретном и настольном режимах. Карточка подключений 2×2 настраивается в разделе SystemUI.</string>
+    <string name="systemui_hint">Настройки строки состояния применяются после перезапуска SystemUI.</string>
+
+    <string name="pref_sb_show_seconds_title">Показывать секунды</string>
+    <string name="pref_sb_show_seconds_desc">Показывает секунды (hh:mm:ss) в часах строки состояния.</string>
+    <string name="pref_sb_hide_battery_percent_title">Скрыть процент заряда</string>
+    <string name="pref_sb_hide_battery_percent_desc">Скрывает процент заряда, оставляя только значок батареи.</string>
+    <string name="pref_sb_hide_volte_title">Скрыть значки VoLTE / VoWiFi / NFC</string>
+    <string name="pref_sb_hide_volte_desc">Скрывает индикаторы VoLTE, HD-вызовов, VoWiFi, NFC и двух SIM-карт.</string>
+    <string name="pref_sb_ios_icons_title">Значки в стиле iOS (Wi-Fi / сигнал)</string>
+    <string name="pref_sb_ios_icons_desc">Заменяет значок Wi-Fi на веерообразный, а значок сигнала — на четыре полоски в стиле iOS.</string>
+    <string name="pref_sb_custom_padding_title">Отступы для razr fold</string>
+    <string name="pref_sb_custom_padding_desc">Корректирует отступы основного дисплея с вырезом под камеру и внешнего дисплея.</string>
+
+    <!-- Battery -->
+    <string name="section_battery_title">Батарея</string>
+    <string name="battery_hint">Изменения строки состояния применяются после перезапуска SystemUI, управление зарядкой — после перезагрузки устройства.</string>
+    <string name="battery_icon_style_title">Значок батареи</string>
+    <string name="battery_icon_style_summary">Меняет форму значка батареи в строке состояния.</string>
+    <string name="battery_icon_style_system">По умолчанию</string>
+    <string name="battery_icon_style_circle">Круг</string>
+    <string name="battery_icon_style_pill">Капсула</string>
+    <string name="battery_icon_style_hidden">Скрыт</string>
+    <string name="battery_percent_style_title">Процент заряда</string>
+    <string name="battery_percent_style_summary">Выберите постоянное отображение, скрытие или отображение внутри значка. В последнем случае значок имеет форму капсулы.</string>
+    <string name="battery_percent_style_system">По умолчанию</string>
+    <string name="battery_percent_style_always">Всегда виден</string>
+    <string name="battery_percent_style_hidden">Скрыт</string>
+    <string name="battery_percent_style_in_icon">Внутри значка</string>
+    <string name="battery_charge_limit_title">Останавливать зарядку на 80%</string>
+    <string name="battery_charge_limit_desc">Использует адаптивную зарядку Motorola для остановки на выбранном уровне.</string>
+    <string name="battery_charge_limit_value_title">Порог остановки зарядки</string>
+    <string name="battery_charge_limit_value_desc">Выберите 60–100%. Не применяется на устройствах без управления зарядкой Motorola.</string>
+    <string name="battery_charge_limit_value_format">%1$d%%</string>
+    <string name="battery_disable_overheat_title">Отключить контроль температуры</string>
+    <string name="battery_disable_overheat_desc">Отключает выключение при перегреве батареи. Используйте на свой страх и риск.</string>
+    <string name="battery_reboot_hint">Зарядкой и температурой управляет system_server. После изменения перезагрузите устройство.</string>
+
+    <string name="section_screenshot_title">Снимки экрана</string>
+    <string name="disable_flag_secure_title">Отключить FLAG_SECURE (разрешить снимки)</string>
+    <string name="disable_flag_secure_desc">Игнорирует FLAG_SECURE, разрешая снимки и запись защищённых экранов.</string>
+    <string name="disable_flag_secure_warning">Защищённые экраны (например, банковских приложений) тоже можно будет снимать. Включайте только при необходимости.</string>
+
+    <string name="section_framework_title">Системная платформа</string>
+    <string name="restart_menu_title">Меню перезапуска</string>
+    <string name="restart_menu_launcher">Перезапустить лаунчер</string>
+    <string name="restart_menu_systemui">Перезапустить SystemUI</string>
+    <string name="restart_menu_soft_reboot">Мягкая перезагрузка (Zygote)</string>
+    <string name="restart_menu_device">Перезагрузить устройство</string>
+    <string name="restart_menu_clear_cache">Очистить кэш значков и перезапустить</string>
+    <string name="status_rebooting">Перезагрузка устройства…</string>
+    <string name="pref_corepatch_bypass_signatures_title">Обход проверки подписей</string>
+    <string name="pref_corepatch_bypass_signatures_desc">Разрешает установку APK с другой подписью поверх установленного приложения</string>
+    <string name="pref_disable_camera_sound_title">Отключить звук затвора камеры</string>
+    <string name="pref_disable_camera_sound_desc">Отключает звук затвора, принудительно включаемый в Японии или при использовании японской SIM-карты.</string>
+    <string name="pref_corepatch_allow_downgrade_title">Разрешить понижение версии</string>
+    <string name="pref_corepatch_allow_downgrade_desc">Разрешает установку APK с меньшим versionCode поверх установленного приложения</string>
+    <string name="pref_corepatch_bypass_digest_title">Пропуск проверок повреждённых и тестовых подписей</string>
+    <string name="pref_corepatch_bypass_digest_desc">Игнорирует ошибки проверки контрольной суммы при установке</string>
+    <string name="corepatch_reboot_note">※ Для применения изменений системной платформы нужна перезагрузка устройства или мягкая перезагрузка (перезапуск Zygote).</string>
+    <string name="pref_safe_mode_title">Безопасный режим (защита неподдерживаемых устройств)</string>
+    <string name="pref_safe_mode_desc">Предотвращает сбои и циклическую загрузку при включении функций на устройствах, отличных от razr fold. Журнал ошибок принудительно записывается в /sdcard/Download/Errorlog.</string>
+    <string name="status_safe_mode_log">Журнал ошибок записан в /sdcard/Download/Errorlog</string>
+    <string name="button_soft_reboot">Мягкая перезагрузка и применение</string>
+    <string name="status_soft_rebooting">Мягкая перезагрузка…</string>
+
+    <string name="pref_cc_swap_sliders_title">Поменять местами громкость и яркость</string>
+    <string name="pref_cc_swap_sliders_desc">Размещает яркость слева, громкость справа и выравнивает высоту ползунков.</string>
+    <string name="pref_cc_ios_connectivity_title">Карточка подключений 2×2 в стиле iOS 15</string>
+    <string name="pref_cc_liquid_glass_title">Центр управления Liquid Glass</string>
+    <string name="pref_cc_background_blur_title">Размытие фона центров управления и уведомлений</string>
+    <string name="pref_cc_background_blur_desc" formatted="false">Применяет одинаковую интенсивность штатного размытия ко всему фону обоих центров. 100% — системная интенсивность, 0% — без размытия. Не зависит от Liquid Glass. Если сохранённое значение не применилось, перезапустите SystemUI через меню справа вверху.</string>
+    <string name="pref_cc_liquid_glass_desc">Применяет размытие фона, прозрачность и блики по краям, как у карточек уведомлений, не меняя размеры, положение и работу переключателей и ползунков. Не зависит от настройки размытия уведомлений.</string>
+    <string name="pref_cc_liquid_glass_hint">По умолчанию отключено. После включения или отключения перезапустите SystemUI через меню справа вверху. Если размытие отключено устройством, используется полупрозрачное стекло.</string>
+    <string name="pref_cc_ios_connectivity_desc">Располагает Wi-Fi, мобильные данные, Bluetooth и режим полёта в сетке 2×2.</string>
+
+    <!-- Status bar element order -->
+    <string name="section_status_bar_order_title">Порядок элементов панели уведомлений</string>
+    <string name="status_bar_order_summary">Удерживайте и перетаскивайте для изменения порядка. Кнопка ⇄ перемещает элемент между группами.</string>
+    <string name="status_bar_order_left">Слева</string>
+    <string name="status_bar_order_right">Справа</string>
+    <string name="status_bar_order_hint">После изменения нажмите «Перезапустить SystemUI и применить».</string>
+    <string name="status_bar_order_move">Переместить на другую сторону</string>
+    <string name="status_bar_order_reset">Восстановить стандартный порядок</string>
+    <string name="status_bar_element_clock">Часы</string>
+    <string name="status_bar_element_ongoing">Текущая активность</string>
+    <string name="status_bar_element_notifications">Значки уведомлений</string>
+    <string name="status_bar_element_user_switcher">Значок пользователя</string>
+    <string name="status_bar_element_wifi">Wi-Fi</string>
+    <string name="status_bar_element_mobile">Сигнал мобильной сети</string>
+    <string name="status_bar_element_battery">Батарея</string>
+    <string name="status_bar_element_system_icons">Значки состояния (Wi-Fi / сигнал / батарея)</string>
+
+    <!-- Maintenance and backup -->
+    <string name="restart_button">Перезапустить лаунчер и применить</string>
+    <string name="clear_cache_button">Очистить кэш значков</string>
+    <string name="restart_systemui_button">Перезапустить SystemUI и применить</string>
+    <string name="status_restarting_systemui">Перезапуск SystemUI…</string>
+
+    <string name="section_backup_title">Расположение элементов лаунчера</string>
+    <string name="backup_section_title">Резервная копия расположения элементов</string>
+    <string name="backup_section_desc">Сохраняет расположение элементов рабочего стола, дока и папок. Восстановление останавливает лаунчер и заменяет его базу данных.</string>
+    <string name="backup_button">Создать резервную копию</string>
+    <string name="restore_button">Восстановить выбранную копию</string>
+    <string name="backup_select_hint">Выберите копию для восстановления.</string>
+    <string name="backup_empty">Резервных копий пока нет</string>
+    <string name="backup_none_selected">Резервная копия не выбрана.</string>
+    <string name="status_backing_up">Создание резервной копии расположения элементов…</string>
+    <string name="status_restoring">Восстановление расположения элементов…</string>
+    <string name="status_backup_success">Резервная копия расположения элементов создана.</string>
+    <string name="status_restore_success">Расположение элементов восстановлено.</string>
+
+    <string name="section_actions_title">Обслуживание</string>
+    <string name="section_info_title">О модуле</string>
+    <string name="about_scope_body">Область действия LSPosed\n• com.motorola.launcher3\n• com.android.systemui\n• android</string>
+    <string name="about_restart_body">Перезагрузите устройство после первой установки и обновления модуля. После изменения настроек используйте соответствующие кнопки перезапуска.</string>
+    <string name="about_credits_title">Благодарности и лицензии</string>
+    <string name="about_credits_body">MockingBatwing © 2026 Devola-Sun\n\nИспользуемое ПО с открытым исходным кодом (без определённого порядка)\n• YukiHookAPI 1.3.2 — Apache License 2.0 © HighCapable\n• KavaRef — Apache License 2.0 © HighCapable\n• AndroidX / AppCompat — Apache License 2.0 © The Android Open Source Project\n• LSPosed Framework — GPLv3 © LSPosed\n\nСам MockingBatwing распространяется по лицензии GPLv3.\nБесплатен для использования.</string>
+
+    <string name="status_idle">Измените настройки и нажмите «Перезапустить лаунчер и применить».</string>
+    <string name="status_restarting">Перезапуск лаунчера…</string>
+    <string name="status_clearing_cache">Очистка кэша значков и перезапуск лаунчера для применения формы…</string>
+    <string name="status_success">Готово. Проверьте лаунчер.</string>
+    <string name="status_failed">Ошибка: %1$s</string>
+    <string name="status_root_unavailable">Root-доступ (su) недоступен.</string>
+
+    <string name="section_lock_clock_title">Часы экрана блокировки</string>
+    <string name="pref_lock_clock_size_title">Увеличение часов</string>
+    <string name="pref_lock_clock_size_desc" formatted="false">От 100 до 200% с шагом 1%. 100% возвращает исходный размер. Не зависит от сохранения больших часов и Liquid Glass; не увеличивает часы на постоянно включённом экране. После изменения перезапустите SystemUI через меню справа вверху. Большой масштаб и некоторые стили часов могут вызвать обрезку или наложение на уведомления и виджеты.</string>
+    <string name="pref_lock_clock_liquid_glass_title">Часы Liquid Glass</string>
+    <string name="pref_lock_clock_liquid_glass_desc">Добавляет цифрам прозрачность, градиенты и блики по краям без реального преломления или размытия обоев. Не меняет размер, шрифт и положение часов, не зависит от сохранения больших часов. При отключении и на постоянно включённом экране возвращается штатная отрисовка. После изменения перезапустите SystemUI через меню справа вверху. Некоторые стили часов не поддерживаются.</string>
+    <string name="section_notification_media_title">Уведомления и медиакарточки</string>
+    <string name="pref_lock_media_compact_title">Компактная медиакарточка на экране блокировки</string>
+    <string name="pref_lock_media_compact_desc">Скруглённая карточка с небольшой обложкой, сведениями о треке, полосой перемотки и кнопками воспроизведения внизу. При отключённом Liquid Glass фон тёмный с обычным размытием, при включённом — Liquid Glass. Только для экрана блокировки, без изменений центра управления. Если размытие недоступно, фон полупрозрачный. После изменения перезапустите SystemUI. Отключение возвращает прежнее расположение.</string>
+    <string name="pref_notification_media_frost_title">Liquid Glass</string>
+    <string name="pref_notification_keep_silent_visible_title">Не сворачивать беззвучные уведомления</string>
+    <string name="pref_notification_keep_silent_visible_desc">Сохраняет беззвучные уведомления в виде карточек в центре уведомлений вместо полосы значков. Не меняет звук, вибрацию и важность. После изменения перезапустите SystemUI. Отключение возвращает штатное поведение.</string>
+    <string name="pref_notification_media_frost_desc">Добавляет уведомлениям и медиакарточкам экрана блокировки полупрозрачный фон и тонкие блики по краям. Медиакарточки центра управления сохраняют штатное размытие фона, а также настройки расположения и размера. Положение уведомлений и обычный список в шторке не меняются. Отключение возвращает штатный фон.</string>
+    <string name="notification_media_frost_hint">Нужна область действия SystemUI в LSPosed. После изменения перезапустите SystemUI через меню справа вверху. Штатные действия уведомлений и настройки конфиденциальности сохраняются. При исследовании касанием TalkBack карточки не складываются в стопку. Если размытие недоступно или отключено энергосбережением, используются полупрозрачный фон и контур. Некоторые прошивки не поддерживаются.</string>
+    <string name="pref_lock_keep_large_clock_title">Сохранять большие часы (экспериментально)</string>
+    <string name="pref_lock_keep_large_clock_desc">Сохраняет большие часы при уведомлениях и воспроизведении, перемещая уведомления экрана блокировки в стопку внизу. Две и более карточки просматриваются вертикальной прокруткой. Отключение возвращает штатное поведение часов и положение уведомлений. Расположение в шторке не меняется.</string>
+    <string name="lock_clock_hint">Этот переключатель управляет положением уведомлений и их объединением в стопку. Фон настраивается отдельно через Liquid Glass. После изменения перезапустите SystemUI через меню справа вверху. При исследовании касанием используется обычный список. Некоторые прошивки не поддерживаются; положение, наложение на виджеты и взаимодействие требуют проверки на устройстве.</string>
+    <string name="section_lock_shortcuts_title">Ярлыки экрана блокировки</string>
+    <string name="pref_lock_shortcut_blur_title">Фон ярлыков Liquid Glass</string>
+    <string name="pref_lock_edge_camera_title">Камера свайпом от правого края</string>
+    <string name="pref_lock_edge_camera_desc">Проведите влево от правого края экрана блокировки, чтобы открыть камеру без разблокировки.</string>
+    <string name="pref_lock_shortcut_blur_desc">Добавляет полупрозрачный фон и блики по краям кнопок внизу слева и справа на экране блокировки. Виджеты заряда телефона и Bluetooth-устройств под часами сохраняют штатный фон. Не зависит от настроек уведомлений и медиакарточек, значки кнопок остаются чёткими. Отключение возвращает штатный фон кнопок. После изменения перезапустите SystemUI.</string>
+    <string name="pref_lock_shortcut_size_title">Размер ярлыков</string>
+    <string name="pref_lock_shortcut_size_desc">Применяется к обеим сторонам. 100% — системный размер. Увеличивает кнопки, значки и области касания.</string>
+    <string name="lock_shortcut_hint">Выключите экран и снова откройте экран блокировки для применения. При необходимости перезапустите SystemUI. Если размытие недоступно или отключено энергосбережением, используются полупрозрачный фон и контур, как у уведомлений.</string>
+
+    <!-- Language -->
+    <string name="section_language_title">Язык</string>
+    <string name="pref_language_title">Язык интерфейса</string>
+    <string name="pref_language_desc">Меняет язык интерфейса приложения. Изменения применяются сразу.</string>
+    <string name="language_ja">日本語</string>
+    <string name="language_en">English</string>
+    <string name="language_zh_cn">简体中文（中国大陆）</string>
+    <string name="language_ru">Русский</string>
+    <string name="section_lock_pin_title">Ввод PIN-кода экрана блокировки</string>
+    <string name="pref_lock_pin_auto_confirm_title">Автоподтверждение по длине</string>
+    <string name="pref_lock_pin_auto_confirm_desc">Скрывает кнопку подтверждения цифрового PIN-кода устройства и запускает проверку только после ввода выбранного числа цифр. Отключение возвращает штатное поведение.</string>
+    <string name="pref_lock_pin_length_title">Длина PIN-кода для автоподтверждения</string>
+    <string name="lock_pin_length_format">Цифр: %1$d</string>
+    <string name="lock_pin_hint">Обязательно выберите длину текущего PIN-кода (4–16 цифр). Сам PIN-код не меняется. После изменения перезапустите SystemUI. PIN-коды SIM-карт и текстовые пароли не затрагиваются. Если известная длина не совпадает с выбранной, сохраняется штатное поведение. Если длина недоступна, используется выбранное значение: неверный выбор приводит к ошибкам проверки. В таком случае отключите функцию и перезапустите SystemUI. Ограничения попыток и время блокировки не меняются.</string>
+    <string name="section_moto_widget_title">Виджеты Moto</string>
+    <string name="feature_moto_widget_package">com.motorola.timeweatherwidget</string>
+    <string name="page_moto_widget_subtitle">Настройка часов, даты и погоды виджета Moto на рабочем столе</string>
+    <string name="moto_widget_clock_liquid_glass_title">Часы, дата и погода Liquid Glass</string>
+    <string name="moto_widget_clock_liquid_glass_summary">Добавляет прозрачность, градиенты и блики по краям часов, даты, значков и описаний погоды, температуры, названия города и других сведений виджета Moto на рабочем столе. По умолчанию отключено. Не меняет размер, расположение, фон и часы экрана блокировки. Без реального преломления или размытия обоев. Отключение возвращает штатную отрисовку. Нужна область действия com.motorola.launcher3 в LSPosed. После изменения перезапустите виджет и лаунчер кнопкой ниже. Неопознанные элементы сохраняют штатную отрисовку.</string>
+    <string name="restart_moto_widget_button">Перезапустить виджеты Moto и лаунчер</string>
+    <string name="status_restarting_moto_widget">Перезапуск виджетов Moto и лаунчера…</string>
+</resources>

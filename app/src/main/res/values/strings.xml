@@ -29,7 +29,10 @@
     <string name="page_home_title">MockingBatwing</string>
     <string name="page_home_subtitle">Launcher &amp; SystemUI tweaks</string>
     <string name="page_features_title">機能</string>
-    <string name="page_features_subtitle">フック対象アプリごとの設定</string>
+    <string name="page_features_subtitle">カテゴリごとの設定</string>
+    <string name="section_lock_screen_title">ロック画面</string>
+    <string name="page_lock_screen_subtitle">時計・再生カード・PIN入力・ショートカット</string>
+    <string name="feature_lock_screen_desc">時計・通知の配置・再生カード・PIN自動確定・ショートカット・カメラ起動</string>
     <string name="page_log_title">ログ</string>
     <string name="page_log_subtitle">モジュールの動作ログ</string>
     <string name="page_launcher_title">Moto Launcher</string>
@@ -42,7 +45,7 @@
     <string name="page_more_subtitle">バックアップ・キャッシュ・モジュール情報</string>
 
     <!-- Features / per-app settings -->
-    <string name="features_intro">設定したいアプリを選択してください。各カードから専用の設定画面を開けます。</string>
+    <string name="features_intro">設定したいカテゴリを選択してください。各カードから専用の設定画面を開けます。</string>
     <string name="feature_launcher_title">Moto Launcher</string>
     <string name="feature_launcher_package">com.motorola.launcher3</string>
     <string name="feature_launcher_desc">アイコン形状・ラベル・フォルダ・ホームグリッド・ウィジェットのリサイズ</string>
@@ -283,6 +286,10 @@
     <string name="status_root_unavailable">Root（su）が利用できません。</string>
 
     <string name="section_lock_clock_title">ロック画面の時計</string>
+    <string name="pref_lock_clock_size_title">時計の拡大率</string>
+    <string name="pref_lock_clock_size_desc">100〜200％を1％刻みで調整できます。100％で標準サイズに戻ります。「大きな時計を維持」やリキッドガラスとは独立して動作し、AOD（常時表示）は拡大しません。変更後は右上のメニューからSystemUIを再起動してください。拡大率や時計スタイルによっては、表示の欠けや通知・ウィジェットとの重なりが生じる場合があります。</string>
+    <string name="pref_lock_clock_liquid_glass_title">時計をリキッドガラス調にする</string>
+    <string name="pref_lock_clock_liquid_glass_desc">時計の数字に透け感・グラデーション・縁の反射を加えます。壁紙の実際の屈折やブラーは行いません。時計の大きさ・フォント・位置は変更せず、「大きな時計を維持」とは独立して動作します。オフ・AOD（常時表示）では標準描画に戻ります。変更後は右上のメニューからSystemUIを再起動してください。一部の時計スタイルには対応していません。</string>
     <string name="section_notification_media_title">通知・メディアカード</string>
     <string name="pref_lock_media_compact_title">ロック画面の再生カードをコンパクト化</string>
     <string name="pref_lock_media_compact_desc">角丸カードに、小さなジャケット・曲名・シークバー・下段の再生操作を配置します。リキッドグラス表示がオフなら濃色の通常ブラー、オンならリキッドグラス背景になります。ロック画面だけに適用し、コントロールセンターは変更しません。ブラー非対応時は半透明背景で代替します。変更後はSystemUIを再起動してください。オフで元の配置に戻します。</string>
@@ -296,6 +303,8 @@
     <string name="lock_clock_hint">通知位置の変更とスタック表示はこのトグルに連動します。背景は「リキッドグラス表示」で別に変更できます。変更後は右上のメニューからSystemUIを再起動してください。TalkBackのタッチガイド中は通常の一覧を使用します。ROMによっては未対応で、時計・ウィジェットとの重なりや操作は実機確認が必要です。</string>
     <string name="section_lock_shortcuts_title">ロック画面のショートカット</string>
     <string name="pref_lock_shortcut_blur_title">ショートカットの背景をリキッドグラスにする</string>
+    <string name="pref_lock_edge_camera_title">右端スワイプでカメラを起動</string>
+    <string name="pref_lock_edge_camera_desc">ロック画面の右端から左へスワイプすると、ロック画面対応のカメラを起動します。</string>
     <string name="pref_lock_shortcut_blur_desc">ロック画面の左下・右下のボタンの背景に、透明感と縁の反射を加えます。時計下の本体・Bluetoothデバイスのバッテリー表示は標準の背景になります。通知・再生カードの設定とは独立して動作し、ボタンのアイコンはぼかしません。オフにするとボタンも標準の背景に戻ります。変更後はSystemUIを再起動してください。</string>
     <string name="pref_lock_shortcut_size_title">ショートカットのサイズ</string>
     <string name="pref_lock_shortcut_size_desc">左右共通。100%は標準サイズです。ボタンとアイコン、タッチ領域を拡大します。</string>
@@ -307,10 +316,19 @@
     <string name="pref_language_desc">アプリの表示言語を切り替えます。変更は即時反映されます。</string>
     <string name="language_ja">日本語</string>
     <string name="language_en">English</string>
+    <string name="language_zh_cn">简体中文（中国大陆）</string>
+    <string name="language_ru">Русский</string>
     <string name="section_lock_pin_title">ロック画面のPIN入力</string>
     <string name="pref_lock_pin_auto_confirm_title">指定桁数で自動確定</string>
     <string name="pref_lock_pin_auto_confirm_desc">数字の端末ロックPINの決定ボタンを非表示にし、指定桁数を入力したときだけ自動で認証します。オフで標準動作に戻します。</string>
     <string name="pref_lock_pin_length_title">自動確定するPINの桁数</string>
     <string name="lock_pin_length_format">%1$d桁</string>
     <string name="lock_pin_hint">必ず現在のPINと同じ桁数（4〜16桁）を選んでください。PIN自体は変更しません。変更後はSystemUIを再起動してください。SIM PIN・英数字パスワードは対象外です。端末から取得した桁数が設定値と異なる場合は標準動作を維持します。桁数を取得できない場合は指定値を使うため、誤った桁数を選ぶと認証に失敗します。その場合はオフにしてSystemUIを再起動してください。認証失敗の回数制限・待機時間は変わりません。</string>
+    <string name="section_moto_widget_title">Motoウィジェット</string>
+    <string name="feature_moto_widget_package">com.motorola.timeweatherwidget</string>
+    <string name="page_moto_widget_subtitle">ホーム画面のMotoウィジェットの時計・日付・天気をカスタマイズ</string>
+    <string name="moto_widget_clock_liquid_glass_title">時計・日付・天気をリキッドグラス調にする</string>
+    <string name="moto_widget_clock_liquid_glass_summary">ホーム画面のMotoウィジェットの時計・日付・天気アイコンと説明・気温・都市名などに、透け感・グラデーション・縁の反射を加えます。初期状態はオフ。大きさや配置、背景、ロック画面の時計は変更しません。壁紙の実際の屈折やブラーは行いません。オフで標準描画に戻ります。LSPosedの com.motorola.launcher3 スコープが必要です。変更後は下のボタンでウィジェットとランチャーを再起動してください。表示部分を識別できないスタイルは標準表示を維持します。</string>
+    <string name="restart_moto_widget_button">Motoウィジェットとランチャーを再起動して反映</string>
+    <string name="status_restarting_moto_widget">Motoウィジェットとランチャーを再起動しています…</string>
 </resources>

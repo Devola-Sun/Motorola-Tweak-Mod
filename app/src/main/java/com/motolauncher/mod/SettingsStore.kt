@@ -67,6 +67,11 @@ class SettingsStore(context: Context) {
             ?: HookConfig.DEFAULT_WIDGET_FREE_RESIZE
         set(value) = update(HookConfig.KEY_WIDGET_FREE_RESIZE, value)
 
+    var motoWidgetClockLiquidGlass: Boolean
+        get() = values[HookConfig.KEY_MOTO_WIDGET_CLOCK_LIQUID_GLASS] as? Boolean
+            ?: HookConfig.DEFAULT_MOTO_WIDGET_CLOCK_LIQUID_GLASS
+        set(value) = update(HookConfig.KEY_MOTO_WIDGET_CLOCK_LIQUID_GLASS, value)
+
     /** The shape that was active when the icon cache was last cleared. */
     var lastAppliedShape: String
         get() = values[HookConfig.KEY_LAST_APPLIED_SHAPE] as? String
@@ -219,10 +224,27 @@ class SettingsStore(context: Context) {
             ?: HookConfig.DEFAULT_LOCK_KEEP_LARGE_CLOCK
         set(value) = update(HookConfig.KEY_LOCK_KEEP_LARGE_CLOCK, value)
 
+    var lockClockSizePercent: Int
+        get() = HookConfig.coerceLockClockSize(
+            values[HookConfig.KEY_LOCK_CLOCK_SIZE_PERCENT] as? Int
+                ?: HookConfig.DEFAULT_LOCK_CLOCK_SIZE_PERCENT
+        )
+        set(value) = update(HookConfig.KEY_LOCK_CLOCK_SIZE_PERCENT, HookConfig.coerceLockClockSize(value))
+
+    var lockClockLiquidGlass: Boolean
+        get() = values[HookConfig.KEY_LOCK_CLOCK_LIQUID_GLASS] as? Boolean
+            ?: HookConfig.DEFAULT_LOCK_CLOCK_LIQUID_GLASS
+        set(value) = update(HookConfig.KEY_LOCK_CLOCK_LIQUID_GLASS, value)
+
     var lockShortcutBlur: Boolean
         get() = values[HookConfig.KEY_LOCK_SHORTCUT_BLUR] as? Boolean
             ?: HookConfig.DEFAULT_LOCK_SHORTCUT_BLUR
         set(value) = update(HookConfig.KEY_LOCK_SHORTCUT_BLUR, value)
+
+    var lockEdgeCamera: Boolean
+        get() = values[HookConfig.KEY_LOCK_EDGE_CAMERA] as? Boolean
+            ?: HookConfig.DEFAULT_LOCK_EDGE_CAMERA
+        set(value) = update(HookConfig.KEY_LOCK_EDGE_CAMERA, value)
 
     var lockMediaCompact: Boolean
         get() = values[HookConfig.KEY_LOCK_MEDIA_COMPACT] as? Boolean
@@ -391,10 +413,13 @@ class SettingsStore(context: Context) {
             HookConfig.KEY_NOTIFICATION_KEEP_SILENT_VISIBLE to HookConfig.DEFAULT_NOTIFICATION_KEEP_SILENT_VISIBLE,
             HookConfig.KEY_CC_IOS_CONNECTIVITY to HookConfig.DEFAULT_CC_IOS_CONNECTIVITY,
             HookConfig.KEY_LOCK_KEEP_LARGE_CLOCK to HookConfig.DEFAULT_LOCK_KEEP_LARGE_CLOCK,
+            HookConfig.KEY_LOCK_CLOCK_SIZE_PERCENT to HookConfig.DEFAULT_LOCK_CLOCK_SIZE_PERCENT,
+            HookConfig.KEY_LOCK_CLOCK_LIQUID_GLASS to HookConfig.DEFAULT_LOCK_CLOCK_LIQUID_GLASS,
             HookConfig.KEY_LOCK_PIN_AUTO_CONFIRM to HookConfig.DEFAULT_LOCK_PIN_AUTO_CONFIRM,
             HookConfig.KEY_LOCK_PIN_LENGTH to HookConfig.DEFAULT_LOCK_PIN_LENGTH,
             HookConfig.KEY_LOCK_MEDIA_COMPACT to HookConfig.DEFAULT_LOCK_MEDIA_COMPACT,
             HookConfig.KEY_LOCK_SHORTCUT_BLUR to HookConfig.DEFAULT_LOCK_SHORTCUT_BLUR,
+            HookConfig.KEY_LOCK_EDGE_CAMERA to HookConfig.DEFAULT_LOCK_EDGE_CAMERA,
             HookConfig.KEY_LOCK_SHORTCUT_SIZE_PERCENT to HookConfig.DEFAULT_LOCK_SHORTCUT_SIZE_PERCENT,
             HookConfig.KEY_BATTERY_ICON_STYLE to HookConfig.DEFAULT_BATTERY_ICON_STYLE,
             HookConfig.KEY_BATTERY_PERCENT_STYLE to HookConfig.DEFAULT_BATTERY_PERCENT_STYLE,

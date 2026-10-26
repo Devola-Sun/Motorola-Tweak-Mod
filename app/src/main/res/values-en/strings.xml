@@ -29,7 +29,10 @@
     <string name="page_home_title">MockingBatwing</string>
     <string name="page_home_subtitle">Launcher &amp; SystemUI tweaks</string>
     <string name="page_features_title">Features</string>
-    <string name="page_features_subtitle">Settings for each hooked app</string>
+    <string name="page_features_subtitle">Settings by category</string>
+    <string name="section_lock_screen_title">Lock screen</string>
+    <string name="page_lock_screen_subtitle">Clock, media card, PIN entry and shortcuts</string>
+    <string name="feature_lock_screen_desc">Clock, notification placement, media card, PIN auto-confirm, shortcuts and camera gesture</string>
     <string name="page_log_title">Log</string>
     <string name="page_log_subtitle">Module activity log</string>
     <string name="page_launcher_title">Moto Launcher</string>
@@ -42,7 +45,7 @@
     <string name="page_more_subtitle">Backup, cache and module info</string>
 
     <!-- Features / per-app settings -->
-    <string name="features_intro">Select the app you want to configure. Each card opens its dedicated settings screen.</string>
+    <string name="features_intro">Select the category you want to configure. Each card opens its dedicated settings screen.</string>
     <string name="feature_launcher_title">Moto Launcher</string>
     <string name="feature_launcher_package">com.motorola.launcher3</string>
     <string name="feature_launcher_desc">Icon shape, labels, folders, home grid and widget resizing</string>
@@ -283,6 +286,10 @@
     <string name="status_root_unavailable">Root (su) is not available.</string>
 
     <string name="section_lock_clock_title">Lock screen clock</string>
+    <string name="pref_lock_clock_size_title">Clock enlargement</string>
+    <string name="pref_lock_clock_size_desc" formatted="false">Adjust from 100 to 200% in 1% steps. 100% restores the native size. Independent of Keep large clock and Liquid Glass; always-on display is not enlarged. Restart SystemUI from the top-right menu after changes. Higher values or some clock styles may cause clipping or overlap with notifications and widgets.</string>
+    <string name="pref_lock_clock_liquid_glass_title">Liquid Glass clock</string>
+    <string name="pref_lock_clock_liquid_glass_desc">Adds translucency, gradients and reflective edges to clock digits, without actual wallpaper refraction or blur. Keeps the clock size, font and position unchanged, independently of Keep large clock. Restores stock rendering when off or in always-on display. Restart SystemUI from the top-right menu after changes. Some clock styles are unsupported.</string>
     <string name="section_notification_media_title">Notifications and media cards</string>
     <string name="pref_lock_media_compact_title">Compact lock-screen playback card</string>
     <string name="pref_lock_media_compact_desc">Uses a rounded card with small album art, track information, a seek bar and playback controls below. With Liquid glass off, the background uses plain dark blur; with it on, the background uses Liquid glass. Applies only to the lock screen; the control center is unchanged. Uses a translucent fallback when blur is unavailable. Restart SystemUI after changes. Turn off to restore the previous layout.</string>
@@ -296,6 +303,8 @@
     <string name="lock_clock_hint">This switch controls notification placement and stacking. Backgrounds are controlled separately by Liquid glass. Restart SystemUI from the top-right menu after changes. Touch exploration uses an unstacked list. Some ROMs are unsupported; placement, widget overlap and interaction require device testing.</string>
     <string name="section_lock_shortcuts_title">Lock screen shortcuts</string>
     <string name="pref_lock_shortcut_blur_title">Liquid glass shortcut backgrounds</string>
+    <string name="pref_lock_edge_camera_title">Swipe from right edge to open camera</string>
+    <string name="pref_lock_edge_camera_desc">Swipe left from the right edge of the lock screen to open the lock-screen camera.</string>
     <string name="pref_lock_shortcut_blur_desc">Gives the bottom-left and bottom-right lock-screen buttons translucent backgrounds with reflective edges. Phone and Bluetooth device battery widgets below the clock use their stock backgrounds. Works independently of notification/playback card settings and keeps button icons sharp. Turn off to restore stock button backgrounds. Restart SystemUI after changes.</string>
     <string name="pref_lock_shortcut_size_title">Shortcut size</string>
     <string name="pref_lock_shortcut_size_desc">Applies to both sides. 100% is the system size. Enlarges the buttons, icons and touch targets.</string>
@@ -307,10 +316,19 @@
     <string name="pref_language_desc">Switches the display language of the app. Changes apply immediately.</string>
     <string name="language_ja">日本語</string>
     <string name="language_en">English</string>
+    <string name="language_zh_cn">简体中文（中国大陆）</string>
+    <string name="language_ru">Русский</string>
     <string name="section_lock_pin_title">Lock-screen PIN entry</string>
     <string name="pref_lock_pin_auto_confirm_title">Auto-confirm at selected length</string>
     <string name="pref_lock_pin_auto_confirm_desc">Hide the numeric device-lock PIN confirm button and authenticate only after the selected number of digits. Turn off to restore stock behavior.</string>
     <string name="pref_lock_pin_length_title">PIN length for auto-confirm</string>
     <string name="lock_pin_length_format">%1$d digits</string>
     <string name="lock_pin_hint">Always select the length of your current PIN (4–16 digits). This does not change your PIN. Restart SystemUI after changes. SIM PINs and text passwords are excluded. A known length mismatch preserves stock behavior. If length metadata is unavailable, the selected value is used: an incorrect selection causes authentication failures. In that case, turn this off and restart SystemUI. Failed-attempt limits and lockout delays are unchanged.</string>
+    <string name="section_moto_widget_title">Moto Widgets</string>
+    <string name="feature_moto_widget_package">com.motorola.timeweatherwidget</string>
+    <string name="page_moto_widget_subtitle">Customize the Moto widget clock, date and weather on your home screen</string>
+    <string name="moto_widget_clock_liquid_glass_title">Liquid Glass clock, date and weather</string>
+    <string name="moto_widget_clock_liquid_glass_summary">Adds translucency, gradients and reflective edges to the home screen Moto widget clock, date, weather icons and descriptions, temperature, city name and related information. Off by default. Does not change size, layout, backgrounds or the lock screen clock. No actual wallpaper refraction or blur. Turning this off restores stock rendering. Requires the com.motorola.launcher3 LSPosed scope. Use the button below to restart the widget and launcher after changes. Unrecognized display elements keep stock rendering.</string>
+    <string name="restart_moto_widget_button">Restart Moto Widgets and launcher to apply</string>
+    <string name="status_restarting_moto_widget">Restarting Moto Widgets and launcher…</string>
 </resources>

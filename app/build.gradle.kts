@@ -6,6 +6,8 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+val moduleApplicationId = "io.github.devola_sun.motorolatweak"
+
 android {
     namespace = "com.motolauncher.mod"
     // YukiHookAPI 1.3.2 is published against API 37, so the module must compile
@@ -17,11 +19,11 @@ android {
         // LSPosed repository review requires the module id to follow the
         // io.github.<owner>.<repo> convention. The namespace stays
         // com.motolauncher.mod so the Kotlin sources are untouched.
-        applicationId = "io.github.devola_sun.motorolatweak"
+        applicationId = moduleApplicationId
         minSdk = 36
         targetSdk = 36
-        versionCode = 18
-        versionName = "2.5.5"
+        versionCode = 19
+        versionName = "2.5.6"
     }
 
     buildTypes {
@@ -59,6 +61,33 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+}
+
+// Yuki's processor can infer a unit-test applicationId when test and app KSP
+// tasks run in the same build. Check the generated code that actually ships,
+// not just output-metadata.json (which still reports the correct APK id).
+androidComponents.onVariants { variant ->
+    val capitalized = variant.name.replaceFirstChar { it.uppercaseChar() }
+    val generatedEntry = layout.buildDirectory.file(
+        "generated/ksp/${variant.name}/kotlin/com/motolauncher/mod/HookEntry_Impl.kt"
+    )
+    val verifyIdentity = tasks.register("verify${capitalized}XposedIdentity") {
+        dependsOn("ksp${capitalized}Kotlin")
+        inputs.file(generatedEntry)
+        inputs.property("moduleApplicationId", moduleApplicationId)
+        doLast {
+            val source = generatedEntry.get().asFile.readText()
+            val actual = Regex("MODULE_PACKAGE_NAME\\s*=\\s*\"([^\"]+)\"")
+                .find(source)?.groupValues?.get(1)
+            check(actual == moduleApplicationId) {
+                "Xposed module id mismatch: generated=$actual expected=$moduleApplicationId. " +
+                    "Refusing to assemble an APK that reads the wrong preferences."
+            }
+            logger.lifecycle("Verified Xposed module identity: $actual (${variant.name})")
+        }
+    }
+    tasks.matching { it.name == "assemble$capitalized" || it.name == "package$capitalized" }
+        .configureEach { dependsOn(verifyIdentity) }
 }
 
 dependencies {

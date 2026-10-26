@@ -19,6 +19,15 @@ Output:
 app\build\outputs\apk\debug\app-debug.apk
 ```
 
+The Xposed entry annotation explicitly sets the module package to
+`io.github.devola_sun.motorolatweak`. Each variant's packaging/assembly checks
+the generated `HookEntry_Impl.MODULE_PACKAGE_NAME` against the application ID.
+This prevents KSP from shipping a `.test` identity: that identity reads empty
+preferences and silently disables both clock glass and Keep large clock (and
+resets other hooks to defaults), even when their saved settings are enabled.
+SystemUI startup logs now include `keepLargeClock` and `clockGlass` so the
+host's effective settings can be checked separately from the settings app.
+
 ## Settings screen
 
 The app uses four bottom tabs: **ホーム / 機能 / ログ / その他**.  
@@ -83,6 +92,7 @@ KernelSU/SukiSU/Magisk if `su` is hidden from its process.
 | `sb_right_order` | `user_switcher,wifi,mobile,battery` | Right status bar element order |
 | `disable_flag_secure` | `false` | Ignore FLAG_SECURE for system screenshots / screen recording |
 | `lock_keep_large_clock` | `false` | Experimental: keep the stock large keyguard clock when notifications/media are present |
+| `lock_clock_liquid_glass` | `false` | Translucent gradient/reflected bevel on supported lock-screen clock digits; independent of clock size, stock rendering in AOD |
 | `lock_media_compact` | `false` | Dark rounded keyguard-only playback card with small artwork, track information, seek bar and native controls; control-center cards are excluded |
 | `lock_pin_auto_confirm` | `false` | Hide device PIN confirmation and submit only at the selected length; known length mismatches stay stock |
 | `lock_pin_length` | `6` | Selected numeric device PIN length, 4..16 |
@@ -132,6 +142,23 @@ card's bound album drawable, occupies no layout/input space, and is removed when
 the card is detached, moved to another host, or the option is disabled. This path
 requires an identified dynamic host or a separate popup window with the expected
 playback controls; verify vendor popup recognition and artwork on the device.
+
+**ロック画面 → ロック画面の時計 → 時計をリキッドガラス調にする** is opt-in.
+Restart SystemUI from the top-right menu after changing it. An AGSL RenderEffect
+on a separate glyph RenderNode shades the existing digits with translucent gradients and reflective edges;
+it does not capture, blur or refract the wallpaper. Timekeeping, font, size,
+position and native clock animations are unchanged. Supported targets are Moto
+plugin TextViews tagged `clock_face_time`, AOSP `AnimatableClockView`, and reactive
+clock digits discovered through ClockRegistry/ClockFaceLayout or identified clock hosts;
+dates, battery widgets and status-bar clocks are excluded. Other/custom clock
+renderers remain stock. The size/layout hook initializes separately and is unchanged
+from before this feature; no View RenderEffect, layout params or clock-size flows are
+modified by glass rendering. Disabling the option, entering AOD or leaving keyguard
+bypasses glyph recording. Shader failures fall back to stock
+rendering and are reported through ErrorLogger. Hardware acceleration is required.
+Logs distinguish compiled shader, discovered clock hosts/digits and rendered frames.
+The scope/policy unit tests do not exercise the GPU shader: verify appearance,
+AOD transitions, clock-style/font changes, notifications, and fold/unfold on device.
 
 The **ロック画面の時計 → 大きな時計を維持（試験的）** option supports the
 reference ROM's reactive `KeyguardClockInteractor` / `KeyguardClockViewModel`

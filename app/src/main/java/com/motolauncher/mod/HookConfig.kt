@@ -25,6 +25,11 @@ object HookConfig {
     const val KEY_FOLDER_PREVIEW_3X3: String = "folder_preview_3x3"
     const val KEY_WIDGET_FREE_RESIZE: String = "widget_free_resize"
 
+    /** Moto RemoteViews are rendered in the home launcher's process. */
+    const val MOTO_WIDGET_PACKAGE = "com.motorola.timeweatherwidget"
+    const val KEY_MOTO_WIDGET_CLOCK_LIQUID_GLASS = "moto_widget_clock_liquid_glass"
+    const val DEFAULT_MOTO_WIDGET_CLOCK_LIQUID_GLASS = false
+
     /** Layout. */
     const val KEY_GRID_ROWS: String = "grid_rows"
     const val KEY_GRID_COLUMNS: String = "grid_columns"
@@ -68,6 +73,19 @@ object HookConfig {
     const val KEY_LOCK_KEEP_LARGE_CLOCK = "lock_keep_large_clock"
     const val DEFAULT_LOCK_KEEP_LARGE_CLOCK = false
 
+    /** Independent enlargement of the stock clock face; 100 keeps native sizing. */
+    const val KEY_LOCK_CLOCK_SIZE_PERCENT = "lock_clock_size_percent"
+    const val DEFAULT_LOCK_CLOCK_SIZE_PERCENT = 100
+    const val MIN_LOCK_CLOCK_SIZE_PERCENT = 100
+    const val MAX_LOCK_CLOCK_SIZE_PERCENT = 200
+
+    fun coerceLockClockSize(value: Int): Int =
+        value.coerceIn(MIN_LOCK_CLOCK_SIZE_PERCENT, MAX_LOCK_CLOCK_SIZE_PERCENT)
+
+    /** Glass shading on clock digits only, independent of clock size/layout. */
+    const val KEY_LOCK_CLOCK_LIQUID_GLASS = "lock_clock_liquid_glass"
+    const val DEFAULT_LOCK_CLOCK_LIQUID_GLASS = false
+
     /** Opt-in PIN submission; never applies to SIM PIN or text passwords. */
     const val KEY_LOCK_PIN_AUTO_CONFIRM = "lock_pin_auto_confirm"
     const val KEY_LOCK_PIN_LENGTH = "lock_pin_length"
@@ -88,6 +106,8 @@ object HookConfig {
     const val KEY_LOCK_SHORTCUT_SIZE_PERCENT = "lock_shortcut_size_percent"
     const val DEFAULT_LOCK_SHORTCUT_BLUR = false
     const val DEFAULT_LOCK_SHORTCUT_SIZE_PERCENT = 100
+    const val KEY_LOCK_EDGE_CAMERA = "lock_edge_camera"
+    const val DEFAULT_LOCK_EDGE_CAMERA = false
     const val MIN_LOCK_SHORTCUT_SIZE_PERCENT = 100
     const val MAX_LOCK_SHORTCUT_SIZE_PERCENT = 175
 
@@ -147,7 +167,7 @@ object HookConfig {
      * crash system_server / cause a boot loop, so the framework hooks are only
      * installed on the razr fold while this is enabled.
      */
-    /** Display language ("ja" / "en"). */
+    /** Display language ("ja" / "en" / "zh-CN" / "ru"). */
     const val KEY_APP_LANGUAGE: String = "app_language"
     const val DEFAULT_APP_LANGUAGE: String = "ja"
 
@@ -155,6 +175,8 @@ object HookConfig {
     const val DEFAULT_AUTO_UPDATE_CHECK: Boolean = true
     const val LANGUAGE_JA: String = "ja"
     const val LANGUAGE_EN: String = "en"
+    const val LANGUAGE_ZH_CN: String = "zh-CN"
+    const val LANGUAGE_RU: String = "ru"
 
     const val KEY_SAFE_MODE: String = "safe_mode"
     const val DEFAULT_SAFE_MODE: Boolean = true

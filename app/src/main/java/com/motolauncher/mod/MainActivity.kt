@@ -8,14 +8,17 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.View
+import android.view.ViewGroup
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.SwitchCompat
@@ -70,9 +73,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var notificationKeepSilentVisibleSwitch: SwitchCompat
     private lateinit var lockMediaCompactSwitch: SwitchCompat
     private lateinit var lockKeepLargeClockSwitch: SwitchCompat
+    private lateinit var lockClockSizeSlider: Slider
+    private lateinit var lockClockSizeValue: TextView
+    private lateinit var lockClockLiquidGlassSwitch: SwitchCompat
     private lateinit var lockPinAutoConfirmSwitch: SwitchCompat
     private lateinit var lockPinLengthSpinner: Spinner
     private lateinit var lockShortcutBlurSwitch: SwitchCompat
+    private lateinit var lockEdgeCameraSwitch: SwitchCompat
     private lateinit var lockShortcutSizeSlider: Slider
     private lateinit var lockShortcutSizeValue: TextView
     private lateinit var batteryIconStyleSpinner: Spinner
@@ -131,13 +138,21 @@ class MainActivity : AppCompatActivity() {
     private lateinit var resetStatusOrderButton: Button
 
     private lateinit var backButton: View
+    private val featureSectionBackCallback = object : OnBackPressedCallback(false) {
+        override fun handleOnBackPressed() {
+            showPage(PAGE_FEATURES)
+        }
+    }
     private lateinit var widgetFreeResizeSwitch: SwitchCompat
     private lateinit var launcherFeatureSummary: TextView
     private lateinit var systemUiFeatureSummary: TextView
     private lateinit var frameworkFeatureSummary: TextView
     private lateinit var openLauncherSettingsButton: Button
     private lateinit var openSystemUiSettingsButton: Button
+    private lateinit var openLockScreenSettingsButton: Button
     private lateinit var openFrameworkSettingsButton: Button
+    private lateinit var openMotoWidgetSettingsButton: Button
+    private val sectionRestartButtons = mutableListOf<Button>()
     private lateinit var homeScopeSummary: TextView
     private lateinit var featureScopeSummary: TextView
     private lateinit var aboutScopeBody: TextView
@@ -332,7 +347,9 @@ class MainActivity : AppCompatActivity() {
             findViewById(R.id.page_more),
             findViewById(R.id.page_appearance),
             findViewById(R.id.page_systemui),
-            findViewById(R.id.page_framework)
+            findViewById(R.id.page_framework),
+            findViewById(R.id.page_lock_screen),
+            findViewById(R.id.page_moto_widget)
         )
         navItems = listOf(
             findViewById(R.id.nav_home),
@@ -346,7 +363,9 @@ class MainActivity : AppCompatActivity() {
         systemUiFeatureSummary = findViewById(R.id.text_systemui_feature_summary)
         openLauncherSettingsButton = findViewById(R.id.button_open_launcher_settings)
         openSystemUiSettingsButton = findViewById(R.id.button_open_systemui_settings)
+        openLockScreenSettingsButton = findViewById(R.id.button_open_lock_screen_settings)
         openFrameworkSettingsButton = findViewById(R.id.button_open_framework_settings)
+        openMotoWidgetSettingsButton = findViewById(R.id.button_open_moto_widget_settings)
         frameworkFeatureSummary = findViewById(R.id.text_framework_feature_summary)
         homeScopeSummary = findViewById(R.id.text_home_scope_summary)
         featureScopeSummary = findViewById(R.id.text_feature_scope_summary)
@@ -382,9 +401,13 @@ class MainActivity : AppCompatActivity() {
         notificationKeepSilentVisibleSwitch = findViewById(R.id.switch_notification_keep_silent_visible)
         lockMediaCompactSwitch = findViewById(R.id.switch_lock_media_compact)
         lockKeepLargeClockSwitch = findViewById(R.id.switch_lock_keep_large_clock)
+        lockClockSizeSlider = findViewById(R.id.slider_lock_clock_size)
+        lockClockSizeValue = findViewById(R.id.text_lock_clock_size_value)
+        lockClockLiquidGlassSwitch = findViewById(R.id.switch_lock_clock_liquid_glass)
         lockPinAutoConfirmSwitch = findViewById(R.id.switch_lock_pin_auto_confirm)
         lockPinLengthSpinner = findViewById(R.id.spinner_lock_pin_length)
         lockShortcutBlurSwitch = findViewById(R.id.switch_lock_shortcut_blur)
+        lockEdgeCameraSwitch = findViewById(R.id.switch_lock_edge_camera)
         lockShortcutSizeSlider = findViewById(R.id.slider_lock_shortcut_size)
         lockShortcutSizeValue = findViewById(R.id.text_lock_shortcut_size_value)
         batteryIconStyleSpinner = findViewById(R.id.spinner_battery_icon_style)
@@ -428,6 +451,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindNavigation() {
+        onBackPressedDispatcher.addCallback(this, featureSectionBackCallback)
         val navPages = intArrayOf(PAGE_HOME, PAGE_FEATURES, PAGE_LOG, PAGE_MORE)
         navItems.forEachIndexed { index, item ->
             item.setOnClickListener { showPage(navPages[index]) }
@@ -483,7 +507,7 @@ class MainActivity : AppCompatActivity() {
 
         val selectedNav = when (index) {
             PAGE_HOME -> 0
-            PAGE_FEATURES, PAGE_LAUNCHER, PAGE_SYSTEMUI, PAGE_FRAMEWORK -> 1
+            PAGE_FEATURES, PAGE_LAUNCHER, PAGE_SYSTEMUI, PAGE_FRAMEWORK, PAGE_LOCK_SCREEN, PAGE_MOTO_WIDGET -> 1
             PAGE_LOG -> 2
             PAGE_MORE -> 3
             else -> 0
@@ -491,12 +515,10 @@ class MainActivity : AppCompatActivity() {
         navItems.forEachIndexed { navIndex, item ->
             item.isSelected = navIndex == selectedNav
         }
-        backButton.visibility =
-            if (index == PAGE_LAUNCHER || index == PAGE_SYSTEMUI || index == PAGE_FRAMEWORK) {
-                View.VISIBLE
-            } else {
-                View.GONE
-            }
+        val isFeatureSection = index == PAGE_LAUNCHER || index == PAGE_SYSTEMUI ||
+            index == PAGE_FRAMEWORK || index == PAGE_LOCK_SCREEN || index == PAGE_MOTO_WIDGET
+        featureSectionBackCallback.isEnabled = isFeatureSection
+        backButton.visibility = if (isFeatureSection) View.VISIBLE else View.GONE
 
         val titles = intArrayOf(
             R.string.page_home_title,
@@ -505,7 +527,9 @@ class MainActivity : AppCompatActivity() {
             R.string.page_more_title,
             R.string.page_launcher_title,
             R.string.page_systemui_title,
-            R.string.page_framework_title
+            R.string.page_framework_title,
+            R.string.section_lock_screen_title,
+            R.string.section_moto_widget_title
         )
         val subtitles = intArrayOf(
             R.string.page_home_subtitle,
@@ -514,7 +538,9 @@ class MainActivity : AppCompatActivity() {
             R.string.page_more_subtitle,
             R.string.page_launcher_subtitle,
             R.string.page_systemui_subtitle,
-            R.string.page_framework_subtitle
+            R.string.page_framework_subtitle,
+            R.string.page_lock_screen_subtitle,
+            R.string.page_moto_widget_subtitle
         )
         textPageTitle.setText(titles[index])
         textPageSubtitle.setText(subtitles[index])
@@ -528,7 +554,13 @@ class MainActivity : AppCompatActivity() {
     private fun bindFeatures() {
         openLauncherSettingsButton.setOnClickListener { showPage(PAGE_LAUNCHER) }
         openSystemUiSettingsButton.setOnClickListener { showPage(PAGE_SYSTEMUI) }
+        openLockScreenSettingsButton.setOnClickListener { showPage(PAGE_LOCK_SCREEN) }
         openFrameworkSettingsButton.setOnClickListener { showPage(PAGE_FRAMEWORK) }
+        openMotoWidgetSettingsButton.setOnClickListener { showPage(PAGE_MOTO_WIDGET) }
+        findViewById<SwitchCompat>(R.id.switch_moto_widget_clock_liquid_glass).apply {
+            isChecked = settings.motoWidgetClockLiquidGlass
+            setOnCheckedChangeListener { _, enabled -> settings.motoWidgetClockLiquidGlass = enabled }
+        }
     }
 
     /**
@@ -553,7 +585,9 @@ class MainActivity : AppCompatActivity() {
                 aboutScopeBody.text = getString(R.string.about_scope_body)
                 setSettingsButtonState(openLauncherSettingsButton, true)
                 setSettingsButtonState(openSystemUiSettingsButton, true)
+                setSettingsButtonState(openLockScreenSettingsButton, true)
                 setSettingsButtonState(openFrameworkSettingsButton, true)
+                setSettingsButtonState(openMotoWidgetSettingsButton, true)
                 return@detect
             }
 
@@ -576,7 +610,9 @@ class MainActivity : AppCompatActivity() {
 
             setSettingsButtonState(openLauncherSettingsButton, HookConfig.TARGET_PACKAGE in hooked)
             setSettingsButtonState(openSystemUiSettingsButton, HookConfig.SYSTEM_UI_PACKAGE in hooked)
+            setSettingsButtonState(openLockScreenSettingsButton, HookConfig.SYSTEM_UI_PACKAGE in hooked)
             setSettingsButtonState(openFrameworkSettingsButton, HookConfig.FRAMEWORK_PACKAGE in hooked)
+            setSettingsButtonState(openMotoWidgetSettingsButton, HookConfig.TARGET_PACKAGE in hooked)
         }
     }
 
@@ -589,6 +625,7 @@ class MainActivity : AppCompatActivity() {
     private fun loadAppIcons() {
         loadAppIcon(launcherAppIcon, HookConfig.TARGET_PACKAGE)
         loadAppIcon(systemUiAppIcon, HookConfig.SYSTEM_UI_PACKAGE)
+        loadAppIcon(findViewById(R.id.icon_moto_widget_app), HookConfig.MOTO_WIDGET_PACKAGE)
     }
 
     private fun loadAppIcon(view: ImageView, packageName: String) {
@@ -1033,10 +1070,34 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun bindLockShortcutSettings() {
+        lockEdgeCameraSwitch.isChecked = settings.lockEdgeCamera
+        lockEdgeCameraSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.lockEdgeCamera = enabled
+            syncModulePrefs()
+        }
         lockKeepLargeClockSwitch.isChecked = settings.lockKeepLargeClock
         lockKeepLargeClockSwitch.setOnCheckedChangeListener { _, enabled ->
             settings.lockKeepLargeClock = enabled
             syncModulePrefs()
+        }
+        lockClockLiquidGlassSwitch.isChecked = settings.lockClockLiquidGlass
+        lockClockLiquidGlassSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.lockClockLiquidGlass = enabled
+            syncModulePrefs()
+        }
+        lockClockSizeSlider.valueTo = HookConfig.MAX_LOCK_CLOCK_SIZE_PERCENT.toFloat()
+        lockClockSizeSlider.value = HookConfig.MIN_LOCK_CLOCK_SIZE_PERCENT.toFloat()
+        lockClockSizeSlider.valueFrom = HookConfig.MIN_LOCK_CLOCK_SIZE_PERCENT.toFloat()
+        lockClockSizeSlider.stepSize = 1f
+        lockClockSizeSlider.value = settings.lockClockSizePercent.toFloat()
+        lockClockSizeSlider.setLabelFormatter { value ->
+            getString(R.string.cover_dock_percent_format, value.toInt())
+        }
+        lockClockSizeValue.text = getString(R.string.cover_dock_percent_format, settings.lockClockSizePercent)
+        lockClockSizeSlider.addOnChangeListener { _, value, fromUser ->
+            val percent = HookConfig.coerceLockClockSize(value.toInt())
+            lockClockSizeValue.text = getString(R.string.cover_dock_percent_format, percent)
+            if (fromUser) settings.lockClockSizePercent = percent
         }
         lockShortcutBlurSwitch.isChecked = settings.lockShortcutBlur
         lockShortcutBlurSwitch.setOnCheckedChangeListener { _, enabled ->
@@ -1313,11 +1374,21 @@ class MainActivity : AppCompatActivity() {
      * the activity is recreated immediately.
      */
     private fun bindLanguage() {
-        val languageKeys = listOf(HookConfig.LANGUAGE_JA, HookConfig.LANGUAGE_EN)
+        val languageKeys = listOf(
+            HookConfig.LANGUAGE_JA,
+            HookConfig.LANGUAGE_EN,
+            HookConfig.LANGUAGE_ZH_CN,
+            HookConfig.LANGUAGE_RU
+        )
         val adapter = ArrayAdapter(
             this,
             R.layout.item_spinner,
-            listOf(getString(R.string.language_ja), getString(R.string.language_en))
+            listOf(
+                getString(R.string.language_ja),
+                getString(R.string.language_en),
+                getString(R.string.language_zh_cn),
+                getString(R.string.language_ru)
+            )
         ).apply {
             setDropDownViewResource(R.layout.item_spinner_dropdown)
         }
@@ -1740,6 +1811,51 @@ class MainActivity : AppCompatActivity() {
                 RESTART_SYSTEMUI_COMMAND
             )
         }
+        bindSectionRestartButtons()
+    }
+
+    /** Put an action after every settings section, not just at the end of a long page. */
+    private fun bindSectionRestartButtons() {
+        fun sections(page: Int, titles: List<Int>, label: Int, action: () -> Unit) {
+            val content = (pages[page] as ViewGroup).getChildAt(0) as LinearLayout
+            val headings = (0 until content.childCount).map { content.getChildAt(it) }
+                .filterIsInstance<TextView>().filter { view -> titles.any { view.text == getString(it) } }
+            headings.asReversed().forEachIndexed { reversedIndex, heading ->
+                // SystemUI already has its final restart action in XML.
+                if (page == PAGE_SYSTEMUI && reversedIndex == 0) return@forEachIndexed
+                val index = content.indexOfChild(heading)
+                var end = index + 1
+                while (end < content.childCount && content.getChildAt(end) !in headings) end++
+                val button = layoutInflater.inflate(R.layout.item_section_restart, content, false) as Button
+                button.apply {
+                    setText(label)
+                    layoutParams = LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = (12 * resources.displayMetrics.density).toInt() }
+                    setOnClickListener { action() }
+                }
+                content.addView(button, end)
+                sectionRestartButtons += button
+            }
+        }
+        sections(PAGE_LAUNCHER, listOf(R.string.section_appearance, R.string.section_main_dock,
+            R.string.section_cover_dock, R.string.section_layout), R.string.restart_button) {
+            restartButton.performClick()
+        }
+        sections(PAGE_SYSTEMUI, listOf(R.string.section_systemui_title, R.string.section_notification_media_title,
+            R.string.section_battery_title, R.string.section_control_center_title,
+            R.string.section_status_bar_order_title), R.string.restart_systemui_button) {
+            restartSystemUiButton.performClick()
+        }
+        sections(PAGE_LOCK_SCREEN, listOf(R.string.section_lock_screen_title, R.string.section_lock_clock_title,
+            R.string.section_lock_pin_title, R.string.section_lock_shortcuts_title), R.string.restart_systemui_button) {
+            restartSystemUiButton.performClick()
+        }
+        val motoRestart = findViewById<Button>(R.id.button_restart_moto_widget)
+        motoRestart.setOnClickListener {
+            runRootAction(getString(R.string.status_restarting_moto_widget), RESTART_MOTO_WIDGET_COMMAND)
+        }
+        sectionRestartButtons += motoRestart
     }
 
     private fun runRootAction(
@@ -1773,6 +1889,8 @@ class MainActivity : AppCompatActivity() {
         clearCacheButton.isEnabled = !busy
         restartSystemUiButton.isEnabled = !busy
         softRebootButton.isEnabled = !busy
+        restartMenuButton.isEnabled = !busy
+        sectionRestartButtons.forEach { it.isEnabled = !busy }
         backupButton.isEnabled = !busy
         restoreButton.isEnabled = !busy && selectedBackup != null
         backupSpinner.isEnabled = !busy
@@ -1789,6 +1907,8 @@ class MainActivity : AppCompatActivity() {
         private const val PAGE_LAUNCHER = 4
         private const val PAGE_SYSTEMUI = 5
         private const val PAGE_FRAMEWORK = 6
+        private const val PAGE_LOCK_SCREEN = 7
+        private const val PAGE_MOTO_WIDGET = 8
 
         private const val HOME_START =
             "am start --user current -a android.intent.action.MAIN -c android.intent.category.HOME -p ${HookConfig.TARGET_PACKAGE}"
@@ -1890,6 +2010,14 @@ class MainActivity : AppCompatActivity() {
             append("$SYNC_PREFS_COMMAND; ")
             append("pid=\$(pidof ${HookConfig.SYSTEM_UI_PACKAGE}); ")
             append("if [ -n \"\$pid\" ]; then kill \$pid; fi")
+        }
+
+        // Force-stop would disable widget updates; kill only, then recreate its host.
+        private val RESTART_MOTO_WIDGET_COMMAND = buildString {
+            append("$SYNC_PREFS_COMMAND && { ")
+            append("pid=\$(pidof ${HookConfig.MOTO_WIDGET_PACKAGE}); ")
+            append("if [ -n \"\$pid\" ]; then kill \$pid || exit 1; fi; ")
+            append("am force-stop --user current ${HookConfig.TARGET_PACKAGE} && $HOME_START; }")
         }
 
         /**

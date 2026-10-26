@@ -14,12 +14,16 @@ import com.motolauncher.mod.hooks.CorePatchHooker
 import com.motolauncher.mod.hooks.FlagSecureFrameworkHook
 import com.motolauncher.mod.hooks.FolderPreviewHook
 import com.motolauncher.mod.hooks.LockShortcutHook
+import com.motolauncher.mod.hooks.LockEdgeCameraHook
 import com.motolauncher.mod.hooks.LockClockHook
+import com.motolauncher.mod.hooks.LockClockScaleHook
+import com.motolauncher.mod.hooks.LockClockGlass
 import com.motolauncher.mod.hooks.LockPinAutoConfirmHook
 import com.motolauncher.mod.hooks.NotificationMediaFrostHook
 import com.motolauncher.mod.hooks.SilentNotificationHook
 import com.motolauncher.mod.hooks.StatusBarHooks
 import com.motolauncher.mod.hooks.WidgetResizeHook
+import com.motolauncher.mod.hooks.MotoWidgetClockGlassHook
 
 /**
  * YukiHookAPI entry point.
@@ -28,7 +32,9 @@ import com.motolauncher.mod.hooks.WidgetResizeHook
  * annotation and generates both `assets/xposed_init` and the real Xposed entry
  * class at compile time.
  */
-@InjectYukiHookWithXposed
+// Do not let KSP infer the module id from a unit-test BuildConfig (.test).
+// An incorrect id silently makes every hook read another package's preferences.
+@InjectYukiHookWithXposed(modulePackageName = "io.github.devola_sun.motorolatweak")
 object HookEntry : IYukiHookXposedInit {
 
     private const val MODULE_TAG = "MotoLauncherMod"
@@ -106,6 +112,9 @@ object HookEntry : IYukiHookXposedInit {
                     runCatching { loadHooker(WidgetResizeHook) }.onFailure {
                         Log.w(MODULE_TAG, "WidgetResizeHook could not be loaded", it)
                     }
+                    runCatching { loadHooker(MotoWidgetClockGlassHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "MotoWidgetClockGlassHook could not be loaded", it)
+                    }
                     runCatching { FlagSecureFrameworkHook.hook(this) }.onFailure {
                         Log.w(MODULE_TAG, "FlagSecureFrameworkHook could not be loaded", it)
                     }
@@ -138,6 +147,8 @@ object HookEntry : IYukiHookXposedInit {
                                 "padding=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_SB_ENABLE_CUSTOM_PADDING, HookConfig.DEFAULT_SB_ENABLE_CUSTOM_PADDING)}, " +
                                 "swapSliders=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_SWAP_SLIDERS, HookConfig.DEFAULT_CC_SWAP_SLIDERS)}, " +
                                 "iosConnectivity=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_CC_IOS_CONNECTIVITY, HookConfig.DEFAULT_CC_IOS_CONNECTIVITY)}, " +
+                                "keepLargeClock=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_LOCK_KEEP_LARGE_CLOCK, HookConfig.DEFAULT_LOCK_KEEP_LARGE_CLOCK)}, " +
+                                "clockGlass=${HookConfig.safeGetBoolean(prefs, HookConfig.KEY_LOCK_CLOCK_LIQUID_GLASS, HookConfig.DEFAULT_LOCK_CLOCK_LIQUID_GLASS)}, " +
                                 "bootCompleted=${HookConfig.isBootCompleted()}"
                         )
                     }
@@ -151,8 +162,17 @@ object HookEntry : IYukiHookXposedInit {
                     runCatching { loadHooker(LockShortcutHook) }.onFailure {
                         ErrorLogger.log(MODULE_TAG, "LockShortcutHook could not be loaded", it)
                     }
+                    runCatching { loadHooker(LockEdgeCameraHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "LockEdgeCameraHook could not be loaded", it)
+                    }
                     runCatching { loadHooker(LockClockHook) }.onFailure {
                         ErrorLogger.log(MODULE_TAG, "LockClockHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(LockClockScaleHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "LockClockScaleHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(LockClockGlass) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "LockClockGlass could not be loaded", it)
                     }
                     runCatching { loadHooker(LockPinAutoConfirmHook) }.onFailure {
                         ErrorLogger.log(MODULE_TAG, "LockPinAutoConfirmHook could not be loaded", it)
