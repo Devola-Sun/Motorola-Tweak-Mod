@@ -1,7 +1,8 @@
 package com.motolauncher.mod.hooks
 
-/** A locked device alone does not authorize styling: QS may be open over keyguard. */
+/** Shared compact playback style, never control-center media or an unknown host. */
 internal object LockMediaCardScope {
-    fun allows(enabled: Boolean, keyguard: Boolean, notificationHost: Boolean, controlCenter: Boolean): Boolean =
-        enabled && keyguard && notificationHost && !controlCenter
+    fun allows(enabled: Boolean, keyguard: Boolean, notificationHost: Boolean, controlCenter: Boolean,
+        dynamicHost: Boolean = false): Boolean =
+        enabled && (notificationHost || dynamicHost) && !controlCenter
 }

@@ -16,10 +16,12 @@ import com.motolauncher.mod.hooks.FolderPreviewHook
 import com.motolauncher.mod.hooks.LockShortcutHook
 import com.motolauncher.mod.hooks.LockEdgeCameraHook
 import com.motolauncher.mod.hooks.LockClockHook
+import com.motolauncher.mod.hooks.LockIndicatorHook
 import com.motolauncher.mod.hooks.LockClockScaleHook
 import com.motolauncher.mod.hooks.LockClockGlass
 import com.motolauncher.mod.hooks.LockPinAutoConfirmHook
 import com.motolauncher.mod.hooks.NotificationMediaFrostHook
+import com.motolauncher.mod.hooks.MediaArtworkBrightnessHook
 import com.motolauncher.mod.hooks.SilentNotificationHook
 import com.motolauncher.mod.hooks.StatusBarHooks
 import com.motolauncher.mod.hooks.WidgetResizeHook
@@ -168,6 +170,9 @@ object HookEntry : IYukiHookXposedInit {
                     runCatching { loadHooker(LockClockHook) }.onFailure {
                         ErrorLogger.log(MODULE_TAG, "LockClockHook could not be loaded", it)
                     }
+                    runCatching { loadHooker(LockIndicatorHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "LockIndicatorHook could not be loaded", it)
+                    }
                     runCatching { loadHooker(LockClockScaleHook) }.onFailure {
                         ErrorLogger.log(MODULE_TAG, "LockClockScaleHook could not be loaded", it)
                     }
@@ -179,6 +184,9 @@ object HookEntry : IYukiHookXposedInit {
                     }
                     runCatching { loadHooker(NotificationMediaFrostHook) }.onFailure {
                         ErrorLogger.log(MODULE_TAG, "NotificationMediaFrostHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(MediaArtworkBrightnessHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "MediaArtworkBrightnessHook could not be loaded", it)
                     }
                     runCatching { loadHooker(SilentNotificationHook) }.onFailure {
                         ErrorLogger.log(MODULE_TAG, "SilentNotificationHook could not be loaded", it)

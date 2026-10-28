@@ -2,7 +2,6 @@ package com.motolauncher.mod.hooks
 
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.current
-import com.highcapable.yukihookapi.hook.log.YLog
 
 object ClockHook : YukiBaseHooker() {
 
@@ -26,7 +25,6 @@ object ClockHook : YukiBaseHooker() {
                         method { name = "updateShowSeconds" }.call()
                         method { name = "updateClock" }.call()
                     }
-                    // YLog.debug("Clock: Enabled seconds on attached to window")
                 }
             }
 

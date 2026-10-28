@@ -86,6 +86,10 @@ object HookConfig {
     const val KEY_LOCK_CLOCK_LIQUID_GLASS = "lock_clock_liquid_glass"
     const val DEFAULT_LOCK_CLOCK_LIQUID_GLASS = false
 
+    /** Move the native lock indicator above the clock, preserving its unlock state. */
+    const val KEY_LOCK_ICON_ABOVE_CLOCK = "lock_icon_above_clock"
+    const val DEFAULT_LOCK_ICON_ABOVE_CLOCK = false
+
     /** Opt-in PIN submission; never applies to SIM PIN or text passwords. */
     const val KEY_LOCK_PIN_AUTO_CONFIRM = "lock_pin_auto_confirm"
     const val KEY_LOCK_PIN_LENGTH = "lock_pin_length"
@@ -97,7 +101,7 @@ object HookConfig {
     fun coerceLockPinLength(value: Int): Int =
         if (value in MIN_LOCK_PIN_LENGTH..MAX_LOCK_PIN_LENGTH) value else DEFAULT_LOCK_PIN_LENGTH
 
-    /** Compact dark playback card, strictly limited to the keyguard media host. */
+    /** Reference-style playback controls in notification-center/keyguard media hosts. */
     const val KEY_LOCK_MEDIA_COMPACT = "lock_media_compact"
     const val DEFAULT_LOCK_MEDIA_COMPACT = false
 
@@ -136,6 +140,10 @@ object HookConfig {
     /** Shared glass surface for keyguard/shade notification and media cards. */
     const val KEY_NOTIFICATION_MEDIA_FROST = "notification_media_frost"
     const val DEFAULT_NOTIFICATION_MEDIA_FROST = false
+
+    /** Keep artwork at its un-dimmed light appearance in every SystemUI media host. */
+    const val KEY_MEDIA_ARTWORK_LIGHT_BRIGHTNESS = "media_artwork_light_brightness"
+    const val DEFAULT_MEDIA_ARTWORK_LIGHT_BRIGHTNESS = false
 
     const val KEY_NOTIFICATION_KEEP_SILENT_VISIBLE = "notification_keep_silent_visible"
     const val DEFAULT_NOTIFICATION_KEEP_SILENT_VISIBLE = false

@@ -709,13 +709,32 @@ object ControlCenterHooks : YukiBaseHooker() {
                     if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return
                     val layout = param.thisObject ?: return
                     enforceGridDimensions(layout)
-                    (layout as? View)?.addOnLayoutChangeListener { v, _, _, _, _, _, _, _, _ ->
-                        if (!modulePrefs.getBoolean("cc_ios_connectivity", true)) return@addOnLayoutChangeListener
-                        val vg = v as? ViewGroup ?: return@addOnLayoutChangeListener
-                        layoutAirplaneButton(vg)
-                    }
                 }
             })
+
+            // Reapply the order after every native layout, even when the container bounds do not change.
+            runCatching {
+                var owner: Class<*>? = layoutClass
+                var onLayout: java.lang.reflect.Method? = null
+                while (owner != null && onLayout == null) {
+                    onLayout = owner.declaredMethods.firstOrNull {
+                        it.name == "onLayout" && it.parameterTypes.contentEquals(arrayOf(
+                            Boolean::class.javaPrimitiveType, Int::class.javaPrimitiveType,
+                            Int::class.javaPrimitiveType, Int::class.javaPrimitiveType, Int::class.javaPrimitiveType
+                        ))
+                    }
+                    owner = owner.superclass
+                }
+                XposedBridge.hookMethod(checkNotNull(onLayout), object : XC_MethodHook() {
+                    override fun afterHookedMethod(param: MethodHookParam) {
+                        runCatching {
+                            if (!layoutClass.isInstance(param.thisObject) ||
+                                !modulePrefs.getBoolean("cc_ios_connectivity", true)) return@runCatching
+                            layoutAirplaneButton(param.thisObject as ViewGroup)
+                        }.onFailure { ErrorLogger.log(TAG, "Connectivity layout update failed", it) }
+                    }
+                })
+            }.onFailure { ErrorLogger.log(TAG, "Connectivity layout hook failed", it) }
 
             XposedHelpers.findAndHookMethod(
                 layoutClass,
@@ -780,12 +799,13 @@ object ControlCenterHooks : YukiBaseHooker() {
     }
 
     private fun layoutAirplaneButton(layout: ViewGroup) {
-        try {
+        runCatching {
             val airplaneBtn = getOrCreateAirplaneButton(layout)
             airplaneBtn.visibility = View.VISIBLE
             airplaneBtn.alpha = 1f
 
             val records = XposedHelpers.getObjectField(layout, "mRecords") as? List<*>
+            val record0View = (records?.getOrNull(0)?.let { XposedHelpers.getObjectField(it, "tileView") }) as? View
             val record1View = (records?.getOrNull(1)?.let { XposedHelpers.getObjectField(it, "tileView") }) as? View
             val record2View = (records?.getOrNull(2)?.let { XposedHelpers.getObjectField(it, "tileView") }) as? View
 
@@ -794,11 +814,23 @@ object ControlCenterHooks : YukiBaseHooker() {
             val top: Int
             val bottom: Int
 
-            if (record1View != null && record2View != null && record1View.width > 0 && record2View.height > 0) {
-                left = record1View.left
-                right = record1View.right
-                top = record2View.top
-                bottom = record2View.bottom
+            if (record0View != null && record1View != null && record2View != null &&
+                record0View.width > 0 && record1View.width > 0 && record2View.height > 0) {
+                // Keep the existing cell bounds; only change which button occupies each cell.
+                // Min/max also make repeated layout callbacks safe after the views have moved.
+                left = minOf(record0View.left, record1View.left, record2View.left)
+                right = left + record0View.width
+                top = minOf(record0View.top, record1View.top, record2View.top)
+                bottom = top + record1View.height
+                val rightColumnLeft = maxOf(record0View.left, record1View.left, record2View.left)
+                val rightColumnRight = rightColumnLeft + record1View.width
+                val bottomRowTop = maxOf(record0View.top, record1View.top, record2View.top)
+                val bottomRowBottom = bottomRowTop + record2View.height
+
+                // Top: airplane, mobile data. Bottom: Wi-Fi, Bluetooth.
+                record0View.layout(left, bottomRowTop, right, bottomRowBottom)
+                record1View.layout(rightColumnLeft, top, rightColumnRight, bottom)
+                record2View.layout(rightColumnLeft, bottomRowTop, rightColumnRight, bottomRowBottom)
             } else {
                 val cellWidth = XposedHelpers.getIntField(layout, "mCellWidth")
                 val cellHeight = XposedHelpers.getIntField(layout, "mMaxCellHeight").let {
@@ -807,10 +839,9 @@ object ControlCenterHooks : YukiBaseHooker() {
                 val cellMarginH = XposedHelpers.getIntField(layout, "mCellMarginHorizontal")
                 val cellMarginV = XposedHelpers.getIntField(layout, "mCellMarginVertical")
                 val sidePadding = XposedHelpers.getIntField(layout, "mSidePadding")
-                val paddingStart = layout.paddingStart + sidePadding
-                val isRtl = layout.layoutDirection == View.LAYOUT_DIRECTION_RTL
-                val col = if (isRtl) 0 else 1
-                val row = 1
+                val paddingStart = layout.paddingLeft + sidePadding
+                val col = 0
+                val row = 0
                 left = paddingStart + col * (cellWidth + cellMarginH)
                 top = layout.paddingTop + row * (cellHeight + cellMarginV)
                 right = left + cellWidth
@@ -820,7 +851,7 @@ object ControlCenterHooks : YukiBaseHooker() {
             if (right > left && bottom > top) {
                 airplaneBtn.layout(left, top, right, bottom)
             }
-        } catch (_: Throwable) {}
+        }.onFailure { ErrorLogger.log(TAG, "Connectivity button layout failed", it) }
     }
 
     private fun hookQSTileViewModernFixed(classLoader: ClassLoader) {
@@ -949,7 +980,7 @@ object ControlCenterHooks : YukiBaseHooker() {
 
                             if (currentTiles.isEmpty()) return
 
-                            // 1. Wi-Fi (Top-Left)
+                            // 1. Wi-Fi (positioned Bottom-Left by layoutAirplaneButton)
                             val wifiTile = currentTiles.firstOrNull { isTileSpec(it, "internet", "wifi") }
                                 ?: currentTiles.getOrNull(0)
 
@@ -957,7 +988,7 @@ object ControlCenterHooks : YukiBaseHooker() {
                             val cellTile = currentTiles.firstOrNull { isTileSpec(it, "cell", "mobile", "cellular", "data") }
                                 ?: currentTiles.getOrNull(1)
 
-                            // 3. Bluetooth (Bottom-Left)
+                            // 3. Bluetooth (positioned Bottom-Right by layoutAirplaneButton)
                             val btTile = currentTiles.firstOrNull { isTileSpec(it, "bt", "bluetooth") }
                                 ?: currentTiles.getOrNull(2)
 
@@ -987,6 +1018,12 @@ object ControlCenterHooks : YukiBaseHooker() {
         private val circleContainer = FrameLayout(context)
         private val bgImageView = ImageView(context)
         private val iconImageView = ImageView(context)
+        internal fun isBackgroundView(view: View): Boolean = view === bgImageView
+        // Selection can be propagated by the vendor reveal animation. It is
+        // not an authoritative indication of the radio's enabled state.
+        internal var airplaneModeEnabled = false
+            private set
+
         private val bgShape = GradientDrawable().apply {
             cornerRadius = circleSize / 2f
         }
@@ -1061,6 +1098,19 @@ object ControlCenterHooks : YukiBaseHooker() {
             }
             updateColorsFromSibling()
             updateState()
+            ControlCenterGlassHook.prepareAirplaneButton(this)
+        }
+
+        override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+            super.onLayout(changed, left, top, right, bottom)
+            ControlCenterGlassHook.prepareAirplaneButton(this)
+        }
+
+        override fun dispatchDraw(canvas: Canvas) {
+            // Also cover reveals that reuse the layout, and state changes made
+            // after the panel's pre-draw observer. Never post a delayed restyle.
+            ControlCenterGlassHook.prepareAirplaneButton(this)
+            super.dispatchDraw(canvas)
         }
 
         override fun onDetachedFromWindow() {
@@ -1098,6 +1148,8 @@ object ControlCenterHooks : YukiBaseHooker() {
         fun updateState() {
             try {
                 val isOn = Settings.Global.getInt(context.contentResolver, Settings.Global.AIRPLANE_MODE_ON, 0) != 0
+                airplaneModeEnabled = isOn
+                isSelected = isOn
                 updateColorsFromSibling()
                 if (isOn) {
                     bgShape.setColor(colorActive)

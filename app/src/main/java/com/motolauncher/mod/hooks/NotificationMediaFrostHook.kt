@@ -9,7 +9,6 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
 import android.os.SystemClock
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,7 +24,7 @@ import de.robv.android.xposed.XposedHelpers
 import java.lang.ref.WeakReference
 import java.util.WeakHashMap
 
-/** Changes surfaces only. Native clipping, expansion, privacy and media actions stay in charge. */
+/** Restyles native media views in place; expansion, privacy and session binding stay native. */
 object NotificationMediaFrostHook : YukiBaseHooker() {
     private const val TAG = "MotoNotificationFrost"
     private const val DRAW_ORIGINAL = "motorolaTweak.frost.originalBackground"
@@ -34,7 +33,6 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
     private val media = WeakHashMap<View, MediaState>()
     private val observed = WeakHashMap<View, Boolean>()
     private val applying = WeakHashMap<View, Boolean>()
-    private val logged = mutableSetOf<String>()
     private var blurCheckedAt = -1L
     private var blurEnabled = false
 
@@ -48,6 +46,7 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
         val artwork: DynamicMediaArtwork = DynamicMediaArtwork()
     )
     private data class HiddenLayer(var background: Drawable?, var alpha: Float, var hideImage: Boolean)
+    private enum class MediaHost { UNKNOWN, NOTIFICATION, DYNAMIC, CONTROL_CENTER }
 
     /** Drawable callbacks must not retain the weak-map key through its value. */
     private class WeakCallback(view: View) : Drawable.Callback {
@@ -64,10 +63,15 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
     override fun onHook() {
         val loader = appClassLoader ?: return
         KeyguardPanelVisibility.install(loader)
+        val notificationRow = runCatching {
+            XposedHelpers.findClass("com.android.systemui.statusbar.notification.row.ExpandableNotificationRow", loader)
+        }.onFailure { report("find notification content owner", it) }.getOrNull()
         runCatching {
             val clazz = XposedHelpers.findClass(
                 "com.android.systemui.statusbar.notification.row.NotificationBackgroundView", loader
             )
+            val isolatedSurface = runCatching { KeyguardNotificationSurface(clazz) }
+                .onFailure { report("install isolated notification geometry helper", it) }.getOrNull()
             XposedBridge.hookAllMethods(clazz, "onDraw", object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
                     runCatching {
@@ -85,6 +89,17 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
                         glass.drawable.state = original.state
                         glass.drawable.level = original.level
                         glass.drawable.alpha = original.alpha
+                        if (SystemUiGlassPalette.isolateNotificationDraw(glass.night, glass.keyguard) &&
+                            isolatedSurface != null) {
+                            val canvas = param.args.firstOrNull() as? Canvas ?: return@runCatching
+                            // Merely swapping mBackground leaves Motorola's separate
+                            // light/lock-screen blur/tint pass in onDraw intact. Draw only
+                            // our material via the native geometry helper instead.
+                            // Dark shade keeps its existing native path.
+                            isolatedSurface.draw(view, canvas, glass.drawable)
+                            param.result = null
+                            return@runCatching
+                        }
                         // Swap only during the native draw: retain its roundness, group clipping,
                         // actual height, dismiss/expansion animations and original tint bookkeeping.
                         param.setObjectExtra(DRAW_ORIGINAL, original)
@@ -164,7 +179,19 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
                 XposedHelpers.findAndHookMethod(owner, method, Canvas::class.java, object : XC_MethodHook() {
                     override fun beforeHookedMethod(param: MethodHookParam) {
                         runCatching {
-                            val view = param.thisObject as? ViewGroup ?: return@runCatching
+                            val drawn = param.thisObject as? View ?: return@runCatching
+                            if (drawn is ViewGroup && notificationRow?.isInstance(drawn) == true) {
+                                val night = drawn.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+                                    Configuration.UI_MODE_NIGHT_YES
+                                if (enabled() && !night) LightGlassContentStyle.apply(drawn, media = false)
+                                else LightGlassContentStyle.restore(drawn)
+                                return@runCatching
+                            }
+                            LockMediaCardStyle.owner(drawn)?.let { root ->
+                                if (root.isAttachedToWindow) updateMedia(root)
+                                return@runCatching
+                            }
+                            val view = drawn as? ViewGroup ?: return@runCatching
                             if (!observed.containsKey(view) || !view.isAttachedToWindow) return@runCatching
                             updateMedia(view)
                         }.onFailure { report("media draw boundary", it) }
@@ -172,6 +199,22 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
                 })
             }.onFailure { report("install media $method boundary", it) }
         }
+
+        // HWUI can redraw an invalidated child without recording its parent's
+        // dispatchDraw again. Enforce the layout at the child recording boundary too.
+        runCatching {
+            XposedHelpers.findAndHookMethod(ViewGroup::class.java, "drawChild",
+                Canvas::class.java, View::class.java, Long::class.javaPrimitiveType,
+                object : XC_MethodHook() {
+                    override fun beforeHookedMethod(param: MethodHookParam) {
+                        runCatching {
+                            val child = param.args[1] as? View ?: return@runCatching
+                            val root = LockMediaCardStyle.owner(child) ?: return@runCatching
+                            if (root.isAttachedToWindow) updateMedia(root)
+                        }.onFailure { report("media child draw boundary", it) }
+                    }
+                })
+        }.onFailure { report("install media child boundary", it) }
 
         // Motorola keyguard cards are not necessarily TransitionLayouts. Discover the
         // actual inflated media layout, rather than requiring an AOSP root ID/class.
@@ -184,14 +227,10 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
                         val layout = inflater.context.resources.getResourceEntryName(id)
                         if (!layout.contains("media", ignoreCase = true)) return@runCatching
                         val root = param.result as? ViewGroup ?: return@runCatching
-                        if (logged.add("inflate:$layout")) {
-                            Log.i(TAG, "Media layout $layout: ${describe(root)}")
-                        }
                         discoverMedia(root)
                     }.onFailure { report("discover inflated media", it) }
                 }
             })
-            Log.i(TAG, "Keyguard media discovery installed; compact=${HookConfig.safeGetBoolean(modulePrefs, HookConfig.KEY_LOCK_MEDIA_COMPACT, false)}")
         }.onFailure { report("install media discovery", it) }
     }
 
@@ -203,18 +242,6 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
         if (isMediaCard(root) || resourceName(root) == "root_view") observeMedia(root)
         for (i in 0 until root.childCount) {
             (root.getChildAt(i) as? ViewGroup)?.let(::discoverMedia)
-        }
-    }
-
-    private fun describe(view: View, depth: Int = 0): String = buildString {
-        append("${resourceName(view)}:${view.javaClass.simpleName}")
-        if (view is ViewGroup && depth < 4) {
-            append('[')
-            for (i in 0 until view.childCount) {
-                if (i > 0) append(',')
-                append(describe(view.getChildAt(i), depth + 1))
-            }
-            append(']')
         }
     }
 
@@ -271,37 +298,28 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
             isPlaybackRoot(child) || child is ViewGroup && containsPlaybackRoot(child)
         }
 
-    private fun isNotificationMedia(view: View): Boolean {
+    private fun mediaHost(view: ViewGroup): MediaHost {
         var inNotificationHost = false
+        var inDynamicHost = false
         var current: View? = view
         while (current != null) {
             val name = resourceName(current)
             val className = current.javaClass.name
-            if (MediaGlassScope.isControlCenter(name, className)) return false
+            // Control-center ancestry always wins, including QS over keyguard.
+            if (MediaGlassScope.isControlCenter(name, className)) return MediaHost.CONTROL_CENTER
             if (MediaGlassScope.isNotificationHost(name, className)) inNotificationHost = true
+            if (MediaGlassScope.isDynamicHost(name, className)) inDynamicHost = true
             current = current.parent as? View
         }
-        // Unknown hosts fail closed, including while the control center opens over keyguard.
-        return inNotificationHost
-    }
-
-    private fun isDynamicMedia(view: ViewGroup): Boolean {
+        if (inNotificationHost) return MediaHost.NOTIFICATION
         // Require real playback controls before accepting a floating notification host.
         val ids = (0 until view.childCount).map { resourceName(view.getChildAt(it)) }.toSet()
-        if (!ids.containsAll(setOf("album_art", "icon", "header_title", "media_progress_bar"))) return false
-        var dynamic = false
-        var current: View? = view
-        while (current != null) {
-            val id = resourceName(current)
-            val clazz = current.javaClass.name
-            if (MediaGlassScope.isControlCenter(id, clazz) || MediaGlassScope.isNotificationHost(id, clazz)) return false
-            if (MediaGlassScope.isDynamicHost(id, clazz)) dynamic = true
-            current = current.parent as? View
-        }
+        if (!ids.containsAll(setOf("album_art", "icon", "header_title", "media_progress_bar"))) return MediaHost.UNKNOWN
         val window = view.rootView.layoutParams as? WindowManager.LayoutParams
-        return dynamic || window?.let {
+        val popup = inDynamicHost || window?.let {
             MediaGlassScope.isPopupWindow(it.type) || MediaGlassScope.isDynamicHost(it.title?.toString().orEmpty(), "")
         } == true
+        return if (popup) MediaHost.DYNAMIC else MediaHost.UNKNOWN
     }
 
     private fun applyMedia(view: ViewGroup) {
@@ -314,33 +332,34 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
             restoreMedia(view)
             return
         }
-        val notificationHost = isNotificationMedia(view)
-        val dynamicHost = !notificationHost && isDynamicMedia(view)
+        val host = mediaHost(view)
+        val notificationHost = host == MediaHost.NOTIFICATION
+        val dynamicHost = host == MediaHost.DYNAMIC
         val compactEnabled = HookConfig.safeGetBoolean(modulePrefs,
             HookConfig.KEY_LOCK_MEDIA_COMPACT, HookConfig.DEFAULT_LOCK_MEDIA_COMPACT)
-        if (compactEnabled && logged.add("host:${view.javaClass.name}:${resourceName(view)}:$notificationHost")) {
-            var ancestor: View? = view
-            val chain = buildList {
-                while (ancestor != null) {
-                    val current = ancestor
-                    add("${resourceName(current)}:${current.javaClass.name}")
-                    ancestor = current.parent as? View
-                }
-            }
-            Log.i(TAG, "Media host notification=$notificationHost: ${chain.joinToString(" > ")}; ${describe(view)}")
-        }
         val compact = LockMediaCardScope.allows(
             enabled = compactEnabled,
             keyguard = compactEnabled && notificationHost && LockNotificationLayout.isKeyguard(view) &&
                 !KeyguardPanelVisibility.controlCenterVisible,
             notificationHost = notificationHost,
-            controlCenter = !notificationHost
+            // Scope by THIS card's ancestors. A global QS visibility transition
+            // must not restore another, still-visible notification card to AOSP.
+            controlCenter = host == MediaHost.CONTROL_CENTER,
+            dynamicHost = dynamicHost
         )
         if (compact) {
+            // Hand off ownership once: remove the frost/artwork overlay before the
+            // shared style snapshots native controls. Never run both renderers on
+            // the same card, or create/reparent a competing playback view.
+            LightGlassContentStyle.restore(view)
             restoreMedia(view)
-            if (LockMediaCardStyle.apply(view, liquid = enabled(), blurAvailable = blurAvailable(view)) {
+            if (LockMediaCardStyle.apply(view, liquid = enabled(), blurAvailable = blurAvailable(view),
+                forceKeyguardAppearance = dynamicHost) {
                 report("compact media backdrop blur (using translucent fallback)", it)
             }) return
+            // Zero-sized transition frames are not an opt-out. Keep the last style
+            // until usable native bounds return, rather than restoring it each frame.
+            if (LockMediaCardStyle.isApplied(view)) return
         }
         LockMediaCardStyle.restore(view)
         if (!enabled() || (!notificationHost && !dynamicHost)) {
@@ -366,6 +385,8 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
             state.tint = view.backgroundTintList
         }
         val glass = glassFor(view, state.glass, ripple = false, forceDark = dynamicHost)
+        if (!glass.night) LightGlassContentStyle.apply(view, media = true)
+        else LightGlassContentStyle.restore(view)
         state.glass = glass
         if (view.backgroundTintList != null) view.backgroundTintList = null
         if (view.background !== glass.drawable) {
@@ -382,6 +403,7 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
         if (applying.put(view, true) != null) return
         try {
             applyMedia(view)
+            MediaArtworkBrightnessHook.updateArtwork(view)
         } finally {
             applying.remove(view)
         }
@@ -421,6 +443,7 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
     }
 
     private fun restoreMedia(view: ViewGroup) {
+        LightGlassContentStyle.restore(view)
         val state = media[view] ?: return
         state.artwork.restore(view)
         if (view.background === state.glass?.drawable) {
@@ -434,7 +457,7 @@ object NotificationMediaFrostHook : YukiBaseHooker() {
 
     private fun glassFor(view: View, previous: Glass?, ripple: Boolean, forceDark: Boolean = false): Glass {
         val keyguard = LockNotificationLayout.isKeyguard(view)
-        val night = forceDark || keyguard || view.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
+        val night = forceDark || view.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK ==
             Configuration.UI_MODE_NIGHT_YES
         val blur = blurAvailable(view)
         if (previous != null && previous.night == night && previous.blur == blur && previous.keyguard == keyguard) return previous

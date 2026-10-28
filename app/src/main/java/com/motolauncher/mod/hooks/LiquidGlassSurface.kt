@@ -19,7 +19,7 @@ import kotlin.math.roundToInt
 
 /** Shared material for notification/media cards and independently enabled keyguard shortcuts. */
 internal object LiquidGlassSurface {
-    enum class Material { CARD, LAUNCHER }
+    enum class Material { CARD, LAUNCHER, CONTROL_CENTER }
     /** Keyguard cards share one silhouette as well as the same optical material. */
     fun cardRadius(view: View, keyguard: Boolean): Float =
         (if (keyguard) 30f else 26f) * view.resources.displayMetrics.density
@@ -35,6 +35,7 @@ internal object LiquidGlassSurface {
         material: Material = Material.CARD,
         backdropAlpha: Int = 255,
         sharedBackdrop: Boolean = false,
+        bodyAlpha: Int = 255,
         report: (Throwable) -> Unit
     ): Drawable {
         val density = view.resources.displayMetrics.density
@@ -45,7 +46,9 @@ internal object LiquidGlassSurface {
             // ancestor alpha explicitly before being submitted to SurfaceFlinger.
             drawable.alpha = backdropAlpha.coerceIn(0, 255)
             // Preserve wallpaper detail rather than turning the entire card into a milky slab.
-            XposedHelpers.callMethod(drawable, "setBlurRadius", ((if (liquid) 18f else 28f) * density).roundToInt().coerceIn(1, 96))
+            val blurDp = if (!liquid) 28f else if (material == Material.CARD)
+                SystemUiGlassPalette.cardBlurRadiusDp(keyguard) else 18f
+            XposedHelpers.callMethod(drawable, "setBlurRadius", (blurDp * density).roundToInt().coerceIn(1, 96))
             XposedHelpers.callMethod(drawable, "setCornerRadius", radius)
             // Vendor implementations can start with an opaque black fill. The shared
             // surface below supplies the tint; the backdrop must only contribute blur.
@@ -60,20 +63,26 @@ internal object LiquidGlassSurface {
             }
             return if (backdrop != null) LayerDrawable(arrayOf(backdrop, tint)) else tint
         }
-        val dark = keyguard || night
+        // Light notification/media cards use the same dark optics as Modern QS.
+        // Keep their native host theme/geometry; this selects only the material.
+        val controlCenterCard = material == Material.CARD && !night
+        val dark = night || controlCenterCard
         val hasBackdrop = backdrop != null || sharedBackdrop
-        val colors = when {
-            material == Material.LAUNCHER -> if (dark) intArrayOf(
-                Color.argb(82, 65, 74, 90), Color.argb(112, 24, 30, 42)) else intArrayOf(
-                Color.argb(100, 245, 250, 255), Color.argb(62, 165, 188, 210))
-            dark -> intArrayOf(
-                Color.argb(if (hasBackdrop) 76 else 156, 30, 32, 36),
-                Color.argb(if (hasBackdrop) 102 else 184, 18, 20, 24))
-            else -> intArrayOf(
-                Color.argb(if (hasBackdrop) 116 else 222, 255, 255, 255),
-                Color.argb(if (hasBackdrop) 146 else 238, 244, 245, 247))
+        val colors = when (material) {
+            Material.LAUNCHER -> LauncherGlassPalette.bodyColors(dark)
+            Material.CONTROL_CENTER -> SystemUiGlassPalette.controlCenterColors(hasBackdrop)
+            Material.CARD -> SystemUiGlassPalette.notificationColors(night, hasBackdrop, keyguard)
         }
-        val surface = LiquidGlassDrawable(radius, density, oval, dark, colors)
+        if (bodyAlpha != 255) colors.indices.forEach { index ->
+            val color = colors[index]
+            colors[index] = (color and 0x00ffffff) or
+                ((Color.alpha(color) * bodyAlpha.coerceIn(0, 255) / 255) shl 24)
+        }
+        val reflectionColors = if (material == Material.CARD)
+            SystemUiGlassPalette.cardReflectionColors(dark, keyguard && !controlCenterCard) else null
+        val surface = LiquidGlassDrawable(radius, density, oval, dark, colors, reflectionColors,
+            card = material == Material.CARD,
+            launcher = material == Material.LAUNCHER)
         return if (backdrop != null) LayerDrawable(arrayOf(backdrop, surface)) else surface
     }
 }
@@ -84,22 +93,29 @@ private class LiquidGlassDrawable(
     private val density: Float,
     private val oval: Boolean,
     private val dark: Boolean,
-    private val colors: IntArray
+    private val colors: IntArray,
+    private val reflectionColors: IntArray?,
+    private val card: Boolean,
+    private val launcher: Boolean
 ) : Drawable() {
     private val body = Paint(Paint.ANTI_ALIAS_FLAG)
     private val reflection = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val edgeShade = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val edgeShadeStops = floatArrayOf(0f, 0.08f, 0.26f, 0.72f, 0.94f, 1f)
     private val rim = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = (0.75f * density).coerceAtLeast(1f)
+        strokeWidth = ((if (launcher) LauncherGlassPalette.RIM_WIDTH_DP else 0.75f) * density)
+            .coerceAtLeast(1f)
     }
     private val innerRim = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
-        strokeWidth = (0.5f * density).coerceAtLeast(0.75f)
+        strokeWidth = ((if (launcher) LauncherGlassPalette.INNER_RIM_WIDTH_DP else 0.5f) * density)
+            .coerceAtLeast(0.75f)
     }
     private val surfaceBounds = RectF()
     private val rimBounds = RectF()
     private val innerBounds = RectF()
-    private val paints = arrayOf(body, reflection, rim, innerRim)
+    private val paints = arrayOf(body, reflection, edgeShade, rim, innerRim)
     private var opacity = 255
 
     override fun onBoundsChange(bounds: Rect) {
@@ -112,17 +128,26 @@ private class LiquidGlassDrawable(
             rim.strokeWidth + innerRim.strokeWidth / 2f)
         body.shader = LinearGradient(0f, surfaceBounds.top, 0f, surfaceBounds.bottom,
             colors, null, Shader.TileMode.CLAMP)
+        if (card && !dark) {
+            // The lens is defined by its edges, not a white fill over the wallpaper.
+            // Keep the middle transparent; no content blur or bitmap sampling.
+            edgeShade.shader = LinearGradient(0f, surfaceBounds.top, 0f, surfaceBounds.bottom,
+                SystemUiGlassPalette.cardEdgeShadeColors(dark), edgeShadeStops, Shader.TileMode.CLAMP)
+        }
         // A faint wash, not an opaque white patch across the controls.
         reflection.shader = LinearGradient(surfaceBounds.left, surfaceBounds.top,
             surfaceBounds.right, surfaceBounds.bottom,
-            intArrayOf(Color.argb(if (dark) 20 else 38, 255, 255, 255),
-                Color.TRANSPARENT, Color.argb(7, 255, 255, 255)),
+            if (launcher) LauncherGlassPalette.reflectionColors(dark) else reflectionColors ?:
+                intArrayOf(Color.argb(if (dark) 20 else 38, 255, 255, 255),
+                    Color.TRANSPARENT, Color.argb(7, 255, 255, 255)),
             floatArrayOf(0f, 0.48f, 1f), Shader.TileMode.CLAMP)
         // Directional edge reflections replace the old uniform white outline.
         rim.shader = LinearGradient(surfaceBounds.left, surfaceBounds.top,
             surfaceBounds.right, surfaceBounds.bottom,
-            intArrayOf(Color.argb(142, 255, 255, 255), Color.argb(42, 255, 255, 255),
-                Color.argb(16, 255, 255, 255), Color.argb(76, 255, 255, 255)),
+            if (launcher) LauncherGlassPalette.rimColors() else
+                if (card) SystemUiGlassPalette.cardRimColors(dark) else
+                intArrayOf(Color.argb(142, 255, 255, 255), Color.argb(42, 255, 255, 255),
+                    Color.argb(16, 255, 255, 255), Color.argb(76, 255, 255, 255)),
             floatArrayOf(0f, 0.35f, 0.65f, 1f), Shader.TileMode.CLAMP)
         innerRim.shader = LinearGradient(0f, surfaceBounds.top, 0f, surfaceBounds.bottom,
             intArrayOf(Color.argb(if (dark) 28 else 20, 0, 0, 0), Color.TRANSPARENT,
@@ -133,6 +158,7 @@ private class LiquidGlassDrawable(
     override fun draw(canvas: Canvas) {
         if (bounds.isEmpty || opacity == 0) return
         drawSurface(canvas, surfaceBounds, radius, body)
+        if (card && !dark) drawSurface(canvas, surfaceBounds, radius, edgeShade)
         drawSurface(canvas, surfaceBounds, radius, reflection)
         drawSurface(canvas, rimBounds, (radius - rim.strokeWidth / 2f).coerceAtLeast(0f), rim)
         if (innerBounds.width() > 0f && innerBounds.height() > 0f) {

@@ -22,12 +22,15 @@ import de.robv.android.xposed.XposedHelpers
 internal object ControlCenterGlassHook {
     private const val STATE = "motorolaTweak.controlCenterGlass"
     private const val OBSERVED = "$STATE.observed"
+    private const val TILE_ACTIVE = "$STATE.tileActive"
     private val reported = mutableSetOf<String>()
     private var blurCheckedAt = -1L
     private var blurEnabled = false
     private val nativeBlur = ControlCenterNativeBlur()
+    private var glassEnabled: () -> Boolean = { false }
 
     fun install(loader: ClassLoader, backgroundBlurPercent: () -> Int, enabled: () -> Boolean) {
+        glassEnabled = enabled
         nativeBlur.install(loader, backgroundBlurPercent)
         runCatching {
             val panel = XposedHelpers.findClass("com.android.systemui.qs.QSModernPanel", loader)
@@ -49,7 +52,7 @@ internal object ControlCenterGlassHook {
                         runCatching {
                             if (param.hasThrowable() || !enabled()) return@runCatching
                             val view = param.thisObject as? ViewGroup ?: return@runCatching
-                            if (view.isAttachedToWindow) visit(view, true, blurAvailable(view), ancestorAlpha(view))
+                            if (view.isAttachedToWindow) visit(view, true, blurAvailable(view))
                         }.onFailure { report("prepare panel glass", it) }
                     }
                 })
@@ -57,6 +60,25 @@ internal object ControlCenterGlassHook {
         }.onFailure { report("install control-center glass", it) }
         installTileUpdates(loader, enabled)
         installDrawableWriters(enabled)
+        installPanelDrawBoundary(enabled)
+    }
+
+    private fun installPanelDrawBoundary(enabled: () -> Boolean) {
+        runCatching {
+            XposedHelpers.findAndHookMethod(ViewGroup::class.java, "dispatchDraw", Canvas::class.java,
+                object : XC_MethodHook() {
+                    override fun beforeHookedMethod(param: MethodHookParam) {
+                        runCatching {
+                            val panel = param.thisObject as? ViewGroup ?: return@runCatching
+                            if (XposedHelpers.getAdditionalInstanceField(panel, OBSERVED) != true ||
+                                !enabled()) return@runCatching
+                            // Animator/visibility writers may run after pre-draw. Prepare
+                            // the whole subtree before any child display list is recorded.
+                            visit(panel, true, blurAvailable(panel))
+                        }.onFailure { report("prepare panel glass before child drawing", it) }
+                    }
+                })
+        }.onFailure { report("install panel draw boundary", it) }
     }
 
     /** Catch replacements at their source, rather than repairing them one frame later. */
@@ -110,10 +132,16 @@ internal object ControlCenterGlassHook {
                     XposedBridge.hookMethod(method, object : XC_MethodHook() {
                         override fun afterHookedMethod(param: MethodHookParam) {
                             runCatching {
-                                if (param.hasThrowable() || !enabled()) return@runCatching
-                                val view = param.thisObject as? View ?: return@runCatching
-                                if (!view.isAttachedToWindow || !insidePanel(view)) return@runCatching
-                                visit(view, true, blurAvailable(view), ancestorAlpha(view))
+                                  if (param.hasThrowable() || !enabled()) return@runCatching
+                                 val view = param.thisObject as? View ?: return@runCatching
+                                 if (method.name == "handleStateChanged") {
+                                     param.args.firstOrNull()?.let { tileState ->
+                                         XposedHelpers.setAdditionalInstanceField(view, TILE_ACTIVE,
+                                             XposedHelpers.getIntField(tileState, "state") == 2)
+                                     }
+                                 }
+                                 if (!view.isAttachedToWindow || !insidePanel(view)) return@runCatching
+                                 visit(view, true, blurAvailable(view))
                             }.onFailure { report("native tile glass update", it) }
                         }
                     })
@@ -140,10 +168,9 @@ internal object ControlCenterGlassHook {
             override fun onViewAttachedToWindow(v: View) {
                 runCatching {
                     nativeBlur.attach(panel)
-                    hidden = false
                     if (enabled()) {
                         applied = true
-                        visit(panel, true, blurAvailable(panel), ancestorAlpha(panel))
+                        visit(panel, true, blurAvailable(panel))
                     }
                     listener = ViewTreeObserver.OnPreDrawListener {
                         runCatching {
@@ -152,12 +179,10 @@ internal object ControlCenterGlassHook {
                             nativeBlur.update(panel)
                             if (!active && !applied) return@runCatching
                             applied = active
-                            val opacity = ancestorAlpha(panel)
                             val blur = active && blurAvailable(panel)
-                            // Invisible panels still need one pass to unregister their
-                            // previous blur regions, then do no subtree work while hidden.
-                            if (!active || opacity > 0f || !hidden) visit(panel, active, blur, opacity)
-                            hidden = opacity == 0f
+                            // Keep hidden/newly populated tiles ready for reveal. No
+                            // per-tile blur regions need a visibility-driven handoff.
+                            visit(panel, active, blur)
                         }.onFailure {
                             runCatching { visit(panel, false, false) }
                                 .onFailure { failure -> report("rollback glass", failure) }
@@ -181,7 +206,6 @@ internal object ControlCenterGlassHook {
                 }.onFailure { report("detach control-center glass", it) }
             }
 
-            private var hidden = false
         }
         panel.addOnAttachStateChangeListener(attachment)
         if (panel.isAttachedToWindow) attachment.onViewAttachedToWindow(panel)
@@ -199,7 +223,19 @@ internal object ControlCenterGlassHook {
         var tileImage = false
     }
 
-    private fun visit(view: View, enabled: Boolean, blur: Boolean, opacity: Float = 0f) {
+    /** Custom connectivity buttons do not receive the vendor tile update hooks. */
+    internal fun prepareAirplaneButton(view: ControlCenterHooks.AirplaneModeButtonView) {
+        runCatching {
+            if (!view.isAttachedToWindow || !insidePanel(view)) return@runCatching
+            val enabled = glassEnabled()
+            if (!enabled && XposedHelpers.getAdditionalInstanceField(view, STATE) == null) return@runCatching
+            // Run before child display lists are recorded, not after an unstyled
+            // frame has already been submitted during the panel's reveal.
+            visit(view, enabled, enabled && blurAvailable(view))
+        }.onFailure { report("prepare airplane glass before drawing", it) }
+    }
+
+    private fun visit(view: View, enabled: Boolean, blur: Boolean) {
         val existing = XposedHelpers.getAdditionalInstanceField(view, STATE) as? State
         if (!enabled) {
             existing?.let { restore(view, it) }
@@ -234,6 +270,10 @@ internal object ControlCenterGlassHook {
                         val glass = wrap(view, original, state.image, blur)
                         state.image = glass
                         if (view.drawable !== glass) view.setImageDrawable(glass)
+                        if (glass.bounds.isEmpty && view.width > 0 && view.height > 0) {
+                            glass.setBounds(0, 0, view.width - view.paddingLeft - view.paddingRight,
+                                view.height - view.paddingTop - view.paddingBottom)
+                        }
                         glass.attachOriginal()
                     }
                 }
@@ -245,35 +285,21 @@ internal object ControlCenterGlassHook {
         if (view is ViewGroup) {
             for (index in 0 until view.childCount) {
                 val child = view.getChildAt(index)
-                val alpha = if (child.visibility == View.VISIBLE) opacity * child.alpha else 0f
-                visit(child, enabled, blur, alpha)
+                visit(child, enabled, blur)
             }
         }
-    }
-
-    private fun ancestorAlpha(view: View): Float {
-        if (!view.isAttachedToWindow || view.windowVisibility != View.VISIBLE) return 0f
-        var alpha = 1f
-        var current: View? = view
-        while (current != null) {
-            if (current.visibility != View.VISIBLE) return 0f
-            alpha *= current.alpha
-            if (alpha <= 0f) return 0f
-            current = current.parent as? View
-        }
-        return alpha.coerceIn(0f, 1f)
     }
 
     private fun isTileBackdrop(view: View): Boolean {
         var parent = view.parent as? View
         repeat(3) {
             val ancestor = parent ?: return false
-            if (ancestor.javaClass.name.contains("QSTileViewModernFixed") ||
-                ancestor is ControlCenterHooks.AirplaneModeButtonView) {
+            if (ancestor is ControlCenterHooks.AirplaneModeButtonView) {
+                return ancestor.isBackgroundView(view)
+            }
+            if (ancestor.javaClass.name.contains("QSTileViewModernFixed")) {
                 // The vendor background image is separate from the icon image.
                 return resourceName(view) in setOf("background", "tile_background", "bg") ||
-                    (ancestor is ControlCenterHooks.AirplaneModeButtonView &&
-                        (view.parent as? ViewGroup)?.indexOfChild(view) == 0) ||
                     runCatching { XposedHelpers.getObjectField(ancestor, "mBg") === view }
                         .onFailure { report("locate fixed-tile background", it) }.getOrDefault(false)
             }
@@ -300,7 +326,8 @@ internal object ControlCenterGlassHook {
         if (state.sliderOverlay == null || state.sliderRadius != radius) {
             state.sliderOverlay?.let { view.overlay.remove(it) }
             state.sliderOverlay = LiquidGlassSurface.create(view, radius, false,
-                keyguard = false, night = true, sharedBackdrop = true) {
+                keyguard = false, night = true, material = LiquidGlassSurface.Material.CONTROL_CENTER,
+                sharedBackdrop = true) {
                 report("slider glass overlay", it)
             }.also {
                 // Keep the native fill/position and thumb legible under the reflection.
@@ -315,10 +342,37 @@ internal object ControlCenterGlassHook {
     }
 
     private fun wrap(view: View, original: Drawable, previous: GlassDrawable?, blur: Boolean): GlassDrawable {
-        if (original === previous && previous.blur == blur) return previous
+        val active = tileActive(view)
+        if (original === previous && previous.blur == blur) {
+            previous.active = active
+            return previous
+        }
         val native = if (original === previous) previous.original else original
         previous?.release()
-        return GlassDrawable(view, native, blur)
+        return GlassDrawable(view, native, blur).also { it.active = active }
+    }
+
+    private fun tileActive(view: View): Boolean {
+        // Find the custom owner BEFORE inspecting selected/activated on any
+        // child or parent. Vendor expansion can select the subtree even while
+        // airplane mode is OFF, otherwise changing the glass at reveal end.
+        var airplaneOwner: View? = view
+        repeat(4) {
+            val owner = airplaneOwner ?: return@repeat
+            if (owner is ControlCenterHooks.AirplaneModeButtonView) return owner.airplaneModeEnabled
+            airplaneOwner = owner.parent as? View
+        }
+        var current: View? = view
+        // Fixed tiles keep their background in a nested ImageView; compact and
+        // vendor tiles fall back to selection only without an explicit state.
+        repeat(4) {
+            val owner = current ?: return false
+            val native = XposedHelpers.getAdditionalInstanceField(owner, TILE_ACTIVE) as? Boolean
+            if (native != null) return native
+            if (owner.isSelected || owner.isActivated) return true
+            current = owner.parent as? View
+        }
+        return false
     }
 
     private fun restore(view: View, state: State) {
@@ -344,12 +398,19 @@ internal object ControlCenterGlassHook {
 
     /** Retains native state colors/ripple/animations and exact native silhouette. */
     private class GlassDrawable(view: View, val original: Drawable, val blur: Boolean) : Drawable(), Drawable.Callback {
+        var active = false
+            set(value) {
+                if (field == value) return
+                field = value
+                invalidateSelf()
+            }
         private val outline = Outline()
         private val rect = Rect()
         private val density = view.resources.displayMetrics.density
         private val fallbackRadius = 24f * density
         private var radius = -1f
         private var surface: Drawable? = null
+        private var surfaceActive = false
         private var failed = false
         // The view owns this drawable; never store the view in a global weak-map value.
         private val target = java.lang.ref.WeakReference(view)
@@ -375,18 +436,20 @@ internal object ControlCenterGlassHook {
 
         private fun drawGlass(canvas: Canvas) {
             prepareSurface()
-            surface?.let { tint ->
-                if (tint.bounds != rect) tint.bounds = rect
-                if (tint.alpha != original.alpha) tint.alpha = original.alpha
-                tint.draw(canvas)
-            }
-            // Keep native accent/ripple state without alpha setters during drawing.
+            // Native foregrounds are chosen for the native accent. Keep that accent
+            // nearly opaque when ON, but put the reflection ABOVE the native fill.
+            // OFF controls need only a trace of the stock opaque background.
             val save = canvas.saveLayerAlpha(bounds.left.toFloat(), bounds.top.toFloat(),
-                bounds.right.toFloat(), bounds.bottom.toFloat(), 122)
+                bounds.right.toFloat(), bounds.bottom.toFloat(), SystemUiGlassPalette.nativeControlAlpha(active))
             try {
                 original.draw(canvas)
             } finally {
                 canvas.restoreToCount(save)
+            }
+            surface?.let { tint ->
+                if (tint.bounds != rect) tint.bounds = rect
+                if (tint.alpha != original.alpha) tint.alpha = original.alpha
+                tint.draw(canvas)
             }
         }
 
@@ -397,18 +460,23 @@ internal object ControlCenterGlassHook {
             if (!rounded || rect.isEmpty) rect.set(bounds)
             val corner = if (rounded && outline.radius >= 0f) outline.radius else
                 minOf(fallbackRadius, rect.width() / 2f, rect.height() / 2f)
-            if (surface == null || radius != corner) {
+            if (surface == null || radius != corner || surfaceActive != active) {
                 val view = target.get() ?: return
                 surface?.callback = null
                 radius = corner
+                surfaceActive = active
                 // SystemUI controls use a dark palette even over a light wallpaper.
                 // One shared native shade blur; all optical cues are recorded in the
                 // same display list as the control. No delayed per-tile blur regions.
                 surface = LiquidGlassSurface.create(view, corner, false, keyguard = false, night = true,
-                    sharedBackdrop = blur) {
+                    material = LiquidGlassSurface.Material.CONTROL_CENTER, sharedBackdrop = blur,
+                    bodyAlpha = SystemUiGlassPalette.controlBodyAlpha(active)) {
                     report("control-center backdrop blur (using translucent fallback)", it)
                 }.also { it.callback = this }
             }
+            // Prepare shader geometry before draw(), including the very first
+            // frame where ImageView has only just acquired its drawable bounds.
+            surface?.let { if (it.bounds != rect) it.bounds = rect }
         }
 
         fun attachOriginal() {

@@ -4,7 +4,6 @@ import android.view.View
 import android.view.ViewGroup
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.current
-import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.type.java.BooleanType
 import com.highcapable.yukihookapi.hook.type.java.StringClass
 
@@ -38,9 +37,6 @@ object IconSlotHook : YukiBaseHooker() {
                 }
                 beforeHook {
                     val slot = args(0).string()
-                    val visible = args(1).boolean()
-                    // スロット名のデバッグログを出力
-                    // YLog.debug("StatusBarIconControllerImpl.setIconVisibility: slot=[$slot], visible=$visible")
 
                     if (!isHideVolte) return@beforeHook
 
@@ -48,7 +44,6 @@ object IconSlotHook : YukiBaseHooker() {
                     val shouldHide = hiddenSlots.any { slotLower.contains(it) }
                     if (shouldHide) {
                         args(1).setFalse()
-                        // YLog.debug("StatusBarIconControllerImpl: Force hiding icon slot [$slot]")
                     }
                 }
             }
@@ -66,15 +61,13 @@ object IconSlotHook : YukiBaseHooker() {
                     try {
                         val iconController = instance.current().field { name = "mIconController" }.any()
                         val slotIms = instance.current().field { name = "mSlotIMS" }.string()
-                        // YLog.debug("ImsIconController.updateImsIcon: slotIMS=[$slotIms], force suppressing")
                         if (iconController != null && slotIms.isNotEmpty()) {
                             iconController.current().method {
                                 name = "setIconVisibility"
                                 param(StringClass, BooleanType)
                             }.call(slotIms, false)
                         }
-                    } catch (e: Throwable) {
-                        // YLog.debug("ImsIconController hook error: ${e.message}")
+                    } catch (_: Throwable) {
                     }
                     resultNull() // 描画処理自体をスキップ
                 }
@@ -166,7 +159,6 @@ object IconSlotHook : YukiBaseHooker() {
         if (isVolteTarget) {
             if (view.visibility != View.GONE) {
                 view.visibility = View.GONE
-                // YLog.debug("hideVolteViews: Hid view id=[$resName], desc=[$desc]")
             }
         }
     }

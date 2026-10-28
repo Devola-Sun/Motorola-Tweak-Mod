@@ -2,7 +2,11 @@
 <resources>
     <string name="section_updates_title">Updates</string>
     <string name="pref_auto_update_check_title">Automatically check for updates</string>
-    <string name="pref_auto_update_check_desc">Check GitHub for stable releases when you open the app and suggest updating when a newer version is available.</string>
+    <string name="pref_auto_update_check_desc">Check GitHub for stable releases when you open the app. Remind again after 6 hours if not updated. This is not a background notification.</string>
+    <string name="update_check_now">Check now</string>
+    <string name="update_checking">Checking GitHub releases…</string>
+    <string name="update_latest">No newer stable release is available for this version.</string>
+    <string name="update_check_failed">Could not check for updates. Check your connection or GitHub rate limits and try again.</string>
     <string name="update_available_title">Update available</string>
     <string name="update_available_message">A new stable release is available.\n\nInstalled: %1$s\nLatest: %2$s\n\nYou can update from the GitHub release page.</string>
     <string name="update_open_release">View on GitHub</string>
@@ -92,19 +96,19 @@
     <!-- Cover-screen Dock -->
     <string name="section_cover_dock">Cover-screen Dock</string>
     <string name="cover_dock_enable_title">Show the Dock on the cover screen</string>
-    <string name="cover_dock_enable_summary">Shows the Hotseat on the outer display. Restart the launcher after changing this setting.</string>
+    <string name="cover_dock_enable_summary">Shows the Hotseat on the outer display.</string>
     <string name="cover_dock_floating_island_title">Floating Island Dock</string>
-    <string name="cover_dock_floating_island_summary">Cover screen only. Adds at least 20dp side insets and 28dp rounded corners to the background. Reuses background width and height settings without changing the icon count or layout area. Restart the launcher after changing this setting.</string>
+    <string name="cover_dock_floating_island_summary">Cover screen only. Adds at least 20dp side insets and 28dp rounded corners to the background. Reuses background width and height settings without changing the icon count or layout area.</string>
     <string name="cover_dock_frost_title">Frosted glass Dock</string>
     <string name="cover_dock_liquid_glass_title">Liquid Glass Dock</string>
-    <string name="cover_dock_liquid_glass_summary">Adds a translucent gradient and reflective edges to the cover Dock. Mutually exclusive with frosted glass. Restart the launcher after changes.</string>
+    <string name="cover_dock_liquid_glass_summary">Adds a translucent gradient and reflective edges to the cover Dock. Mutually exclusive with frosted glass.</string>
     <string name="section_main_dock">Main-display Dock</string>
     <string name="main_dock_frost_title">Frosted glass Dock</string>
     <string name="main_dock_liquid_glass_title">Liquid Glass Dock</string>
-    <string name="main_dock_glass_summary">Enabling either style makes the stock Dock background transparent and displays glass at the same position and size. Only one style can be enabled at a time. Disable both to restore the stock background. Does not blur the wallpaper. Restart the launcher after changes.</string>
+    <string name="main_dock_glass_summary">Enabling either style makes the stock Dock background transparent and displays glass at the same position and size. Only one style can be enabled at a time. Disable both to restore the stock background. Does not blur the wallpaper.</string>
     <string name="folder_liquid_glass_title">Liquid Glass folders</string>
-    <string name="folder_liquid_glass_summary">Adds translucent gradients and reflective edges to folder icons and open folder backgrounds. Restart the launcher after changes.</string>
-    <string name="cover_dock_frost_summary">Gives the cover-screen Dock a frosted look using a translucent gradient and a subtle border. Does not blur the wallpaper or icons. Restart the launcher after changing this setting.</string>
+    <string name="folder_liquid_glass_summary">Styles folder icons as glass and adds a container using the notification and control center material to open folders. Background blur follows the shared slider.</string>
+    <string name="cover_dock_frost_summary">Gives the cover-screen Dock a frosted look using a translucent gradient and a subtle border. Does not blur the wallpaper or icons.</string>
     <string name="cover_dock_height_title">Dock background height</string>
     <string name="cover_dock_width_title">Dock background width</string>
     <string name="cover_dock_size_title">Dock size</string>
@@ -147,11 +151,11 @@
     <string name="root_required_title">Root access required</string>
     <string name="root_required_message">This app needs root access to apply settings, restart the launcher and read module scopes.\n\nGrant superuser access to this app (io.github.devola_sun.motorolatweak) in KernelSU / SukiSU / Magisk, then tap Check again.\n\nIf access is already granted, close and reopen this app.</string>
     <string name="root_required_retry">Check again</string>
-    <string name="layout_summary">Rows, columns and Dock icons range from 4 to 10. Restart the launcher after changing.</string>
+    <string name="layout_summary">Rows, columns and Dock icons range from 4 to 10.</string>
     <string name="grid_rows_title">Desktop rows</string>
     <string name="grid_columns_title">Desktop columns</string>
     <string name="square_grid_cells_title">Square grid cells</string>
-    <string name="square_grid_cells_summary">Makes each home screen cell a 1:1 square and balances the remaining space above/below and left/right. Restart the launcher after changing this setting.</string>
+    <string name="square_grid_cells_summary">Makes each home screen cell a 1:1 square and balances the remaining space above/below and left/right.</string>
     <string name="dock_icons_title">Dock icons</string>
 
     <!-- SystemUI -->
@@ -159,7 +163,7 @@
     <string name="section_control_center_title">Control center</string>
     <string name="pref_cc_compact_layout_title">Move media card to the top row</string>
     <string name="pref_cc_compact_layout_desc">Places a square media card beside connectivity, with brightness on the left and volume on the right below it. The lower-left area contains flashlight and auto-rotate, with a two-tile-wide Bedtime mode button underneath.</string>
-    <string name="pref_cc_compact_layout_hint">Restart SystemUI from the top-right menu after enabling or disabling. Requires the SystemUI scope in LSPosed. Applies in portrait and table mode. The 2×2 connectivity card can be configured under SystemUI.</string>
+    <string name="pref_cc_compact_layout_hint">Requires the SystemUI scope in LSPosed. Applies in portrait and table mode. The 2×2 connectivity card can be configured under SystemUI.</string>
     <string name="systemui_hint">Status bar settings are applied after restarting SystemUI.</string>
 
     <string name="pref_sb_show_seconds_title">Show clock seconds</string>
@@ -229,10 +233,10 @@
     <string name="pref_cc_swap_sliders_desc">Swaps them to brightness on the left and volume on the right, and syncs their heights.</string>
     <string name="pref_cc_ios_connectivity_title">iOS 15 style 2×2 connectivity card</string>
     <string name="pref_cc_liquid_glass_title">Liquid Glass control center</string>
-    <string name="pref_cc_background_blur_title">Control and notification center background blur</string>
-    <string name="pref_cc_background_blur_desc" formatted="false">Applies the same percentage to both backgrounds using the original system blur. 100% is the system strength; 0% disables blur. Independent of Liquid Glass. If the saved value is not applied, restart SystemUI from the top-right menu.</string>
+    <string name="pref_cc_background_blur_title">Notification, control center and folder background blur</string>
+    <string name="pref_cc_background_blur_desc" formatted="false">Applies the same percentage to the native background blur in the notification center, control center and open folders. 100% is the system strength; 0% disables blur. Independent of Liquid Glass. Folder changes apply the next time a folder opens.</string>
     <string name="pref_cc_liquid_glass_desc">Uses the notification cards’ backdrop blur, translucency and reflective edges without changing switch or slider sizes, positions or interactions. Independent of the notification blur setting.</string>
-    <string name="pref_cc_liquid_glass_hint">Off by default. Restart SystemUI from the top-right menu after enabling or disabling. Falls back to translucent glass when the device disables blur.</string>
+    <string name="pref_cc_liquid_glass_hint">Off by default. Falls back to translucent glass when the device disables blur.</string>
     <string name="pref_cc_ios_connectivity_desc">A 2×2 grid of Wi-Fi, data, Bluetooth and airplane mode.</string>
 
     <!-- Status bar element order -->
@@ -256,6 +260,7 @@
     <string name="restart_button">Restart launcher to apply</string>
     <string name="clear_cache_button">Clear icon cache</string>
     <string name="restart_systemui_button">Restart SystemUI to apply</string>
+    <string name="restart_device_button">Reboot device to apply</string>
     <string name="status_restarting_systemui">Restarting SystemUI…</string>
 
     <string name="section_backup_title">Launcher layout</string>
@@ -287,28 +292,32 @@
 
     <string name="section_lock_clock_title">Lock screen clock</string>
     <string name="pref_lock_clock_size_title">Clock enlargement</string>
-    <string name="pref_lock_clock_size_desc" formatted="false">Adjust from 100 to 200% in 1% steps. 100% restores the native size. Independent of Keep large clock and Liquid Glass; always-on display is not enlarged. Restart SystemUI from the top-right menu after changes. Higher values or some clock styles may cause clipping or overlap with notifications and widgets.</string>
+    <string name="pref_lock_clock_size_desc" formatted="false">Adjust from 100 to 200% in 1% steps. 100% restores the native size. Independent of Keep large clock and Liquid Glass; always-on display is not enlarged. Higher values or some clock styles may cause clipping or overlap with notifications and widgets.</string>
     <string name="pref_lock_clock_liquid_glass_title">Liquid Glass clock</string>
-    <string name="pref_lock_clock_liquid_glass_desc">Adds translucency, gradients and reflective edges to clock digits, without actual wallpaper refraction or blur. Keeps the clock size, font and position unchanged, independently of Keep large clock. Restores stock rendering when off or in always-on display. Restart SystemUI from the top-right menu after changes. Some clock styles are unsupported.</string>
+    <string name="pref_lock_clock_liquid_glass_desc">Adds translucency, gradients and reflective edges to clock digits, without actual wallpaper refraction or blur. Keeps the clock size, font and position unchanged, independently of Keep large clock. Restores stock rendering when off or in always-on display. Some clock styles are unsupported.</string>
     <string name="section_notification_media_title">Notifications and media cards</string>
-    <string name="pref_lock_media_compact_title">Compact lock-screen playback card</string>
-    <string name="pref_lock_media_compact_desc">Uses a rounded card with small album art, track information, a seek bar and playback controls below. With Liquid glass off, the background uses plain dark blur; with it on, the background uses Liquid glass. Applies only to the lock screen; the control center is unchanged. Uses a translucent fallback when blur is unavailable. Restart SystemUI after changes. Turn off to restore the previous layout.</string>
+    <string name="pref_media_artwork_light_brightness_title">Keep artwork at light-mode brightness</string>
+    <string name="pref_media_artwork_light_brightness_desc">Prevents theme-based artwork dimming on lock-screen, notification-center, control-center and Dynamic Island-style media cards. Backgrounds and controls keep their theme. Turn off to restore the stock appearance.</string>
+    <string name="pref_lock_media_compact_title">Compact playback card</string>
+    <string name="pref_lock_media_compact_desc">Uses the same compact layout for lock-screen and notification-center cards and expanded Dynamic Island-style playback popups. Album art and track information appear above a straight seek bar with times at both ends and a translucent background track; white playback controls and the output picker below. Reuses the native player; extra actions appear only when provided by the media app. Keeps the Liquid glass setting and leaves the control center unchanged. Turn off to restore stock layout.</string>
+    <string name="pref_lock_icon_above_clock_title">Solid white lock above the clock</string>
+    <string name="pref_lock_icon_above_clock_desc">Draws a solid white lock above the clock and hides the original bottom lock indicator. Reflects locked/unlocked state. The top icon is display-only. Always-on display is unchanged. Turn off to restore the stock bottom indicator.</string>
     <string name="pref_notification_media_frost_title">Liquid glass</string>
     <string name="pref_notification_keep_silent_visible_title">Do not tuck away silent notifications</string>
-    <string name="pref_notification_keep_silent_visible_desc">Keeps silent notifications as cards in the notification center instead of an icon-only bar. Does not change sound, vibration or importance. Restart SystemUI after changes. Turn off to restore stock behavior.</string>
+    <string name="pref_notification_keep_silent_visible_desc">Keeps silent notifications as cards in the notification center instead of an icon-only bar. Does not change sound, vibration or importance. Turn off to restore stock behavior.</string>
     <string name="pref_notification_media_frost_desc">Gives notifications and lock-screen media cards translucent surfaces with subtle reflective edges. Control-center media cards keep stock background blur while retaining layout and size customizations. Notification placement and the normal unstacked shade list are unchanged. Turn off to restore stock backgrounds.</string>
-    <string name="notification_media_frost_hint">Requires the SystemUI scope in LSPosed. Restart SystemUI from the top-right menu after changes. Stock notification actions and privacy settings are preserved. Stacking is disabled during TalkBack touch exploration. When blur is unavailable or disabled by battery saver, a translucent surface and outline are used instead. Some ROMs are unsupported.</string>
+    <string name="notification_media_frost_hint">Requires the SystemUI scope in LSPosed. Stock notification actions and privacy settings are preserved. Stacking is disabled during TalkBack touch exploration. When blur is unavailable or disabled by battery saver, a translucent surface and outline are used instead. Some ROMs are unsupported.</string>
     <string name="pref_lock_keep_large_clock_title">Keep large clock (experimental)</string>
     <string name="pref_lock_keep_large_clock_desc">Keeps the large clock and moves lock-screen notifications into a bottom stack. Scroll vertically to see two or more cards. Turn off to restore the stock clock behavior and notification position. Does not change notification shade placement.</string>
-    <string name="lock_clock_hint">This switch controls notification placement and stacking. Backgrounds are controlled separately by Liquid glass. Restart SystemUI from the top-right menu after changes. Touch exploration uses an unstacked list. Some ROMs are unsupported; placement, widget overlap and interaction require device testing.</string>
+    <string name="lock_clock_hint">This switch controls notification placement and stacking. Backgrounds are controlled separately by Liquid glass. Touch exploration uses an unstacked list. Some ROMs are unsupported; placement, widget overlap and interaction require device testing.</string>
     <string name="section_lock_shortcuts_title">Lock screen shortcuts</string>
     <string name="pref_lock_shortcut_blur_title">Liquid glass shortcut backgrounds</string>
     <string name="pref_lock_edge_camera_title">Swipe from right edge to open camera</string>
     <string name="pref_lock_edge_camera_desc">Swipe left from the right edge of the lock screen to open the lock-screen camera.</string>
-    <string name="pref_lock_shortcut_blur_desc">Gives the bottom-left and bottom-right lock-screen buttons translucent backgrounds with reflective edges. Phone and Bluetooth device battery widgets below the clock use their stock backgrounds. Works independently of notification/playback card settings and keeps button icons sharp. Turn off to restore stock button backgrounds. Restart SystemUI after changes.</string>
+    <string name="pref_lock_shortcut_blur_desc">Gives the bottom-left and bottom-right lock-screen buttons translucent backgrounds with reflective edges. Phone and Bluetooth device battery widgets below the clock use their stock backgrounds. Works independently of notification/playback card settings and keeps button icons sharp. Turn off to restore stock button backgrounds.</string>
     <string name="pref_lock_shortcut_size_title">Shortcut size</string>
     <string name="pref_lock_shortcut_size_desc">Applies to both sides. 100% is the system size. Enlarges the buttons, icons and touch targets.</string>
-    <string name="lock_shortcut_hint">Turn the screen off and show the lock screen again to apply. Restart SystemUI if needed. When blur is unavailable or disabled by battery saver, uses the same translucent surface and outline as notification cards.</string>
+    <string name="lock_shortcut_hint">When blur is unavailable or disabled by battery saver, uses the same translucent surface and outline as notification cards.</string>
 
     <!-- Language -->
     <string name="section_language_title">Language</string>
@@ -323,12 +332,12 @@
     <string name="pref_lock_pin_auto_confirm_desc">Hide the numeric device-lock PIN confirm button and authenticate only after the selected number of digits. Turn off to restore stock behavior.</string>
     <string name="pref_lock_pin_length_title">PIN length for auto-confirm</string>
     <string name="lock_pin_length_format">%1$d digits</string>
-    <string name="lock_pin_hint">Always select the length of your current PIN (4–16 digits). This does not change your PIN. Restart SystemUI after changes. SIM PINs and text passwords are excluded. A known length mismatch preserves stock behavior. If length metadata is unavailable, the selected value is used: an incorrect selection causes authentication failures. In that case, turn this off and restart SystemUI. Failed-attempt limits and lockout delays are unchanged.</string>
+    <string name="lock_pin_hint">Always select the length of your current PIN (4–16 digits). This does not change your PIN. SIM PINs and text passwords are excluded. A known length mismatch preserves stock behavior. If length metadata is unavailable, the selected value is used: an incorrect selection causes authentication failures. In that case, turn this off and apply using the button below. Failed-attempt limits and lockout delays are unchanged.</string>
     <string name="section_moto_widget_title">Moto Widgets</string>
     <string name="feature_moto_widget_package">com.motorola.timeweatherwidget</string>
     <string name="page_moto_widget_subtitle">Customize the Moto widget clock, date and weather on your home screen</string>
     <string name="moto_widget_clock_liquid_glass_title">Liquid Glass clock, date and weather</string>
-    <string name="moto_widget_clock_liquid_glass_summary">Adds translucency, gradients and reflective edges to the home screen Moto widget clock, date, weather icons and descriptions, temperature, city name and related information. Off by default. Does not change size, layout, backgrounds or the lock screen clock. No actual wallpaper refraction or blur. Turning this off restores stock rendering. Requires the com.motorola.launcher3 LSPosed scope. Use the button below to restart the widget and launcher after changes. Unrecognized display elements keep stock rendering.</string>
+    <string name="moto_widget_clock_liquid_glass_summary">Adds translucency, gradients and reflective edges to the home screen Moto widget clock, date, weather icons and descriptions, temperature, city name and related information. Off by default. Does not change size, layout, backgrounds or the lock screen clock. No actual wallpaper refraction or blur. Turning this off restores stock rendering. Requires the com.motorola.launcher3 LSPosed scope. Unrecognized display elements keep stock rendering.</string>
     <string name="restart_moto_widget_button">Restart Moto Widgets and launcher to apply</string>
     <string name="status_restarting_moto_widget">Restarting Moto Widgets and launcher…</string>
 </resources>

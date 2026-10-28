@@ -48,7 +48,7 @@ internal class ControlCenterNativeBlur {
                         state.method = method
                         state.requestedRadius = radius
                         state.opaque = opaque
-                        val output = ControlCenterBlurPolicy.radius(radius, percent())
+                        val output = adjustedRadius(radius)
                         state.appliedRadius = output
                         // Leave opaque, depth bookkeeping and all other windows untouched.
                         param.args[1] = output
@@ -67,8 +67,12 @@ internal class ControlCenterNativeBlur {
 
     fun update(panel: ViewGroup) {
         val state = windows[panel] ?: return
-        applyPending(state, ControlCenterBlurPolicy.radius(state.requestedRadius, percent()))
+        applyPending(state, adjustedRadius(state.requestedRadius))
     }
+
+    // Both panels share a window. Never change its scale in response to QS
+    // visibility: that signal is collected at pre-draw, after expansion begins.
+    private fun adjustedRadius(radius: Int): Int = ControlCenterBlurPolicy.radius(radius, percent())
 
     fun detach(panel: ViewGroup) {
         windows[panel]?.let {

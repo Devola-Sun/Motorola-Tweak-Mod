@@ -6,7 +6,6 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.type.android.ViewClass
-import com.motolauncher.mod.ErrorLogger
 import com.motolauncher.mod.HookConfig
 
 /**
@@ -32,7 +31,6 @@ object StatusBarOrderHook : YukiBaseHooker() {
     )
 
     private val defaultLeft = setOf("clock", "ongoing", "notifications")
-    private val defaultRight = setOf("user_switcher", "wifi", "mobile", "battery")
     private val clusterKeys = setOf("wifi", "mobile")
 
     private var lastRootHash = 0
@@ -175,24 +173,13 @@ object StatusBarOrderHook : YukiBaseHooker() {
         // If neither Wi-Fi nor cellular appears in the saved order, keep the
         // cluster on the right side.
         if (systemIcons != null && !clusterPlaced[0]) {
-            placeView(endContainer, systemIcons, wrapContent = true)
+            placeView(endContainer, systemIcons)
         }
 
         startContainer.requestLayout()
         endContainer.requestLayout()
         lastRootHash = System.identityHashCode(root)
         lastSignature = signature
-        Log.i(TAG, "Status bar order applied: left=$left right=$right")
-
-        // The status bar is laid out (and the battery icon is shown) after this
-        // callback, so the real positions are only available later. The dump
-        // is written to the error log because the status bar spacing cannot be
-        // judged from the source alone (the concrete child views differ per
-        // ROM).
-        runCatching {
-            android.os.Handler(android.os.Looper.getMainLooper())
-                .postDelayed({ dumpLayout(root, "late") }, 2000L)
-        }
     }
 
     private fun applySide(
@@ -206,7 +193,7 @@ object StatusBarOrderHook : YukiBaseHooker() {
         order.forEach { key ->
             if (key in clusterKeys) {
                 if (!clusterPlaced[0] && statusIconsCluster != null) {
-                    placeView(target, statusIconsCluster, wrapContent = true)
+                    placeView(target, statusIconsCluster)
                     clusterPlaced[0] = true
                 }
                 return@forEach
@@ -218,7 +205,7 @@ object StatusBarOrderHook : YukiBaseHooker() {
                     // that the ROM keeps managing its visibility.
                     placeInsideCluster(statusIconsCluster as? ViewGroup, view)
                 } else {
-                    placeView(target, view, wrapContent = key == "battery")
+                    placeView(target, view)
                     if (key == "battery") {
                         // A battery that was moved to the other side is not
                         // managed by the cluster any more.
@@ -241,7 +228,7 @@ object StatusBarOrderHook : YukiBaseHooker() {
         }
     }
 
-    private fun placeView(target: ViewGroup, view: View, wrapContent: Boolean) {
+    private fun placeView(target: ViewGroup, view: View) {
         val original = view.layoutParams
         val sameParent = view.parent === target
 
@@ -281,62 +268,6 @@ object StatusBarOrderHook : YukiBaseHooker() {
             params.setMargins(margins[0], margins[1], margins[2], margins[3])
         }
         target.addView(view, params)
-    }
-
-    /**
-     * Writes the real container layout to the error log. The status bar gap
-     * problems are impossible to judge from the source alone, because the
-     * concrete child views differ per ROM.
-     */
-    private fun dumpLayout(root: View, phase: String) {
-        runCatching {
-            val start = root.findViewById<ViewGroup>(
-                id(root, "status_bar_start_side_except_heads_up")
-            )
-            val end = root.findViewById<ViewGroup>(id(root, "status_bar_end_side_content"))
-            val cluster = root.findViewById<ViewGroup>(id(root, "system_icons"))
-            ErrorLogger.log(
-                TAG,
-                "status bar layout ($phase): start=[${describe(start)}] " +
-                    "end=[${describe(end)}] cluster=[${describe(cluster)}]"
-            )
-        }
-    }
-
-    private fun describe(group: ViewGroup?): String {
-        if (group == null) return "null"
-        val builder = StringBuilder()
-        builder.append("@").append(group.left).append('/').append(group.width)
-        for (index in 0 until group.childCount) {
-            val child = group.getChildAt(index)
-            val params = child.layoutParams
-            val margins = params as? ViewGroup.MarginLayoutParams
-            builder.append('{')
-                .append(child.javaClass.simpleName)
-                .append(" id=").append(resourceName(child))
-                .append(" vis=").append(visibilityName(child.visibility))
-                .append(" x=").append(child.left)
-                .append(" w=").append(child.width)
-                .append(" lpw=").append(params?.width)
-                .append(" h=").append(params?.height)
-                .append(" weight=").append((params as? LinearLayout.LayoutParams)?.weight)
-                .append(" margin=").append(margins?.leftMargin)
-                .append(',').append(margins?.rightMargin)
-                .append("} ")
-        }
-        return builder.toString()
-    }
-
-    private fun resourceName(view: View): String = runCatching {
-        val id = view.id
-        if (id == View.NO_ID) "none" else view.resources.getResourceEntryName(id)
-    }.getOrDefault("?")
-
-    private fun visibilityName(visibility: Int): String = when (visibility) {
-        View.VISIBLE -> "visible"
-        View.INVISIBLE -> "invisible"
-        View.GONE -> "gone"
-        else -> visibility.toString()
     }
 
     private fun reorderWifiAndMobile(container: ViewGroup, wifiFirst: Boolean) {

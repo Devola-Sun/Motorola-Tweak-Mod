@@ -70,8 +70,10 @@ class MainActivity : AppCompatActivity() {
     private lateinit var ccCompactLayout: SwitchCompat
     private lateinit var ccLiquidGlass: SwitchCompat
     private lateinit var notificationMediaFrostSwitch: SwitchCompat
+    private lateinit var mediaArtworkLightBrightnessSwitch: SwitchCompat
     private lateinit var notificationKeepSilentVisibleSwitch: SwitchCompat
     private lateinit var lockMediaCompactSwitch: SwitchCompat
+    private lateinit var lockIconAboveClockSwitch: SwitchCompat
     private lateinit var lockKeepLargeClockSwitch: SwitchCompat
     private lateinit var lockClockSizeSlider: Slider
     private lateinit var lockClockSizeValue: TextView
@@ -172,17 +174,28 @@ class MainActivity : AppCompatActivity() {
     private var rootDialog: AlertDialog? = null
     private var updateDialog: AlertDialog? = null
     private var pendingUpdateTag: String? = null
+    private var pendingUpdateManual = false
+    private var updateCheckManual = false
     private val updateExecutor = Executors.newSingleThreadExecutor()
     private var updateCheck: Future<*>? = null
     private var updateCheckGeneration = 0
     private val syncPrefsTask = Runnable { flushModulePrefs() }
     private val scopeRefreshTask = Runnable { refreshScopeList() }
+    private val updateRefreshTask = object : Runnable {
+        override fun run() {
+            if (!screenResumed || isFinishing || isDestroyed) return
+            checkForUpdates()
+            refreshHandler.postDelayed(this, 60_000L)
+        }
+    }
 
     override fun onResume() {
         super.onResume()
         screenResumed = true
         checkRootAccess()
         checkForUpdates()
+        refreshHandler.removeCallbacks(updateRefreshTask)
+        refreshHandler.postDelayed(updateRefreshTask, 60_000L)
     }
 
     private fun checkRootAccess() {
@@ -224,10 +237,14 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         screenResumed = false
         refreshHandler.removeCallbacks(scopeRefreshTask)
+        refreshHandler.removeCallbacks(updateRefreshTask)
         super.onPause()
     }
 
     private fun bindUpdateSettings() {
+        findViewById<Button>(R.id.button_check_updates).setOnClickListener {
+            checkForUpdates(manual = true)
+        }
         findViewById<SwitchCompat>(R.id.switch_auto_update_check).apply {
             isChecked = settings.autoUpdateCheck
             setOnCheckedChangeListener { _, enabled ->
@@ -235,38 +252,64 @@ class MainActivity : AppCompatActivity() {
                 if (enabled) {
                     checkForUpdates()
                 } else {
-                    updateCheckGeneration++
-                    updateCheck?.cancel(true)
-                    updateCheck = null
-                    pendingUpdateTag = null
-                    updateDialog?.dismiss()
+                    if (!updateCheckManual) {
+                        updateCheckGeneration++
+                        updateCheck?.cancel(true)
+                        updateCheck = null
+                    }
+                    if (!pendingUpdateManual) pendingUpdateTag = null
+                    if (!updateCheckManual && !pendingUpdateManual) updateDialog?.dismiss()
                 }
             }
         }
     }
 
-    private fun checkForUpdates() {
-        if (!settings.autoUpdateCheck || !screenResumed || isFinishing || isDestroyed) return
-        showPendingUpdate()
-        if (updateCheck != null) return
+    private fun checkForUpdates(manual: Boolean = false) {
+        if ((!manual && !settings.autoUpdateCheck) || !screenResumed || isFinishing || isDestroyed) return
+        if (!manual) showPendingUpdate()
+        if (updateCheck != null) {
+            if (!manual || updateCheckManual) {
+                if (manual) Toast.makeText(this, R.string.update_checking, Toast.LENGTH_SHORT).show()
+                return
+            }
+            // A manual retry must not silently reuse an automatic cached result.
+            // Its generation invalidates the automatic callback; the single
+            // executor serializes requests even if network I/O ignores cancel.
+            updateCheck?.cancel(true)
+            updateCheck = null
+        }
+        if (manual) Toast.makeText(this, R.string.update_checking, Toast.LENGTH_SHORT).show()
+        updateCheckManual = manual
         val generation = ++updateCheckGeneration
         updateCheck = updateExecutor.submit {
-            val tag = GitHubReleaseChecker.check()
+            val result = GitHubReleaseChecker.check(force = manual)
             runOnUiThread {
                 if (isFinishing || isDestroyed || generation != updateCheckGeneration) return@runOnUiThread
                 updateCheck = null
-                if (!settings.autoUpdateCheck) return@runOnUiThread
-                pendingUpdateTag = tag
-                showPendingUpdate()
+                updateCheckManual = false
+                if (!manual && !settings.autoUpdateCheck) return@runOnUiThread
+                when (result) {
+                    is ReleaseCheckResult.Success -> {
+                        pendingUpdateTag = result.tag
+                        pendingUpdateManual = manual
+                        if (manual && result.tag == null && screenResumed) {
+                            Toast.makeText(this, R.string.update_latest, Toast.LENGTH_LONG).show()
+                        }
+                        showPendingUpdate()
+                    }
+                    is ReleaseCheckResult.Failure -> if (manual && screenResumed) {
+                        Toast.makeText(this, R.string.update_check_failed, Toast.LENGTH_LONG).show()
+                    }
+                }
             }
         }
     }
 
     private fun showPendingUpdate() {
         val tag = pendingUpdateTag ?: return
-        if (!screenResumed || !settings.autoUpdateCheck || isFinishing || isDestroyed ||
+        if (!screenResumed || (!pendingUpdateManual && !settings.autoUpdateCheck) || isFinishing || isDestroyed ||
             updateDialog?.isShowing == true || rootCheckRunning || rootDialog?.isShowing == true ||
-            GitHubReleaseChecker.lastPromptedTag == tag) return
+            (!pendingUpdateManual && !GitHubReleaseChecker.canPrompt(tag))) return
         updateDialog = AlertDialog.Builder(this)
             .setTitle(R.string.update_available_title)
             .setMessage(getString(R.string.update_available_message, BuildConfig.VERSION_NAME, tag))
@@ -281,10 +324,14 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(R.string.update_later, null)
             .create().also { dialog ->
-                dialog.setOnDismissListener { if (updateDialog === dialog) updateDialog = null }
+                dialog.setOnDismissListener {
+                    if (updateDialog === dialog) updateDialog = null
+                    refreshHandler.post { showPendingUpdate() }
+                }
                 dialog.show()
-                GitHubReleaseChecker.lastPromptedTag = tag
+                GitHubReleaseChecker.recordPrompt(tag)
                 pendingUpdateTag = null
+                pendingUpdateManual = false
             }
     }
 
@@ -398,8 +445,10 @@ class MainActivity : AppCompatActivity() {
         ccCompactLayout = findViewById(R.id.switch_cc_compact_layout)
         ccLiquidGlass = findViewById(R.id.switch_cc_liquid_glass)
         notificationMediaFrostSwitch = findViewById(R.id.switch_notification_media_frost)
+        mediaArtworkLightBrightnessSwitch = findViewById(R.id.switch_media_artwork_light_brightness)
         notificationKeepSilentVisibleSwitch = findViewById(R.id.switch_notification_keep_silent_visible)
         lockMediaCompactSwitch = findViewById(R.id.switch_lock_media_compact)
+        lockIconAboveClockSwitch = findViewById(R.id.switch_lock_icon_above_clock)
         lockKeepLargeClockSwitch = findViewById(R.id.switch_lock_keep_large_clock)
         lockClockSizeSlider = findViewById(R.id.slider_lock_clock_size)
         lockClockSizeValue = findViewById(R.id.text_lock_clock_size_value)
@@ -1012,6 +1061,16 @@ class MainActivity : AppCompatActivity() {
         lockMediaCompactSwitch.isChecked = settings.lockMediaCompact
         lockMediaCompactSwitch.setOnCheckedChangeListener { _, enabled ->
             settings.lockMediaCompact = enabled
+            syncModulePrefs()
+        }
+        lockIconAboveClockSwitch.isChecked = settings.lockIconAboveClock
+        lockIconAboveClockSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.lockIconAboveClock = enabled
+            syncModulePrefs()
+        }
+        mediaArtworkLightBrightnessSwitch.isChecked = settings.mediaArtworkLightBrightness
+        mediaArtworkLightBrightnessSwitch.setOnCheckedChangeListener { _, enabled ->
+            settings.mediaArtworkLightBrightness = enabled
             syncModulePrefs()
         }
         notificationMediaFrostSwitch.isChecked = settings.notificationMediaFrost
@@ -1814,41 +1873,26 @@ class MainActivity : AppCompatActivity() {
         bindSectionRestartButtons()
     }
 
-    /** Put an action after every settings section, not just at the end of a long page. */
+    /** Keep a single restart action at the bottom of each feature page. */
     private fun bindSectionRestartButtons() {
-        fun sections(page: Int, titles: List<Int>, label: Int, action: () -> Unit) {
+        fun addPageRestart(page: Int, label: Int, action: () -> Unit) {
             val content = (pages[page] as ViewGroup).getChildAt(0) as LinearLayout
-            val headings = (0 until content.childCount).map { content.getChildAt(it) }
-                .filterIsInstance<TextView>().filter { view -> titles.any { view.text == getString(it) } }
-            headings.asReversed().forEachIndexed { reversedIndex, heading ->
-                // SystemUI already has its final restart action in XML.
-                if (page == PAGE_SYSTEMUI && reversedIndex == 0) return@forEachIndexed
-                val index = content.indexOfChild(heading)
-                var end = index + 1
-                while (end < content.childCount && content.getChildAt(end) !in headings) end++
-                val button = layoutInflater.inflate(R.layout.item_section_restart, content, false) as Button
-                button.apply {
-                    setText(label)
-                    layoutParams = LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-                    ).apply { topMargin = (12 * resources.displayMetrics.density).toInt() }
-                    setOnClickListener { action() }
-                }
-                content.addView(button, end)
-                sectionRestartButtons += button
+            val button = layoutInflater.inflate(R.layout.item_section_restart, content, false) as Button
+            button.apply {
+                setText(label)
+                layoutParams = LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = (12 * resources.displayMetrics.density).toInt() }
+                setOnClickListener { action() }
             }
+            content.addView(button)
+            sectionRestartButtons += button
         }
-        sections(PAGE_LAUNCHER, listOf(R.string.section_appearance, R.string.section_main_dock,
-            R.string.section_cover_dock, R.string.section_layout), R.string.restart_button) {
+        addPageRestart(PAGE_LAUNCHER, R.string.restart_button) {
             restartButton.performClick()
         }
-        sections(PAGE_SYSTEMUI, listOf(R.string.section_systemui_title, R.string.section_notification_media_title,
-            R.string.section_battery_title, R.string.section_control_center_title,
-            R.string.section_status_bar_order_title), R.string.restart_systemui_button) {
-            restartSystemUiButton.performClick()
-        }
-        sections(PAGE_LOCK_SCREEN, listOf(R.string.section_lock_screen_title, R.string.section_lock_clock_title,
-            R.string.section_lock_pin_title, R.string.section_lock_shortcuts_title), R.string.restart_systemui_button) {
+        // SystemUI already has one restart button at the bottom in activity_main.xml.
+        addPageRestart(PAGE_LOCK_SCREEN, R.string.restart_systemui_button) {
             restartSystemUiButton.performClick()
         }
         val motoRestart = findViewById<Button>(R.id.button_restart_moto_widget)

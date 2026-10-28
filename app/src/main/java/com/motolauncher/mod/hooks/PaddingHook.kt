@@ -3,7 +3,6 @@ package com.motolauncher.mod.hooks
 import android.view.View
 import android.widget.FrameLayout
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
-import com.highcapable.yukihookapi.hook.log.YLog
 
 object PaddingHook : YukiBaseHooker() {
 
@@ -61,7 +60,6 @@ object PaddingHook : YukiBaseHooker() {
                             startSide.setPadding(8, startSide.paddingTop, startSide.paddingRight, startSide.paddingBottom)
                         }
                     }
-                    // YLog.debug("PhoneStatusBarView: Custom safe insets applied for unfolded display")
                 }
             }
         }
@@ -80,7 +78,6 @@ object PaddingHook : YukiBaseHooker() {
                     if (!isEnablePadding) return@afterHook
                     val layout = instance as? View ?: return@afterHook
                     layout.setPadding(12, layout.paddingTop, 12, layout.paddingBottom)
-                    // YLog.debug("CliStatusbarLinearLayout: Custom padding applied for cover display")
                 }
             }
             injectMember {

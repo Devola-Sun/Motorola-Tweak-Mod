@@ -13,7 +13,6 @@ import com.motolauncher.mod.BuildConfig
 import com.motolauncher.mod.R
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.current
-import com.highcapable.yukihookapi.hook.log.YLog
 import com.highcapable.yukihookapi.hook.type.android.CanvasClass
 import com.highcapable.yukihookapi.hook.type.android.DrawableClass
 import com.highcapable.yukihookapi.hook.type.android.ImageViewClass
@@ -57,7 +56,6 @@ object SignalIconHook : YukiBaseHooker() {
                     val levelList = getCellularLevelListDrawable(ctx)
                     if (levelList != null) {
                         sd.drawable = levelList
-                        // YLog.debug("SignalDrawable: Wrapped with ic_ios_cellular_level_list")
                     }
                 }
             }
@@ -72,7 +70,6 @@ object SignalIconHook : YukiBaseHooker() {
                     val raw = args(0).int()
                     val level = (raw and 0xFF).coerceIn(0, 4)
                     currentCellularLevel = level
-                    // YLog.debug("Cellular signal level changed: $level")
                 }
             }
 
@@ -86,7 +83,6 @@ object SignalIconHook : YukiBaseHooker() {
                     val raw = args(0).int()
                     val level = (raw and 0xFF).coerceIn(0, 4)
                     currentCellularLevel = level
-                    // YLog.debug("Cellular signal level changed: $level")
                 }
             }
 
@@ -168,7 +164,6 @@ object SignalIconHook : YukiBaseHooker() {
                     if (lvl != null) {
                         val clamped = lvl.coerceIn(0, 4)
                         currentCellularLevel = clamped
-                        // YLog.debug("Cellular signal level changed: $clamped")
                     }
                 }
             }
@@ -268,7 +263,6 @@ object SignalIconHook : YukiBaseHooker() {
                         val raw = args(0).int()
                         val level = (raw and 0xFF).coerceIn(0, 4)
                         currentCellularLevel = level
-                        // YLog.debug("Cellular signal level changed: $level")
 
                         if (isEnableIosIcons) {
                             val d = iv.drawable
@@ -319,7 +313,6 @@ object SignalIconHook : YukiBaseHooker() {
                         "mobile_signal", "mobile_signal_slot1", "mobile_signal_slot2" -> {
                             val lvl = parseCellularLevel(resName)
                             currentCellularLevel = lvl
-                            // YLog.debug("Cellular signal level changed: $lvl")
                             val levelList = getCellularLevelListDrawable(iv.context)
                             if (levelList != null) {
                                 levelList.level = lvl

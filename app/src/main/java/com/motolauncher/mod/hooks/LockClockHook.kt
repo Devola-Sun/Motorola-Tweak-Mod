@@ -1,6 +1,5 @@
 package com.motolauncher.mod.hooks
 
-import android.util.Log
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.motolauncher.mod.ErrorLogger
 import com.motolauncher.mod.HookConfig
@@ -22,7 +21,6 @@ object LockClockHook : YukiBaseHooker() {
     private const val LARGE = 0
     private const val SMALL = 1
     private val reportedErrors = ConcurrentHashMap.newKeySet<String>()
-    private val reportedStates = ConcurrentHashMap.newKeySet<String>()
 
     private val sizeStreams = Collections.synchronizedMap(WeakHashMap<Any, Boolean>())
     private val centerStreams = Collections.synchronizedMap(WeakHashMap<Any, Boolean>())
@@ -52,16 +50,12 @@ object LockClockHook : YukiBaseHooker() {
                 stream.javaClass.getDeclaredMethod("setValue", Any::class.java)
                     .apply { isAccessible = true }.invoke(stream, replacement)
             }
-            Log.i(TAG, "LockClock seeded actual ${if (centered) "center" else "size"} state: " +
-                "$raw -> ${backing.get(stream)}")
         }
-        Log.i(TAG, "LockClock tracked ${stream.javaClass.name} (${if (centered) "center" else "size"})")
     }
 
     /** SystemUI's ClockSize enum is loaded by the host, never by this module. */
     private fun mapSize(value: Any?): Any? = runCatching {
         val active = enabled()
-        if (reportedStates.add("enabled=$active")) Log.i(TAG, "LockClock preference enabled=$active")
         if (!active || value !is Enum<*> ||
             value.declaringJavaClass.name != "com.android.systemui.keyguard.shared.model.ClockSize") {
             return@runCatching value
@@ -69,9 +63,6 @@ object LockClockHook : YukiBaseHooker() {
         val large = value.declaringJavaClass.enumConstants
             ?.firstOrNull { it.name == "LARGE" } ?: return@runCatching value
         if (value.name != "SMALL" && value.name != "LARGE") return@runCatching value
-        if (reportedStates.add("size=${value.name}")) {
-            Log.i(TAG, "LockClock reactive emission ${value.javaClass.name}.${value.name} -> LARGE")
-        }
         large
     }.onFailure { report("reactive emission", it) }.getOrDefault(value)
 
@@ -79,9 +70,6 @@ object LockClockHook : YukiBaseHooker() {
         if (!centered) return mapSize(value)
         return runCatching {
             if (enabled() && value is Boolean) {
-                if (reportedStates.add("center=$value")) {
-                    Log.i(TAG, "LockClock center emission $value -> true")
-                }
                 true
             } else value
         }.onFailure { report("center emission", it) }.getOrDefault(value)
@@ -126,28 +114,9 @@ object LockClockHook : YukiBaseHooker() {
                                     val raw = param.args[index]
                                     val mapped = mapValue(raw, centered)
                                     param.args[index] = mapped
-                                    if (raw != mapped && reportedStates.add("write=${method.name}:$raw")) {
-                                        Log.i(TAG, "LockClock actual write ${method.name}: $raw -> $mapped")
-                                    }
                                 }.onFailure { report("state write", it) }
                             }
-
-                            override fun afterHookedMethod(param: MethodHookParam) {
-                                runCatching {
-                                    if (param.hasThrowable() || !enabled() || method.name != "updateState") {
-                                        return@runCatching
-                                    }
-                                    val centered = centerStreams.containsKey(param.thisObject)
-                                    if (!centered && !sizeStreams.containsKey(param.thisObject)) return@runCatching
-                                    val actual = param.thisObject.javaClass.getDeclaredField("_state")
-                                        .apply { isAccessible = true }.get(param.thisObject)
-                                    if (reportedStates.add("stored=$centered:$actual")) {
-                                        Log.i(TAG, "LockClock verified stored ${if (centered) "center" else "size"}=$actual")
-                                    }
-                                }.onFailure { report("verify state write", it) }
-                            }
                         })
-                        Log.i(TAG, "LockClock write boundary hooked: $streamName.${method.name}")
                     }
             }.onFailure { report("stream hooks: $streamName", it) }
         }
@@ -171,7 +140,6 @@ object LockClockHook : YukiBaseHooker() {
                                     field.isAccessible = true
                                     val value = field.get(param.thisObject) ?: return@forEach
                                     registerStream(value, field.name == "clockShouldBeCentered")
-                                    Log.i(TAG, "LockClock registered $name.${field.name}; enabled=${enabled()}")
                                 }
                             }.onFailure { report("reactive field: $name", it) }
                         }
@@ -179,8 +147,7 @@ object LockClockHook : YukiBaseHooker() {
                     installed++
                 }
             }.onFailure {
-                if (it is ClassNotFoundException) Log.i(TAG, "LockClock optional reactive class absent: $name")
-                else report("reactive install: $name", it)
+                if (it !is ClassNotFoundException) report("reactive install: $name", it)
             }
         }
         return installed
@@ -209,8 +176,7 @@ object LockClockHook : YukiBaseHooker() {
                 installed++
             }
         }.onFailure {
-            if (it is ClassNotFoundException) Log.i(TAG, "LockClock optional legacy size decision absent")
-            else report("legacy size decision", it)
+            if (it !is ClassNotFoundException) report("legacy size decision", it)
         }
 
         // Vendor builds may inline/remove getClockSize. Guard the controller
@@ -237,14 +203,11 @@ object LockClockHook : YukiBaseHooker() {
                     installed++
                 }
             }.onFailure {
-                if (it is ClassNotFoundException) Log.i(TAG, "LockClock optional legacy class absent: $name")
-                else report("legacy controller: $name", it)
+                if (it !is ClassNotFoundException) report("legacy controller: $name", it)
             }
         }
         if (installed == 0) {
             report("unsupported", IllegalStateException("No compatible keyguard clock entry points"))
-        } else {
-            Log.i(TAG, "LockClock hooks installed: $installed; enabled=${enabled()}; layout unverified")
         }
     }
 

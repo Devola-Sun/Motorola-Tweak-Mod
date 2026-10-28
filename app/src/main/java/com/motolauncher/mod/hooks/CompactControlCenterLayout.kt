@@ -20,7 +20,6 @@ import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.graphics.drawable.RippleDrawable
-import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -115,9 +114,6 @@ internal object CompactControlCenterLayout {
         var gap = 0
         var active = false
         var geometry: List<Int> = emptyList()
-        var loggedLayout = false
-        var boundSpecs: Set<String>? = null
-        var loggedBackground = false
     }
 
     private fun field(view: Any, name: String): Any? = XposedHelpers.getObjectField(view, name)
@@ -155,7 +151,6 @@ internal object CompactControlCenterLayout {
             if (!reportedMissingMedia) {
                 reportedMissingMedia = true
                 ErrorLogger.log(TAG, "Compact layout skipped: native media host not found; keeping the original layout")
-                dumpStructure(panel)
             }
             return null
         }
@@ -196,20 +191,6 @@ internal object CompactControlCenterLayout {
             if (view is ViewGroup) findMediaHost(view)?.let { return it }
         }
         return null
-    }
-
-    private fun dumpStructure(root: View, depth: Int = 0) {
-        if (depth > 6) return
-        val id = runCatching { root.resources.getResourceEntryName(root.id) }.getOrDefault("none")
-        Log.i(TAG, "CC structure ${" ".repeat(depth)}${root.javaClass.name} id=$id size=${root.width}x${root.height}")
-        if (depth <= 4) {
-            runCatching {
-                val visible = android.graphics.Rect()
-                val shown = root.getLocalVisibleRect(visible)
-                Log.i(TAG, "CC frame $id shown=$shown visible=$visible padding=${root.paddingLeft},${root.paddingRight} clipToPadding=${(root as? ViewGroup)?.clipToPadding}")
-            }.onFailure { report("Inspecting compact media clipping", it) }
-        }
-        if (root is ViewGroup) for (i in 0 until root.childCount) dumpStructure(root.getChildAt(i), depth + 1)
     }
 
     fun currentTiles(host: Any): List<Any> {
@@ -314,20 +295,9 @@ internal object CompactControlCenterLayout {
         val mediaLeft = sliderLeft.coerceIn(0, (state.overlay.width - square).coerceAtLeast(0))
         moveMediaToOverlay(state, mediaLeft, square)
         XposedHelpers.setAdditionalInstanceField(state.media, "$STATE.mediaActive", true)
-        if (XposedHelpers.getAdditionalInstanceField(state.media, "$STATE.clipDiagnostics") == null) {
-            XposedHelpers.setAdditionalInstanceField(state.media, "$STATE.clipDiagnostics", true)
-            state.media.post {
-                runCatching { dumpStructure(state.media) }.onFailure { report("Inspecting media frame after layout", it) }
-            }
-        }
         fitMediaFrame(state.media)
         positionMediaActions(state.media)
         arrangeMediaContent(state.media)
-        if (!state.loggedLayout && state.top.width > 0) {
-            state.loggedLayout = true
-            Log.i(TAG, "CC compact applied: square=$square gap=$gap media=${state.media.left},${state.media.top},${state.media.width}x${state.media.height} sliders=${state.sliders.left},${state.sliders.top},${state.sliders.width}x${state.sliders.height} shortcuts=${state.shortcuts.width}x${state.shortcuts.height}")
-            dumpStructure(state.media)
-        }
     }
 
     private fun activeMediaHost(view: View): View? {
@@ -486,17 +456,6 @@ internal object CompactControlCenterLayout {
             return null
         }
         val source = findTile(state.scroll) ?: return
-        if (!state.loggedBackground) {
-            state.loggedBackground = true
-            Log.i(TAG, "CC tile background: class=${source.javaClass.name} background=${source.background?.javaClass?.name}")
-            var clazz: Class<*>? = source.javaClass
-            while (clazz != null && clazz != View::class.java) {
-                for (f in clazz.declaredFields.filter { it.name.contains("color", true) || it.name.contains("blur", true) || Drawable::class.java.isAssignableFrom(it.type) }) {
-                    runCatching { f.isAccessible = true; Log.i(TAG, "CC tile style ${f.name}=${f.get(source)}") }
-                }
-                clazz = clazz.superclass
-            }
-        }
         state.buttons.values.forEach { it.syncBackground(source) }
     }
 
@@ -628,10 +587,6 @@ internal object CompactControlCenterLayout {
                 bound.add(spec)
             }.onFailure { report("Binding $spec control-center tile", it) }
         }
-        if (bound != state.boundSpecs) {
-            state.boundSpecs = bound.toSet()
-            Log.i(TAG, "CC compact tiles bound=$bound")
-        }
         return bound
     }
 
@@ -652,7 +607,6 @@ internal object CompactControlCenterLayout {
         }
         private var bedtimeObserverRegistered = false
         private var bedtimeReceiverRegistered = false
-        private var loggedBedtimeState: Pair<Boolean, Boolean>? = null
         private val bedtimeObserver = object : ContentObserver(mainHandler) {
             override fun onChange(selfChange: Boolean) {
                 runCatching { bindBedtime() }.onFailure { report("Updating bedtime mode", it) }
@@ -668,7 +622,6 @@ internal object CompactControlCenterLayout {
         private val shape = GradientDrawable().apply { cornerRadius = dp(context, 24).toFloat() }
         private var nativeSource: View? = null
         private var reportedStyleFailure = false
-        private var loggedPalette: Triple<Int, Int, Int>? = null
 
         init {
             orientation = HORIZONTAL
@@ -708,7 +661,6 @@ internal object CompactControlCenterLayout {
                         }
                         check(Settings.System.putInt(resolver, Settings.System.ACCELEROMETER_ROTATION, if (autoRotate) 0 else 1))
                         renderRotation()
-                        Log.i(TAG, "CC independent rotation clicked: autoRotate=${!autoRotate}")
                     } else if (spec == "silent") {
                         val manager = context.getSystemService(AudioManager::class.java)
                         val currentMode = XposedHelpers.callMethod(manager, "getRingerModeInternal") as Int
@@ -721,7 +673,6 @@ internal object CompactControlCenterLayout {
                         // Use SystemUI's internal ringer API, independently of Zen/bedtime mode.
                         XposedHelpers.callMethod(manager, "setRingerModeInternal", nextMode)
                         renderSilent()
-                        Log.i(TAG, "CC independent silent switch clicked: requested=$nextMode")
                     }
                 }
                     .onFailure { report("Clicking $spec", it) }
@@ -824,7 +775,6 @@ internal object CompactControlCenterLayout {
                 mode.value.conditionId, "", if (active) Condition.STATE_FALSE else Condition.STATE_TRUE,
                 Condition.SOURCE_USER_ACTION
             ))
-            Log.i(TAG, "CC bedtime requested: active=${!active}")
             post { runCatching { bindBedtime() }.onFailure { report("Refreshing bedtime mode", it) } }
         }
 
@@ -841,11 +791,6 @@ internal object CompactControlCenterLayout {
             stateDescription = if (isSelected) "ON" else "OFF"
             if (icon.drawable == null) icon.setImageDrawable(MoonDrawable())
             updateBackground()
-            val state = isEnabled to isSelected
-            if (loggedBedtimeState != state) {
-                loggedBedtimeState = state
-                Log.i(TAG, "CC bedtime confirmed: available=$isEnabled active=$isSelected")
-            }
             if (isAttachedToWindow && !bedtimeObserverRegistered) {
                 // A different mode may keep global Zen unchanged. Observe config
                 // revisions too, so only this bedtime rule determines selection.
@@ -897,11 +842,6 @@ internal object CompactControlCenterLayout {
             shape.setColor(color)
             icon.setColorFilter(foreground)
             label.setTextColor(foreground)
-            val paletteState = Triple(if (!isEnabled) 0 else if (isSelected) 2 else 1, color, foreground)
-            if (palette != null && loggedPalette != paletteState) {
-                loggedPalette = paletteState
-                Log.i(TAG, "CC compact $spec palette: state=${paletteState.first} background=${Integer.toHexString(color)} foreground=${Integer.toHexString(foreground)}")
-            }
         }
 
         fun pause() = runCatching { stopListening() }

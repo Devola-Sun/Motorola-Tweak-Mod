@@ -33,4 +33,13 @@ class ControlCenterBlurPolicyTest {
         assertEquals(0, ControlCenterBlurPolicy.radius(80, -10))
         assertEquals(0, ControlCenterBlurPolicy.radius(-1, 100))
     }
+
+    @Test fun openingAndClosingUseTheSameRatioWithoutAVisibilityHandoff() {
+        for (percent in listOf(0, 25, 50, 75, 100)) {
+            val opening = (0..100).map { ControlCenterBlurPolicy.radius(it, percent) }
+            val closing = (100 downTo 0).map { ControlCenterBlurPolicy.radius(it, percent) }
+            assertEquals(opening, closing.reversed())
+            assertEquals(percent, opening.last())
+        }
+    }
 }

@@ -18,6 +18,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
+import com.highcapable.yukihookapi.hook.type.java.FloatType
 import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.motolauncher.mod.HookConfig
 import com.motolauncher.mod.ErrorLogger
@@ -33,7 +34,6 @@ object CoverDockHook : YukiBaseHooker() {
     private const val TAG = "MotoLauncherMod"
     private const val CLASS_HOTSEAT = "com.android.launcher3.Hotseat"
     private const val CLASS_DEVICE_PROFILE = "com.android.launcher3.DeviceProfile"
-    private const val FIELD_HOTSEAT_BAR_SIZE_PX = "hotseatBarSizePx"
 
     /** Semi-transparent dark gray for the dynamically generated Dock background. */
     private val DOCK_BACKGROUND_COLOR: Int = Color.argb(153, 30, 30, 34)
@@ -90,8 +90,6 @@ object CoverDockHook : YukiBaseHooker() {
         val paddingTop: Int,
         val paddingEnd: Int,
         val paddingBottom: Int,
-        val scaleX: Float,
-        val scaleY: Float,
         val background: Drawable?,
         val clipToOutline: Boolean,
         val willNotDraw: Boolean,
@@ -323,20 +321,13 @@ object CoverDockHook : YukiBaseHooker() {
     private val originalClipStates = WeakHashMap<ViewGroup, OriginalClipState>()
     private val originalBorderSpaces = WeakHashMap<View, Point>()
     private val originalContainerPaddings = WeakHashMap<View, Rect>()
-
-    /** Tracks the unscaled base `hotseatBarSizePx` per DeviceProfile instance. */
-    private val originalHotseatBarSizes = WeakHashMap<Any, Int>()
-
-    /** Tracks the last scaled `hotseatBarSizePx` written by this hook per DeviceProfile. */
-    private val lastScaledHotseatBarSizes = WeakHashMap<Any, Int>()
-
-    /** Tracks the `hotseatBarSizePx` that was active when `Hotseat.setInsets` last ran. */
-    private val lastAppliedBarSizeForHotseat = WeakHashMap<View, Int>()
+    private val dockScales = WeakHashMap<View, DockScaleState>()
 
     override fun onHook() {
         runCatching { hookVisibility() }
         runCatching { hookHotseatLifecycle() }
         runCatching { hookMeasure() }
+        runCatching { hookScale() }.onFailure { ErrorLogger.log(TAG, "hook Dock scale", it) }
         runCatching { hookTouchRouting() }
     }
 
@@ -668,9 +659,6 @@ object CoverDockHook : YukiBaseHooker() {
                                     val prefs = modulePrefs
                                     val heightPercent = HookConfig.coverDockHeightPercent(prefs)
                                     val widthPercent = HookConfig.coverDockWidthPercent(prefs)
-                                    val sizePercent = HookConfig.coverDockSizePercent(prefs)
-                                    val original = originalState(hotseat)
-
                                     applyDockBackgroundAndPadding(
                                         hotseat = hotseat,
                                         heightPercent = heightPercent,
@@ -679,16 +667,6 @@ object CoverDockHook : YukiBaseHooker() {
                                         allowLayoutMutation = true
                                     )
                                     unclipParentHierarchy(hotseat)
-
-                                    val scale = sizePercent / 100f
-                                    val targetScaleX = original.scaleX * scale
-                                    val targetScaleY = original.scaleY * scale
-                                    if (hotseat.scaleX != targetScaleX) {
-                                        hotseat.scaleX = targetScaleX
-                                    }
-                                    if (hotseat.scaleY != targetScaleY) {
-                                        hotseat.scaleY = targetScaleY
-                                    }
                                 }
                             }
                         }
@@ -700,6 +678,50 @@ object CoverDockHook : YukiBaseHooker() {
         }.onFailure {
             Log.w(TAG, "Could not hook Hotseat.onMeasure", it)
         }
+    }
+
+    /** Apply the user multiplier to stock animation frames, not a captured frame. */
+    private fun hookScale() {
+        listOf("setScaleX", "setScaleY").forEach { methodName ->
+            runCatching {
+                findClass(CLASS_HOTSEAT).hook {
+                    injectMember {
+                        method {
+                            name = methodName
+                            param(FloatType)
+                            superClass()
+                        }
+                        beforeHook {
+                            runCatching {
+                                if (reentrantGuard.get() == true || dockScales.isEmpty()) return@runCatching
+                                val hotseat = instance as? View ?: return@runCatching
+                                val state = dockScales[hotseat] ?: return@runCatching
+                                if (!HookConfig.isCoverDockEnabled(modulePrefs)) return@runCatching
+                                val stockScale = args[0] as? Float ?: return@runCatching
+                                args[0] = if (methodName == "setScaleX") {
+                                    state.onStockScaleX(stockScale)
+                                } else {
+                                    state.onStockScaleY(stockScale)
+                                }
+                            }.onFailure { ErrorLogger.log(TAG, "apply Dock animation scale", it) }
+                        }
+                    }
+                }
+            }.onFailure { ErrorLogger.log(TAG, "hook Hotseat.$methodName", it) }
+        }
+    }
+
+    /** Called under the mutation guard; default size never takes ownership of scale. */
+    private fun updateDockScale(hotseat: View, factor: Float) {
+        val existing = dockScales[hotseat]
+        if (existing == null && factor == 1f) return
+        val state = existing ?: DockScaleState(hotseat.scaleX, hotseat.scaleY).also {
+            dockScales[hotseat] = it
+        }
+        state.update(hotseat.scaleX, hotseat.scaleY, factor)
+        if (hotseat.scaleX != state.appliedScaleX) hotseat.scaleX = state.appliedScaleX
+        if (hotseat.scaleY != state.appliedScaleY) hotseat.scaleY = state.appliedScaleY
+        if (factor == 1f) dockScales.remove(hotseat)
     }
 
     /**
@@ -1114,6 +1136,7 @@ object CoverDockHook : YukiBaseHooker() {
         }
 
         if (allowLayoutMutation) {
+            updateDockScale(hotseat, HookConfig.coverDockSizePercent(modulePrefs) / 100f)
             optimizeCellLayoutInternalSpacing(hotseat, iconCount, density)
             if (hotseat.paddingStart != startPadding ||
                 hotseat.paddingTop != topPadding ||
@@ -1346,117 +1369,6 @@ object CoverDockHook : YukiBaseHooker() {
         }
     }
 
-    private fun computeAdjustedMeasureHeight(
-        hotseat: View,
-        specSize: Int,
-        heightPercent: Int,
-        targetBarSize: Int?
-    ): Int {
-        val appliedByInsets = synchronized(lastAppliedBarSizeForHotseat) {
-            lastAppliedBarSizeForHotseat[hotseat]
-        }
-
-        val adjustedSize = when {
-            appliedByInsets != null && targetBarSize != null -> {
-                val delta = targetBarSize - appliedByInsets
-                if (delta != 0) {
-                    synchronized(lastAppliedBarSizeForHotseat) {
-                        lastAppliedBarSizeForHotseat[hotseat] = targetBarSize
-                    }
-                    (specSize + delta).coerceAtLeast(0)
-                } else {
-                    specSize
-                }
-            }
-            targetBarSize != null && specSize == targetBarSize -> specSize
-            else -> (specSize * heightPercent / 100f).roundToInt().coerceAtLeast(0)
-        }
-
-        val lp = hotseat.layoutParams
-        if (lp != null && lp.height > 0 && lp.height != adjustedSize) {
-            lp.height = adjustedSize
-        }
-
-        return adjustedSize
-    }
-
-    private fun recordAppliedBarSizeForHotseat(hotseat: View, heightPercent: Int) {
-        val profile = findDeviceProfile(hotseat)
-        val scaled = if (profile != null) {
-            applyDeviceProfileBarSize(profile, heightPercent)
-        } else {
-            null
-        }
-        if (scaled != null) {
-            synchronized(lastAppliedBarSizeForHotseat) {
-                lastAppliedBarSizeForHotseat[hotseat] = scaled
-            }
-        }
-    }
-
-    /**
-     * Updates `hotseatBarSizePx` on the Hotseat's [DeviceProfile] and any other
-     * tracked [DeviceProfile] instances.
-     */
-    private fun syncDeviceProfiles(hotseat: View, heightPercent: Int): Int? {
-        var result: Int? = null
-        val activeProfile = findDeviceProfile(hotseat)
-        if (activeProfile != null) {
-            result = applyDeviceProfileBarSize(activeProfile, heightPercent)
-        }
-
-        val profiles = synchronized(originalHotseatBarSizes) {
-            originalHotseatBarSizes.keys.toList()
-        }
-        for (profile in profiles) {
-            val scaled = applyDeviceProfileBarSize(profile, heightPercent)
-            if (result == null && scaled != null) {
-                result = scaled
-            }
-        }
-        return result
-    }
-
-    private fun captureOriginalHotseatBarSize(profile: Any): Int? {
-        val current = getHotseatBarSizeField(profile) ?: return null
-        if (current <= 0) return null
-        synchronized(originalHotseatBarSizes) {
-            val lastScaled = lastScaledHotseatBarSizes[profile]
-            val existingBase = originalHotseatBarSizes[profile]
-            if (existingBase == null || (lastScaled != null && current != lastScaled)) {
-                originalHotseatBarSizes[profile] = current
-                return current
-            }
-            return existingBase
-        }
-    }
-
-    private fun applyDeviceProfileBarSize(profile: Any, heightPercent: Int): Int? {
-        val baseSize = captureOriginalHotseatBarSize(profile) ?: return null
-        val scaledSize = (baseSize * heightPercent / 100f)
-            .roundToInt()
-            .coerceAtLeast(0)
-
-        synchronized(originalHotseatBarSizes) {
-            lastScaledHotseatBarSizes[profile] = scaledSize
-        }
-        setHotseatBarSizeField(profile, scaledSize)
-        return scaledSize
-    }
-
-    private fun restoreAllDeviceProfiles() {
-        val entries = synchronized(originalHotseatBarSizes) {
-            val snapshot = originalHotseatBarSizes.entries.map { it.key to it.value }
-            lastScaledHotseatBarSizes.clear()
-            snapshot
-        }
-        for ((profile, originalSize) in entries) {
-            runCatching {
-                setHotseatBarSizeField(profile, originalSize)
-            }
-        }
-    }
-
     private fun findDeviceProfile(hotseat: View): Any? {
         // 1. Check fields on Hotseat (e.g., mActivity) that provide getDeviceProfile().
         runCatching {
@@ -1508,10 +1420,6 @@ object CoverDockHook : YukiBaseHooker() {
         null
     }.getOrNull()
 
-    private fun getHotseatBarSizeField(profile: Any): Int? = runCatching {
-        getIntField(profile, FIELD_HOTSEAT_BAR_SIZE_PX)
-    }.getOrNull()
-
     private fun getIntField(target: Any, name: String): Int? = runCatching {
         findField(target.javaClass, name)?.getInt(target)
     }.getOrNull()
@@ -1519,12 +1427,6 @@ object CoverDockHook : YukiBaseHooker() {
     private fun getBooleanField(target: Any, name: String): Boolean? = runCatching {
         findField(target.javaClass, name)?.getBoolean(target)
     }.getOrNull()
-
-    private fun setHotseatBarSizeField(profile: Any, value: Int) {
-        runCatching {
-            findField(profile.javaClass, FIELD_HOTSEAT_BAR_SIZE_PX)?.setInt(profile, value)
-        }
-    }
 
     private fun findField(type: Class<*>, name: String): Field? {
         var current: Class<*>? = type
@@ -1537,17 +1439,6 @@ object CoverDockHook : YukiBaseHooker() {
             current = current.superclass
         }
         return null
-    }
-
-    private fun hasMethod(type: Class<*>?, name: String): Boolean {
-        var current: Class<*>? = type
-        while (current != null && current != Any::class.java) {
-            if (current.declaredMethods.any { it.name == name }) {
-                return true
-            }
-            current = current.superclass
-        }
-        return false
     }
 
     private fun isHotseatInstance(target: Any?): Boolean {
@@ -1567,8 +1458,6 @@ object CoverDockHook : YukiBaseHooker() {
                 paddingTop = view.paddingTop,
                 paddingEnd = view.paddingEnd,
                 paddingBottom = view.paddingBottom,
-                scaleX = view.scaleX,
-                scaleY = view.scaleY,
                 background = view.background.takeUnless { it is CenteredDockGradientDrawable },
                 clipToOutline = view.clipToOutline,
                 willNotDraw = view.willNotDraw(),
@@ -1581,6 +1470,9 @@ object CoverDockHook : YukiBaseHooker() {
         view: View,
         preserveCurrentPaddingAndHeight: Boolean = false
     ) {
+        // Remove only our multiplier. In particular, never replay a saved scale
+        // every draw on the inner screen or after the cover-Dock option is off.
+        updateDockScale(view, 1f)
         val original = synchronized(originalStates) {
             if (preserveCurrentPaddingAndHeight) {
                 originalStates[view]
@@ -1589,7 +1481,6 @@ object CoverDockHook : YukiBaseHooker() {
             }
         }
         val generatedBg = synchronized(generatedBackgrounds) { generatedBackgrounds.remove(view) }
-        synchronized(lastAppliedBarSizeForHotseat) { lastAppliedBarSizeForHotseat.remove(view) }
 
         if (original == null) {
             if (view.background is CenteredDockGradientDrawable) {
@@ -1619,13 +1510,6 @@ object CoverDockHook : YukiBaseHooker() {
             if (lp != null && original.layoutHeight > 0 && lp.height != original.layoutHeight) {
                 lp.height = original.layoutHeight
             }
-        }
-
-        if (view.scaleX != original.scaleX) {
-            view.scaleX = original.scaleX
-        }
-        if (view.scaleY != original.scaleY) {
-            view.scaleY = original.scaleY
         }
 
         if ((generatedBg != null && view.background === generatedBg) ||

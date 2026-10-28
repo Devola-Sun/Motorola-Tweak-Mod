@@ -2,7 +2,11 @@
 <resources>
     <string name="section_updates_title">更新</string>
     <string name="pref_auto_update_check_title">自动检查更新</string>
-    <string name="pref_auto_update_check_desc">打开应用时检查 GitHub 上的正式版本，发现新版本时提示更新。</string>
+    <string name="pref_auto_update_check_desc">打开应用时检查 GitHub 上的正式版本。未更新时，6 小时后可再次提醒。这不是后台通知。</string>
+    <string name="update_check_now">立即检查</string>
+    <string name="update_checking">正在检查 GitHub 发布版本…</string>
+    <string name="update_latest">当前版本没有可用的更新正式版本。</string>
+    <string name="update_check_failed">无法检查更新。请检查网络连接或 GitHub 访问限制后重试。</string>
     <string name="update_available_title">有可用更新</string>
     <string name="update_available_message">新的正式版本已发布。\n\n当前版本：%1$s\n最新版本：%2$s\n\n可前往 GitHub 发布页面更新。</string>
     <string name="update_open_release">在 GitHub 上查看</string>
@@ -92,19 +96,19 @@
     <!-- Cover-screen Dock -->
     <string name="section_cover_dock">外屏 Dock</string>
     <string name="cover_dock_enable_title">在外屏显示 Dock</string>
-    <string name="cover_dock_enable_summary">在外屏显示底部快捷栏。更改后请重启启动器。</string>
+    <string name="cover_dock_enable_summary">在外屏显示底部快捷栏。</string>
     <string name="cover_dock_floating_island_title">悬浮岛 Dock</string>
-    <string name="cover_dock_floating_island_summary">仅适用于外屏。为背景添加至少 20dp 的左右边距和 28dp 圆角。沿用背景宽度和高度设置，不改变图标数量或布局区域。更改后请重启启动器。</string>
+    <string name="cover_dock_floating_island_summary">仅适用于外屏。为背景添加至少 20dp 的左右边距和 28dp 圆角。沿用背景宽度和高度设置，不改变图标数量或布局区域。</string>
     <string name="cover_dock_frost_title">磨砂玻璃 Dock</string>
     <string name="cover_dock_liquid_glass_title">液态玻璃 Dock</string>
-    <string name="cover_dock_liquid_glass_summary">为外屏 Dock 添加半透明渐变和边缘反光。不能与磨砂玻璃同时启用。更改后请重启启动器。</string>
+    <string name="cover_dock_liquid_glass_summary">为外屏 Dock 添加半透明渐变和边缘反光。不能与磨砂玻璃同时启用。</string>
     <string name="section_main_dock">内屏 Dock</string>
     <string name="main_dock_frost_title">磨砂玻璃 Dock</string>
     <string name="main_dock_liquid_glass_title">液态玻璃 Dock</string>
-    <string name="main_dock_glass_summary">启用任一样式后，原生 Dock 背景将变为透明，并在相同位置显示同等大小的玻璃效果。两种样式不能同时启用。全部关闭可恢复原生背景。不会对壁纸进行实际模糊处理。更改后请重启启动器。</string>
+    <string name="main_dock_glass_summary">启用任一样式后，原生 Dock 背景将变为透明，并在相同位置显示同等大小的玻璃效果。两种样式不能同时启用。全部关闭可恢复原生背景。不会对壁纸进行实际模糊处理。</string>
     <string name="folder_liquid_glass_title">液态玻璃文件夹</string>
-    <string name="folder_liquid_glass_summary">为文件夹图标和展开后的文件夹背景添加半透明渐变与边缘反光。更改后请重启启动器。</string>
-    <string name="cover_dock_frost_summary">通过半透明渐变和细微边框，为外屏 Dock 添加磨砂玻璃效果。不会模糊壁纸或图标。更改后请重启启动器。</string>
+    <string name="folder_liquid_glass_summary">为文件夹图标添加玻璃效果，并为展开的文件夹添加与通知中心、控制中心材质一致的容器。背景模糊跟随共用滑块。</string>
+    <string name="cover_dock_frost_summary">通过半透明渐变和细微边框，为外屏 Dock 添加磨砂玻璃效果。不会模糊壁纸或图标。</string>
     <string name="cover_dock_height_title">Dock 背景高度</string>
     <string name="cover_dock_width_title">Dock 背景宽度</string>
     <string name="cover_dock_size_title">Dock 大小</string>
@@ -147,11 +151,11 @@
     <string name="root_required_title">需要 root 权限</string>
     <string name="root_required_message">此应用需要 root 权限才能应用设置、重启启动器和读取模块作用域。\n\n请在 KernelSU / SukiSU / Magisk 中授予本应用（io.github.devola_sun.motorolatweak）超级用户权限，然后点击“重新检查”。\n\n如果已授权，请关闭并重新打开此应用。</string>
     <string name="root_required_retry">重新检查</string>
-    <string name="layout_summary">行数、列数和 Dock 图标数量的范围均为 4 至 10。更改后请重启启动器。</string>
+    <string name="layout_summary">行数、列数和 Dock 图标数量的范围均为 4 至 10。</string>
     <string name="grid_rows_title">桌面行数</string>
     <string name="grid_columns_title">桌面列数</string>
     <string name="square_grid_cells_title">正方形网格单元格</string>
-    <string name="square_grid_cells_summary">将桌面每格设为 1:1 正方形，并均匀分配上下、左右剩余空间。更改后请重启启动器。</string>
+    <string name="square_grid_cells_summary">将桌面每格设为 1:1 正方形，并均匀分配上下、左右剩余空间。</string>
     <string name="dock_icons_title">Dock 图标数量</string>
 
     <!-- SystemUI -->
@@ -159,7 +163,7 @@
     <string name="section_control_center_title">控制中心</string>
     <string name="pref_cc_compact_layout_title">将媒体卡片移至顶部</string>
     <string name="pref_cc_compact_layout_desc">在连接卡片右侧放置正方形媒体卡片，下方排列亮度（左）和音量（右）滑块。左下区域上排为手电筒和自动旋转，下排为占两格宽的就寝模式按钮。</string>
-    <string name="pref_cc_compact_layout_hint">启用或关闭后，请通过右上角菜单重启 SystemUI。需要 LSPosed 的 SystemUI 作用域。适用于竖屏和桌面模式。连接卡片的 2×2 布局可在 SystemUI 设置中配置。</string>
+    <string name="pref_cc_compact_layout_hint">需要 LSPosed 的 SystemUI 作用域。适用于竖屏和桌面模式。连接卡片的 2×2 布局可在 SystemUI 设置中配置。</string>
     <string name="systemui_hint">状态栏设置在重启 SystemUI 后生效。</string>
 
     <string name="pref_sb_show_seconds_title">显示时钟秒数</string>
@@ -229,10 +233,10 @@
     <string name="pref_cc_swap_sliders_desc">将亮度置于左侧、音量置于右侧，并同步两者高度。</string>
     <string name="pref_cc_ios_connectivity_title">iOS 15 风格 2×2 连接卡片</string>
     <string name="pref_cc_liquid_glass_title">液态玻璃控制中心</string>
-    <string name="pref_cc_background_blur_title">控制中心与通知中心背景模糊</string>
-    <string name="pref_cc_background_blur_desc" formatted="false">使用系统原生模糊，为两处背景整体应用相同比例。100% 为系统默认强度，0% 为不模糊。与液态玻璃开关相互独立。保存后若未生效，请通过右上角菜单重启 SystemUI。</string>
+    <string name="pref_cc_background_blur_title">通知中心、控制中心与文件夹背景模糊</string>
+    <string name="pref_cc_background_blur_desc" formatted="false">为通知中心、控制中心和展开的文件夹应用相同比例的原生背景模糊。100% 为系统默认强度，0% 为不模糊。与液态玻璃开关相互独立。文件夹的更改在下次打开时生效。</string>
     <string name="pref_cc_liquid_glass_desc">应用与通知卡片相同的背景模糊、透明感和边缘反光，不改变开关或滑块的大小、位置和操作。与通知模糊设置相互独立。</string>
-    <string name="pref_cc_liquid_glass_hint">默认关闭。启用或关闭后，请通过右上角菜单重启 SystemUI。设备禁用模糊时将使用半透明玻璃效果。</string>
+    <string name="pref_cc_liquid_glass_hint">默认关闭。设备禁用模糊时将使用半透明玻璃效果。</string>
     <string name="pref_cc_ios_connectivity_desc">将 Wi-Fi、移动数据、蓝牙和飞行模式排列为 2×2 网格。</string>
 
     <!-- Status bar element order -->
@@ -256,6 +260,7 @@
     <string name="restart_button">重启启动器并应用</string>
     <string name="clear_cache_button">清除图标缓存</string>
     <string name="restart_systemui_button">重启 SystemUI 并应用</string>
+    <string name="restart_device_button">重启设备并应用</string>
     <string name="status_restarting_systemui">正在重启 SystemUI…</string>
 
     <string name="section_backup_title">启动器布局</string>
@@ -287,28 +292,32 @@
 
     <string name="section_lock_clock_title">锁屏时钟</string>
     <string name="pref_lock_clock_size_title">时钟放大比例</string>
-    <string name="pref_lock_clock_size_desc" formatted="false">可在 100–200% 之间以 1% 为单位调整。100% 恢复原始大小。与“保持大时钟”和液态玻璃相互独立，不会放大息屏显示。更改后请通过右上角菜单重启 SystemUI。较高比例或某些时钟样式可能导致内容裁切，或与通知、小组件重叠。</string>
+    <string name="pref_lock_clock_size_desc" formatted="false">可在 100–200% 之间以 1% 为单位调整。100% 恢复原始大小。与“保持大时钟”和液态玻璃相互独立，不会放大息屏显示。较高比例或某些时钟样式可能导致内容裁切，或与通知、小组件重叠。</string>
     <string name="pref_lock_clock_liquid_glass_title">液态玻璃时钟</string>
-    <string name="pref_lock_clock_liquid_glass_desc">为时钟数字添加透明感、渐变和边缘反光，不进行实际的壁纸折射或模糊。不改变时钟大小、字体和位置，与“保持大时钟”相互独立。关闭或息屏显示时恢复原生绘制。更改后请通过右上角菜单重启 SystemUI。部分时钟样式不受支持。</string>
+    <string name="pref_lock_clock_liquid_glass_desc">为时钟数字添加透明感、渐变和边缘反光，不进行实际的壁纸折射或模糊。不改变时钟大小、字体和位置，与“保持大时钟”相互独立。关闭或息屏显示时恢复原生绘制。部分时钟样式不受支持。</string>
     <string name="section_notification_media_title">通知与媒体卡片</string>
-    <string name="pref_lock_media_compact_title">紧凑锁屏媒体卡片</string>
-    <string name="pref_lock_media_compact_desc">使用圆角卡片，包含小尺寸专辑封面、曲目信息、进度条和下方播放控件。液态玻璃关闭时使用深色普通模糊背景，开启时使用液态玻璃背景。仅适用于锁屏，不改变控制中心。模糊不可用时使用半透明背景。更改后请重启 SystemUI。关闭可恢复原有布局。</string>
+    <string name="pref_media_artwork_light_brightness_title">将封面亮度固定为浅色模式</string>
+    <string name="pref_media_artwork_light_brightness_desc">防止锁屏、通知中心、控制中心和灵动岛风格播放卡片的封面随主题变暗。不改变背景和控制按钮的主题。关闭后恢复默认显示。</string>
+    <string name="pref_lock_media_compact_title">紧凑播放卡片</string>
+    <string name="pref_lock_media_compact_desc">锁屏、通知中心和 Dynamic Island 风格通知展开的播放卡片使用统一的紧凑布局。上方显示封面和曲目信息，中间使用带半透明背景轨道的直线进度条，两端显示时间，下方显示白色播放控件和输出设备按钮。直接使用原有播放器，额外操作仅在播放应用提供时显示。保留现有液态玻璃设置，不改变控制中心。关闭可恢复原有布局。</string>
+    <string name="pref_lock_icon_above_clock_title">时钟上方显示白色实心锁</string>
+    <string name="pref_lock_icon_above_clock_desc">在时钟上方绘制白色实心锁，并隐藏屏幕底部原有锁图标。随锁定和解锁状态变化。顶部图标仅供显示，不是按钮。不改变息屏显示。关闭后恢复底部默认图标。</string>
     <string name="pref_notification_media_frost_title">液态玻璃效果</string>
     <string name="pref_notification_keep_silent_visible_title">不收起静默通知</string>
-    <string name="pref_notification_keep_silent_visible_desc">在通知中心将静默通知保留为卡片，而非收起为仅含图标的横栏。不改变声音、振动或重要程度。更改后请重启 SystemUI。关闭可恢复原生行为。</string>
+    <string name="pref_notification_keep_silent_visible_desc">在通知中心将静默通知保留为卡片，而非收起为仅含图标的横栏。不改变声音、振动或重要程度。关闭可恢复原生行为。</string>
     <string name="pref_notification_media_frost_desc">为通知和锁屏媒体卡片添加半透明表面与细微的边缘反光。控制中心的媒体卡片保留原生背景模糊，同时保留布局和大小定制。不改变通知位置和通知中心的普通列表。关闭可恢复原生背景。</string>
-    <string name="notification_media_frost_hint">需要 LSPosed 的 SystemUI 作用域。更改后请通过右上角菜单重启 SystemUI。保留原生通知操作和隐私设置。TalkBack 触摸探索启用时不使用堆叠。模糊不可用或被省电模式禁用时，使用半透明表面与轮廓线。部分 ROM 不受支持。</string>
+    <string name="notification_media_frost_hint">需要 LSPosed 的 SystemUI 作用域。保留原生通知操作和隐私设置。TalkBack 触摸探索启用时不使用堆叠。模糊不可用或被省电模式禁用时，使用半透明表面与轮廓线。部分 ROM 不受支持。</string>
     <string name="pref_lock_keep_large_clock_title">保持大时钟（实验性）</string>
     <string name="pref_lock_keep_large_clock_desc">在有通知或媒体播放时仍保持大时钟，并将锁屏通知移至底部堆叠。两张及以上卡片可通过纵向滚动查看。关闭可恢复原生时钟行为和通知位置。不改变通知中心布局。</string>
-    <string name="lock_clock_hint">此开关控制通知位置与堆叠。背景由液态玻璃效果单独控制。更改后请通过右上角菜单重启 SystemUI。触摸探索启用时使用普通列表。部分 ROM 不受支持，位置、与小组件的重叠及交互需要实机测试。</string>
+    <string name="lock_clock_hint">此开关控制通知位置与堆叠。背景由液态玻璃效果单独控制。触摸探索启用时使用普通列表。部分 ROM 不受支持，位置、与小组件的重叠及交互需要实机测试。</string>
     <string name="section_lock_shortcuts_title">锁屏快捷方式</string>
     <string name="pref_lock_shortcut_blur_title">液态玻璃快捷方式背景</string>
     <string name="pref_lock_edge_camera_title">从右边缘滑动打开相机</string>
     <string name="pref_lock_edge_camera_desc">从锁屏右边缘向左滑动可打开锁屏相机。</string>
-    <string name="pref_lock_shortcut_blur_desc">为锁屏左下角和右下角按钮添加半透明背景与边缘反光。时钟下方的手机与蓝牙设备电量小组件保留原生背景。与通知及媒体卡片设置相互独立，不会模糊按钮图标。关闭可恢复原生按钮背景。更改后请重启 SystemUI。</string>
+    <string name="pref_lock_shortcut_blur_desc">为锁屏左下角和右下角按钮添加半透明背景与边缘反光。时钟下方的手机与蓝牙设备电量小组件保留原生背景。与通知及媒体卡片设置相互独立，不会模糊按钮图标。关闭可恢复原生按钮背景。</string>
     <string name="pref_lock_shortcut_size_title">快捷方式大小</string>
     <string name="pref_lock_shortcut_size_desc">同时应用于两侧。100% 为系统默认大小。放大按钮、图标及触摸区域。</string>
-    <string name="lock_shortcut_hint">熄屏后重新显示锁屏以应用更改。必要时请重启 SystemUI。模糊不可用或被省电模式禁用时，使用与通知卡片相同的半透明表面和轮廓线。</string>
+    <string name="lock_shortcut_hint">模糊不可用或被省电模式禁用时，使用与通知卡片相同的半透明表面和轮廓线。</string>
 
     <!-- Language -->
     <string name="section_language_title">语言</string>
@@ -323,12 +332,12 @@
     <string name="pref_lock_pin_auto_confirm_desc">隐藏数字锁屏 PIN 码的确认按钮，仅在输入达到指定长度时自动验证。关闭可恢复原生行为。</string>
     <string name="pref_lock_pin_length_title">自动确认的 PIN 码长度</string>
     <string name="lock_pin_length_format">%1$d 位</string>
-    <string name="lock_pin_hint">请务必选择与当前 PIN 码相同的长度（4–16 位）。此设置不会更改 PIN 码。更改后请重启 SystemUI。不适用于 SIM 卡 PIN 码和文本密码。若检测到实际长度与设置不符，将保留原生行为。若无法获取长度，则使用所选值：选错会导致验证失败，此时请关闭此功能并重启 SystemUI。失败次数限制和锁定等待时间不会改变。</string>
+    <string name="lock_pin_hint">请务必选择与当前 PIN 码相同的长度（4–16 位）。此设置不会更改 PIN 码。不适用于 SIM 卡 PIN 码和文本密码。若检测到实际长度与设置不符，将保留原生行为。若无法获取长度，则使用所选值：选错会导致验证失败，此时请关闭此功能并使用下方按钮应用。失败次数限制和锁定等待时间不会改变。</string>
     <string name="section_moto_widget_title">Moto 小组件</string>
     <string name="feature_moto_widget_package">com.motorola.timeweatherwidget</string>
     <string name="page_moto_widget_subtitle">定制桌面 Moto 小组件的时钟、日期与天气</string>
     <string name="moto_widget_clock_liquid_glass_title">液态玻璃时钟、日期与天气</string>
-    <string name="moto_widget_clock_liquid_glass_summary">为桌面 Moto 小组件的时钟、日期、天气图标与说明、温度、城市名称等信息添加透明感、渐变和边缘反光。默认关闭。不改变大小、布局、背景或锁屏时钟。不进行实际的壁纸折射或模糊。关闭可恢复原生绘制。需要 LSPosed 的 com.motorola.launcher3 作用域。更改后请使用下方按钮重启小组件和启动器。无法识别的显示元素保留原生绘制。</string>
+    <string name="moto_widget_clock_liquid_glass_summary">为桌面 Moto 小组件的时钟、日期、天气图标与说明、温度、城市名称等信息添加透明感、渐变和边缘反光。默认关闭。不改变大小、布局、背景或锁屏时钟。不进行实际的壁纸折射或模糊。关闭可恢复原生绘制。需要 LSPosed 的 com.motorola.launcher3 作用域。无法识别的显示元素保留原生绘制。</string>
     <string name="restart_moto_widget_button">重启 Moto 小组件与启动器并应用</string>
     <string name="status_restarting_moto_widget">正在重启 Moto 小组件与启动器…</string>
 </resources>

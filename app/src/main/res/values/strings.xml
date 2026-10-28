@@ -2,7 +2,11 @@
 <resources>
     <string name="section_updates_title">アップデート</string>
     <string name="pref_auto_update_check_title">アップデートを自動確認</string>
-    <string name="pref_auto_update_check_desc">アプリを開いたときにGitHubの正式リリースを確認し、新しいバージョンがあれば案内します。</string>
+    <string name="pref_auto_update_check_desc">アプリを開いたときにGitHubの正式リリースを確認します。未更新の場合は6時間後から再び案内します。バックグラウンド通知ではありません。</string>
+    <string name="update_check_now">今すぐ確認</string>
+    <string name="update_checking">GitHubのリリースを確認中…</string>
+    <string name="update_latest">現在のバージョンで利用できる新しい正式リリースはありません。</string>
+    <string name="update_check_failed">更新を確認できませんでした。通信状態やGitHubのアクセス制限を確認して再試行してください。</string>
     <string name="update_available_title">アップデートがあります</string>
     <string name="update_available_message">新しい正式リリースが公開されています。\n\n現在: %1$s\n最新: %2$s\n\nGitHubのリリースページから更新できます。</string>
     <string name="update_open_release">GitHubで確認</string>
@@ -92,19 +96,19 @@
     <!-- Cover-screen Dock -->
     <string name="section_cover_dock">カバースクリーンDock</string>
     <string name="cover_dock_enable_title">カバースクリーンにDockを表示</string>
-    <string name="cover_dock_enable_summary">外側ディスプレイにHotseatを表示します。変更後はランチャーを再起動してください。</string>
+    <string name="cover_dock_enable_summary">外側ディスプレイにHotseatを表示します。</string>
     <string name="cover_dock_floating_island_title">Floating Island Dock（左右マージン付き角丸ドック）</string>
-    <string name="cover_dock_floating_island_summary">カバースクリーンのみ。背景に左右20dp以上の余白と28dpの角丸を適用します。横幅・高さの設定を流用し、アイコン数と配置領域は変更しません。変更後はランチャーを再起動してください。</string>
+    <string name="cover_dock_floating_island_summary">カバースクリーンのみ。背景に左右20dp以上の余白と28dpの角丸を適用します。横幅・高さの設定を流用し、アイコン数と配置領域は変更しません。</string>
     <string name="cover_dock_frost_title">Dockをフロストガラス調にする</string>
     <string name="cover_dock_liquid_glass_title">Dockをリキッドグラス調にする</string>
-    <string name="cover_dock_liquid_glass_summary">カバーDockを透明感のあるグラデーションと縁の反射でガラス調にします。フロストガラスとは同時に有効にできません。変更後はランチャーを再起動してください。</string>
+    <string name="cover_dock_liquid_glass_summary">カバーDockを透明感のあるグラデーションと縁の反射でガラス調にします。フロストガラスとは同時に有効にできません。</string>
     <string name="section_main_dock">メインディスプレイのDock</string>
     <string name="main_dock_frost_title">Dockをフロストガラス調にする</string>
     <string name="main_dock_liquid_glass_title">Dockをリキッドグラス調にする</string>
-    <string name="main_dock_glass_summary">どちらかを有効にすると純正Dock背景を透明化し、同じ位置・サイズにガラス調背景を表示します。フロストとリキッドは排他切替です。両方オフで純正背景に戻ります。壁紙の実ブラーは行いません。変更後はランチャーを再起動してください。</string>
+    <string name="main_dock_glass_summary">どちらかを有効にすると純正Dock背景を透明化し、同じ位置・サイズにガラス調背景を表示します。フロストとリキッドは排他切替です。両方オフで純正背景に戻ります。壁紙の実ブラーは行いません。</string>
     <string name="folder_liquid_glass_title">フォルダをリキッドグラス調にする</string>
-    <string name="folder_liquid_glass_summary">フォルダアイコンと開いたフォルダの背景を、半透明のグラデーションと縁の反射でガラス調にします。変更後はランチャーを再起動してください。</string>
-    <string name="cover_dock_frost_summary">カバースクリーンのDock背景を半透明グラデーションと薄い境界線ですりガラス調にします。壁紙の実ブラーは行わず、アイコンもぼかしません。変更後はランチャーを再起動してください。</string>
+    <string name="folder_liquid_glass_summary">フォルダアイコンをガラス調にし、開いたフォルダに通知・コントロールセンターと共通の質感のコンテナを追加します。背景ブラーは共通スライダーに連動します。</string>
+    <string name="cover_dock_frost_summary">カバースクリーンのDock背景を半透明グラデーションと薄い境界線ですりガラス調にします。壁紙の実ブラーは行わず、アイコンもぼかしません。</string>
     <string name="cover_dock_height_title">Dock背景の高さ</string>
     <string name="cover_dock_width_title">Dock背景の横幅</string>
     <string name="cover_dock_size_title">Dockのサイズ</string>
@@ -147,11 +151,11 @@
     <string name="root_required_title">root権限が必要です</string>
     <string name="root_required_message">設定の反映、ランチャーの再起動、フック対象の取得には、このアプリへのroot権限が必要です。\n\nKernelSU / SukiSU / Magiskの管理アプリで本アプリ（io.github.devola_sun.motorolatweak）のスーパーユーザー権限を許可してから、「再確認」を押してください。\n\n許可済みでも表示される場合は、本アプリを終了して開き直してください。</string>
     <string name="root_required_retry">再確認</string>
-    <string name="layout_summary">行数・列数・Dockアイコン数は4〜10です。変更後はランチャーを再起動してください。</string>
+    <string name="layout_summary">行数・列数・Dockアイコン数は4〜10です。</string>
     <string name="grid_rows_title">デスクトップ行数</string>
     <string name="grid_columns_title">デスクトップ列数</string>
     <string name="square_grid_cells_title">グリッドのセルを正方形にする</string>
-    <string name="square_grid_cells_summary">ホーム画面の1マスを縦横比1:1にし、余白を上下・左右に均等配分します。変更後はランチャーを再起動してください。</string>
+    <string name="square_grid_cells_summary">ホーム画面の1マスを縦横比1:1にし、余白を上下・左右に均等配分します。</string>
     <string name="dock_icons_title">Dockアイコン数</string>
 
     <!-- SystemUI -->
@@ -159,7 +163,7 @@
     <string name="section_control_center_title">コントロールセンター</string>
     <string name="pref_cc_compact_layout_title">再生カードを上段に配置</string>
     <string name="pref_cc_compact_layout_desc">通信カードの右に正方形の再生カードを配置し、その下に左：明るさ・右：音量のスライダーを並べます。左下は上段にフラッシュライト・自動回転、下段に2タイル幅のおやすみ時間モードを配置します。</string>
-    <string name="pref_cc_compact_layout_hint">適用・解除後は右上のメニューからSystemUIを再起動してください。LSPosedのSystemUIスコープが必要です。縦画面・テーブルモードが対象で、通信カードの2×2設定はSystemUIの項目で変更できます。</string>
+    <string name="pref_cc_compact_layout_hint">LSPosedのSystemUIスコープが必要です。縦画面・テーブルモードが対象で、通信カードの2×2設定はSystemUIの項目で変更できます。</string>
     <string name="systemui_hint">ステータスバー設定はSystemUIの再起動後に反映されます。</string>
 
     <string name="pref_sb_show_seconds_title">時計の秒数を表示する</string>
@@ -229,10 +233,10 @@
     <string name="pref_cc_swap_sliders_desc">左：明るさ、右：音量へ反転し、高さを同期します。</string>
     <string name="pref_cc_ios_connectivity_title">通信カードを iOS 15 風 2×2 に変更</string>
     <string name="pref_cc_liquid_glass_title">コントロールセンターをリキッドグラス調にする</string>
-    <string name="pref_cc_background_blur_title">コントロールセンター・通知センターの背景ブラー</string>
-    <string name="pref_cc_background_blur_desc" formatted="false">両方の背景全体に、従来方式のブラーを同じ割合で適用します。100%は標準、0%はブラーなし。リキッドグラスのON/OFFとは独立しています。保存後、反映されない場合は右上のメニューからSystemUIを再起動してください。</string>
+    <string name="pref_cc_background_blur_title">通知・コントロールセンター・フォルダの背景ブラー</string>
+    <string name="pref_cc_background_blur_desc" formatted="false">通知・コントロールセンターと開いたフォルダの背景に、標準のブラーを同じ割合で適用します。100%は標準、0%はブラーなし。リキッドグラスのON/OFFとは独立しています。フォルダは次に開いたときに反映されます。</string>
     <string name="pref_cc_liquid_glass_desc">通知カードと共通の背景ブラー・透け感・縁の反射を適用します。スイッチやスライダーのサイズ・配置・操作は変更しません。通知カードのブラー設定とは独立して動作します。</string>
-    <string name="pref_cc_liquid_glass_hint">初期状態はOFFです。適用・解除後は右上のメニューからSystemUIを再起動してください。端末でブラーが無効の場合は半透明のガラス表現になります。</string>
+    <string name="pref_cc_liquid_glass_hint">初期状態はOFFです。端末でブラーが無効の場合は半透明のガラス表現になります。</string>
     <string name="pref_cc_ios_connectivity_desc">Wi-Fi・データ・Bluetoothに機内モードを加えた2×2グリッドにします。</string>
 
     <!-- Status bar element order -->
@@ -256,6 +260,7 @@
     <string name="restart_button">ランチャーを再起動して反映</string>
     <string name="clear_cache_button">アイコンキャッシュを消去</string>
     <string name="restart_systemui_button">SystemUIを再起動して反映</string>
+    <string name="restart_device_button">端末を再起動して反映</string>
     <string name="status_restarting_systemui">SystemUIを再起動しています…</string>
 
     <string name="section_backup_title">ランチャーレイアウト</string>
@@ -287,28 +292,32 @@
 
     <string name="section_lock_clock_title">ロック画面の時計</string>
     <string name="pref_lock_clock_size_title">時計の拡大率</string>
-    <string name="pref_lock_clock_size_desc">100〜200％を1％刻みで調整できます。100％で標準サイズに戻ります。「大きな時計を維持」やリキッドガラスとは独立して動作し、AOD（常時表示）は拡大しません。変更後は右上のメニューからSystemUIを再起動してください。拡大率や時計スタイルによっては、表示の欠けや通知・ウィジェットとの重なりが生じる場合があります。</string>
+    <string name="pref_lock_clock_size_desc">100〜200％を1％刻みで調整できます。100％で標準サイズに戻ります。「大きな時計を維持」やリキッドガラスとは独立して動作し、AOD（常時表示）は拡大しません。拡大率や時計スタイルによっては、表示の欠けや通知・ウィジェットとの重なりが生じる場合があります。</string>
     <string name="pref_lock_clock_liquid_glass_title">時計をリキッドガラス調にする</string>
-    <string name="pref_lock_clock_liquid_glass_desc">時計の数字に透け感・グラデーション・縁の反射を加えます。壁紙の実際の屈折やブラーは行いません。時計の大きさ・フォント・位置は変更せず、「大きな時計を維持」とは独立して動作します。オフ・AOD（常時表示）では標準描画に戻ります。変更後は右上のメニューからSystemUIを再起動してください。一部の時計スタイルには対応していません。</string>
+    <string name="pref_lock_clock_liquid_glass_desc">時計の数字に透け感・グラデーション・縁の反射を加えます。壁紙の実際の屈折やブラーは行いません。時計の大きさ・フォント・位置は変更せず、「大きな時計を維持」とは独立して動作します。オフ・AOD（常時表示）では標準描画に戻ります。一部の時計スタイルには対応していません。</string>
     <string name="section_notification_media_title">通知・メディアカード</string>
-    <string name="pref_lock_media_compact_title">ロック画面の再生カードをコンパクト化</string>
-    <string name="pref_lock_media_compact_desc">角丸カードに、小さなジャケット・曲名・シークバー・下段の再生操作を配置します。リキッドグラス表示がオフなら濃色の通常ブラー、オンならリキッドグラス背景になります。ロック画面だけに適用し、コントロールセンターは変更しません。ブラー非対応時は半透明背景で代替します。変更後はSystemUIを再起動してください。オフで元の配置に戻します。</string>
+    <string name="pref_media_artwork_light_brightness_title">ジャケットの明るさをライトモードに固定</string>
+    <string name="pref_media_artwork_light_brightness_desc">ロック画面・通知センター・コントロールセンター・Dynamic Island風の再生カードで、テーマによるジャケットの暗色化を抑えます。背景や操作ボタンのテーマは変更しません。オフで標準の表示に戻します。</string>
+    <string name="pref_lock_media_compact_title">再生カードをコンパクト化</string>
+    <string name="pref_lock_media_compact_desc">ロック画面・通知センターと、Dynamic Island風の通知から開く再生カードを共通のコンパクト表示にします。上段にジャケットと曲情報、中段に左右の時間表示と薄い背景トラック付きの直線シークバー、下段に白い再生操作と出力先ボタンを配置します。既存のプレイヤーをそのまま使い、追加操作は再生アプリが提供するものだけ表示します。背景のリキッドグラス設定は維持し、コントロールセンターは変更しません。オフで元に戻します。</string>
+    <string name="pref_lock_icon_above_clock_title">時計の上に白い南京錠を配置</string>
+    <string name="pref_lock_icon_above_clock_desc">時計の上に白い塗りつぶしの南京錠を描画し、画面下部の既存ロックアイコンを非表示にします。施錠・解錠状態に連動します。上部の南京錠は表示専用です。常時表示画面は変更せず、オフで下部の標準表示に戻します。</string>
     <string name="pref_notification_media_frost_title">リキッドグラス表示</string>
     <string name="pref_notification_keep_silent_visible_title">サイレント通知を格納しない</string>
-    <string name="pref_notification_keep_silent_visible_desc">通知センターでサイレント通知をアイコンだけのバーに格納せず、カードとして表示します。通知音・バイブレーション・重要度は変更しません。変更後はSystemUIを再起動してください。オフで標準動作に戻します。</string>
+    <string name="pref_notification_keep_silent_visible_desc">通知センターでサイレント通知をアイコンだけのバーに格納せず、カードとして表示します。通知音・バイブレーション・重要度は変更しません。オフで標準動作に戻します。</string>
     <string name="pref_notification_media_frost_desc">通知とロック画面の再生カードを、透明感のある背景と繊細な縁の反射でリキッドグラス調にします。コントロールセンターの再生カードは背景ブラーを標準のままにし、配置・サイズのカスタマイズは維持します。通知の位置や通知センターの一覧表示は変更しません。オフにすると背景を標準表示に戻します。</string>
-    <string name="notification_media_frost_hint">LSPosedのSystemUIスコープが必要です。変更後は右上のメニューからSystemUIを再起動してください。通知の操作・非表示設定は純正に従います。TalkBackのタッチガイド中は重ね表示を使いません。ブラー非対応・省電力時は半透明の背景と縁取りで代替します。ROMによっては未対応です。</string>
+    <string name="notification_media_frost_hint">LSPosedのSystemUIスコープが必要です。通知の操作・非表示設定は純正に従います。TalkBackのタッチガイド中は重ね表示を使いません。ブラー非対応・省電力時は半透明の背景と縁取りで代替します。ROMによっては未対応です。</string>
     <string name="pref_lock_keep_large_clock_title">大きな時計を維持（試験的）</string>
     <string name="pref_lock_keep_large_clock_desc">通知やメディア再生時も大きな時計を維持し、ロック画面の通知を下部のスタック表示に変更します。2件以上は縦スクロールで確認できます。オフにすると時計と通知位置を標準に戻します。通知センターの配置は変更しません。</string>
-    <string name="lock_clock_hint">通知位置の変更とスタック表示はこのトグルに連動します。背景は「リキッドグラス表示」で別に変更できます。変更後は右上のメニューからSystemUIを再起動してください。TalkBackのタッチガイド中は通常の一覧を使用します。ROMによっては未対応で、時計・ウィジェットとの重なりや操作は実機確認が必要です。</string>
+    <string name="lock_clock_hint">通知位置の変更とスタック表示はこのトグルに連動します。背景は「リキッドグラス表示」で別に変更できます。TalkBackのタッチガイド中は通常の一覧を使用します。ROMによっては未対応で、時計・ウィジェットとの重なりや操作は実機確認が必要です。</string>
     <string name="section_lock_shortcuts_title">ロック画面のショートカット</string>
     <string name="pref_lock_shortcut_blur_title">ショートカットの背景をリキッドグラスにする</string>
     <string name="pref_lock_edge_camera_title">右端スワイプでカメラを起動</string>
     <string name="pref_lock_edge_camera_desc">ロック画面の右端から左へスワイプすると、ロック画面対応のカメラを起動します。</string>
-    <string name="pref_lock_shortcut_blur_desc">ロック画面の左下・右下のボタンの背景に、透明感と縁の反射を加えます。時計下の本体・Bluetoothデバイスのバッテリー表示は標準の背景になります。通知・再生カードの設定とは独立して動作し、ボタンのアイコンはぼかしません。オフにするとボタンも標準の背景に戻ります。変更後はSystemUIを再起動してください。</string>
+    <string name="pref_lock_shortcut_blur_desc">ロック画面の左下・右下のボタンの背景に、透明感と縁の反射を加えます。時計下の本体・Bluetoothデバイスのバッテリー表示は標準の背景になります。通知・再生カードの設定とは独立して動作し、ボタンのアイコンはぼかしません。オフにするとボタンも標準の背景に戻ります。</string>
     <string name="pref_lock_shortcut_size_title">ショートカットのサイズ</string>
     <string name="pref_lock_shortcut_size_desc">左右共通。100%は標準サイズです。ボタンとアイコン、タッチ領域を拡大します。</string>
-    <string name="lock_shortcut_hint">変更後は画面を消灯し、ロック画面を再表示してください。反映されない場合はSystemUIを再起動してください。ブラー非対応・省電力時は通知カードと同じ半透明の背景と縁取りで代替します。</string>
+    <string name="lock_shortcut_hint">ブラー非対応・省電力時は通知カードと同じ半透明の背景と縁取りで代替します。</string>
 
     <!-- Language -->
     <string name="section_language_title">言語 / Language</string>
@@ -323,12 +332,12 @@
     <string name="pref_lock_pin_auto_confirm_desc">数字の端末ロックPINの決定ボタンを非表示にし、指定桁数を入力したときだけ自動で認証します。オフで標準動作に戻します。</string>
     <string name="pref_lock_pin_length_title">自動確定するPINの桁数</string>
     <string name="lock_pin_length_format">%1$d桁</string>
-    <string name="lock_pin_hint">必ず現在のPINと同じ桁数（4〜16桁）を選んでください。PIN自体は変更しません。変更後はSystemUIを再起動してください。SIM PIN・英数字パスワードは対象外です。端末から取得した桁数が設定値と異なる場合は標準動作を維持します。桁数を取得できない場合は指定値を使うため、誤った桁数を選ぶと認証に失敗します。その場合はオフにしてSystemUIを再起動してください。認証失敗の回数制限・待機時間は変わりません。</string>
+    <string name="lock_pin_hint">必ず現在のPINと同じ桁数（4〜16桁）を選んでください。PIN自体は変更しません。SIM PIN・英数字パスワードは対象外です。端末から取得した桁数が設定値と異なる場合は標準動作を維持します。桁数を取得できない場合は指定値を使うため、誤った桁数を選ぶと認証に失敗します。その場合はオフに戻し、下のボタンで反映してください。認証失敗の回数制限・待機時間は変わりません。</string>
     <string name="section_moto_widget_title">Motoウィジェット</string>
     <string name="feature_moto_widget_package">com.motorola.timeweatherwidget</string>
     <string name="page_moto_widget_subtitle">ホーム画面のMotoウィジェットの時計・日付・天気をカスタマイズ</string>
     <string name="moto_widget_clock_liquid_glass_title">時計・日付・天気をリキッドグラス調にする</string>
-    <string name="moto_widget_clock_liquid_glass_summary">ホーム画面のMotoウィジェットの時計・日付・天気アイコンと説明・気温・都市名などに、透け感・グラデーション・縁の反射を加えます。初期状態はオフ。大きさや配置、背景、ロック画面の時計は変更しません。壁紙の実際の屈折やブラーは行いません。オフで標準描画に戻ります。LSPosedの com.motorola.launcher3 スコープが必要です。変更後は下のボタンでウィジェットとランチャーを再起動してください。表示部分を識別できないスタイルは標準表示を維持します。</string>
+    <string name="moto_widget_clock_liquid_glass_summary">ホーム画面のMotoウィジェットの時計・日付・天気アイコンと説明・気温・都市名などに、透け感・グラデーション・縁の反射を加えます。初期状態はオフ。大きさや配置、背景、ロック画面の時計は変更しません。壁紙の実際の屈折やブラーは行いません。オフで標準描画に戻ります。LSPosedの com.motorola.launcher3 スコープが必要です。表示部分を識別できないスタイルは標準表示を維持します。</string>
     <string name="restart_moto_widget_button">Motoウィジェットとランチャーを再起動して反映</string>
     <string name="status_restarting_moto_widget">Motoウィジェットとランチャーを再起動しています…</string>
 </resources>

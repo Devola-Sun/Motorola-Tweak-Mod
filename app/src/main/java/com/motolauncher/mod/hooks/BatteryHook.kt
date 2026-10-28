@@ -1,17 +1,12 @@
 package com.motolauncher.mod.hooks
 
-import android.content.Context
-import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.ColorFilter
-import android.graphics.Paint
-import android.graphics.Path
-import android.graphics.PixelFormat
-import android.graphics.RectF
-import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import com.highcapable.yukihookapi.hook.entity.YukiBaseHooker
 import com.highcapable.yukihookapi.hook.factory.current
@@ -20,6 +15,7 @@ import com.highcapable.yukihookapi.hook.type.java.IntType
 import com.motolauncher.mod.ErrorLogger
 import com.motolauncher.mod.HookConfig
 import java.util.WeakHashMap
+import kotlin.math.roundToInt
 
 /**
  * Status bar battery customization (Android 16 / SystemUI).
@@ -27,8 +23,8 @@ import java.util.WeakHashMap
  * `com.android.systemui.battery.BatteryMeterView` is a `LinearLayout` that owns
  * two children:
  *
- *  - `mBatteryIconView` (`ImageView`) - the battery icon. Every style change is
- *    applied to this child only, never to the container itself.
+ *  - `mBatteryIconView` (`ImageView`) - the battery icon. Style/size changes
+ *    apply to this child; only leading spacing is adjusted on status-bar hosts.
  *  - `mBatteryPercentView` (`TextView`) - the percentage text.
  *
  * The percentage is controlled through `mShowPercentMode`
@@ -45,12 +41,30 @@ object BatteryHook : YukiBaseHooker() {
     private const val BATTERY_METER_VIEW = "com.android.systemui.battery.BatteryMeterView"
 
     /** `mShowPercentMode` values used by BatteryMeterView. */
-    private const val MODE_AUTO = 0
     private const val MODE_ON = 1
     private const val MODE_OFF = 2
 
     /** Keeps the native drawable so the icon can be restored at any time. */
     private val originalDrawables = WeakHashMap<ImageView, Drawable>()
+    private val originalLayouts = WeakHashMap<ImageView, IconLayout>()
+    private val originalLeadingSpacing = WeakHashMap<View, LeadingSpacing>()
+
+    private data class LeadingSpacing(
+        val paddingStart: Int,
+        val marginStart: Int?,
+        val relativeMargin: Boolean
+    )
+
+    private data class IconLayout(
+        val width: Int,
+        val height: Int,
+        val paddingLeft: Int,
+        val paddingTop: Int,
+        val paddingRight: Int,
+        val paddingBottom: Int,
+        val scaleType: ImageView.ScaleType,
+        val gravity: Int?
+    )
 
     private val iconStyle: HookConfig.BatteryIconStyle
         get() = HookConfig.BatteryIconStyle.fromKey(
@@ -74,16 +88,8 @@ object BatteryHook : YukiBaseHooker() {
             modulePrefs.getBoolean(HookConfig.KEY_SB_HIDE_BATTERY_PERCENT, false)
         ) HookConfig.BatteryPercentStyle.HIDDEN else percentStyle
 
-    /**
-     * IN_ICON needs a drawable that can render text. A circle fills the small
-     * square icon slot much better than a horizontal pill, so use it when the
-     * user did not explicitly choose CIRCLE or PILL.
-     */
-    private val effectiveIconStyle: HookConfig.BatteryIconStyle
-        get() = if (
-            effectivePercentStyle == HookConfig.BatteryPercentStyle.IN_ICON &&
-            iconStyle == HookConfig.BatteryIconStyle.SYSTEM
-        ) HookConfig.BatteryIconStyle.CIRCLE else iconStyle
+    private val displayPolicy: BatteryDisplayPolicy
+        get() = BatteryDisplayPolicy.resolve(iconStyle, effectivePercentStyle)
 
     override fun onHook() {
         runCatching {
@@ -97,13 +103,13 @@ object BatteryHook : YukiBaseHooker() {
                         }
                         beforeHook {
                             runCatching {
-                                when (effectivePercentStyle) {
-                                    HookConfig.BatteryPercentStyle.ALWAYS -> args(0).set(MODE_ON)
-                                    HookConfig.BatteryPercentStyle.HIDDEN,
-                                    HookConfig.BatteryPercentStyle.IN_ICON -> args(0).set(MODE_OFF)
-                                    // AUTO: keep whatever the system decided.
-                                    HookConfig.BatteryPercentStyle.SYSTEM -> Unit
+                                when (displayPolicy.showExternalPercent) {
+                                    true -> args(0).set(MODE_ON)
+                                    false -> args(0).set(MODE_OFF)
+                                    null -> Unit
                                 }
+                            }.onFailure {
+                                ErrorLogger.log(TAG, "setPercentShowMode update failed", it)
                             }
                         }
                     }
@@ -117,7 +123,9 @@ object BatteryHook : YukiBaseHooker() {
                     "innerUpdateShowPercent",
                     "updateShowPercent",
                     "updatePercentText",
-                    "setPercentTextAtCurrentLevel"
+                    "setPercentTextAtCurrentLevel",
+                    "onAttachedToWindow",
+                    "scaleBatteryMeterViews"
                 ).forEach { methodName ->
                     runCatching {
                         injectMember {
@@ -125,10 +133,27 @@ object BatteryHook : YukiBaseHooker() {
                                 name = methodName
                                 emptyParam()
                             }
+                            beforeHook {
+                                runCatching {
+                                    if (methodName == "scaleBatteryMeterViews") {
+                                        // Let the system recalculate its own dimensions first.
+                                        // The after hook then saves the current density's native layout.
+                                        instance.current {
+                                            (instance as? View)?.let { restoreLeadingSpacing(it) }
+                                            val icon = field { name = "mBatteryIconView" }.any() as? ImageView
+                                            if (icon != null) restoreNativeLayout(icon)
+                                        }
+                                    }
+                                }.onFailure {
+                                    ErrorLogger.log(TAG, "$methodName layout reset failed", it)
+                                }
+                            }
                             afterHook {
                                 runCatching {
                                     applyPercent(instance)
                                     applyIcon(instance)
+                                }.onFailure {
+                                    ErrorLogger.log(TAG, "$methodName update failed", it)
                                 }
                             }
                         }
@@ -148,11 +173,31 @@ object BatteryHook : YukiBaseHooker() {
                             runCatching {
                                 applyPercent(instance)
                                 applyIcon(instance)
+                            }.onFailure {
+                                ErrorLogger.log(TAG, "Battery level update failed", it)
                             }
                         }
                     }
                 }.onFailure {
                     ErrorLogger.log(TAG, "onBatteryLevelChanged hook failed", it)
+                }
+
+                runCatching {
+                    injectMember {
+                        method {
+                            name = "updateColors"
+                            param(IntType, IntType, IntType)
+                        }
+                        afterHook {
+                            runCatching {
+                                applyIcon(instance)
+                            }.onFailure {
+                                ErrorLogger.log(TAG, "Battery color update failed", it)
+                            }
+                        }
+                    }
+                }.onFailure {
+                    ErrorLogger.log(TAG, "updateColors hook failed", it)
                 }
 
                 runCatching {
@@ -165,6 +210,8 @@ object BatteryHook : YukiBaseHooker() {
                             runCatching {
                                 applyPercent(instance)
                                 applyIcon(instance)
+                            }.onFailure {
+                                ErrorLogger.log(TAG, "Battery configuration update failed", it)
                             }
                         }
                     }
@@ -178,12 +225,7 @@ object BatteryHook : YukiBaseHooker() {
     }
 
     private fun applyPercent(target: Any?) {
-        val style = effectivePercentStyle
-        if (style == HookConfig.BatteryPercentStyle.SYSTEM) return
-        // If the icon slot is too small for a legible custom icon, keep the
-        // native icon and show the percentage as text instead.
-        val showText = style == HookConfig.BatteryPercentStyle.ALWAYS ||
-            (style == HookConfig.BatteryPercentStyle.IN_ICON && !canDrawInIcon(target))
+        val showText = displayPolicy.showExternalPercent ?: return
         target?.current {
             field { name = "mShowPercentMode" }.set(if (showText) MODE_ON else MODE_OFF)
             val percentView = field { name = "mBatteryPercentView" }.any() as? TextView
@@ -191,72 +233,54 @@ object BatteryHook : YukiBaseHooker() {
         }
     }
 
-    /**
-     * The Razr's icon slot is roughly 12dp square. Anything smaller than this
-     * cannot render three digits legibly, so use the native icon and the
-     * percentage TextView in that case.
-     */
-    private fun canDrawInIcon(target: Any?): Boolean {
-        val host = target as? View ?: return false
-        val minSize = (10 * host.resources.displayMetrics.density).toInt()
-        var canDraw = false
-        runCatching {
-            target.current {
-                val icon = field { name = "mBatteryIconView" }.any() as? ImageView
-                canDraw = icon != null && icon.width >= minSize && icon.height >= minSize
-            }
-        }
-        return canDraw
-    }
-
     private fun applyIcon(target: Any?) {
-        val style = effectiveIconStyle
-        val showPercentInside =
-            effectivePercentStyle == HookConfig.BatteryPercentStyle.IN_ICON
+        val policy = displayPolicy
+        val style = policy.iconStyle
         val host = target as? View ?: return
         val context = host.context ?: return
 
         target.current {
-            // Only the icon child view is touched; the LinearLayout container
-            // and the percentage view are left to the system.
+            // Keep native container size/visibility and percentage layout intact.
+            // Custom status-bar icons only need a smaller leading gap on the host.
             val icon = field { name = "mBatteryIconView" }.any() as? ImageView
                 ?: return@current
-            val level = field { name = "mLevel" }.int()
-            val pluggedIn = field { name = "mPluggedIn" }.boolean()
-            val textColor = field { name = "mTextColor" }.int().let {
-                if (it == 0) Color.WHITE else it
-            }
-
             when (style) {
                 HookConfig.BatteryIconStyle.SYSTEM -> {
+                    restoreLeadingSpacing(host)
                     icon.visibility = View.VISIBLE
                     restoreNativeIcon(icon)
                 }
 
                 HookConfig.BatteryIconStyle.HIDDEN -> {
+                    restoreLeadingSpacing(host)
+                    restoreNativeIcon(icon)
                     icon.visibility = View.GONE
                 }
 
                 HookConfig.BatteryIconStyle.CIRCLE,
                 HookConfig.BatteryIconStyle.PILL -> {
                     icon.visibility = View.VISIBLE
-                    if (!canDrawInIcon(target)) {
-                        // Too small for a legible custom icon: restore the
-                        // native drawable. applyPercent() shows the text then.
-                        restoreNativeIcon(icon)
-                        return@current
+                    val level = field { name = "mLevel" }.int()
+                    val pluggedIn = field { name = "mPluggedIn" }.boolean()
+                    val textColor = field { name = "mTextColor" }.int().let {
+                        if (it == 0) Color.WHITE else it
                     }
                     rememberNativeIcon(icon)
-                    icon.setImageDrawable(
-                        BatteryStyleDrawable(
+                    applyLeadingSpacing(host)
+                    applyCustomLayout(icon, policy.customSize ?: return@current)
+                    val current = icon.drawable as? BatteryStyleDrawable
+                    if (current != null && current.style == style) {
+                        current.update(level, pluggedIn, textColor, policy.showPercentInside)
+                    } else {
+                        icon.setImageDrawable(BatteryStyleDrawable(
                             context = context,
                             style = style,
                             level = level,
                             charging = pluggedIn,
                             tint = textColor,
-                            showPercent = showPercentInside
-                        )
-                    )
+                            showPercent = policy.showPercentInside
+                        ))
+                    }
                 }
             }
         }
@@ -276,179 +300,96 @@ object BatteryHook : YukiBaseHooker() {
      * disappear from the status bar.
      */
     private fun restoreNativeIcon(icon: ImageView) {
-        if (icon.drawable !is BatteryStyleDrawable) return
-        val original = originalDrawables[icon] ?: return
-        icon.setImageDrawable(original)
+        restoreNativeLayout(icon)
+        val original = originalDrawables.remove(icon)
+        if (icon.drawable is BatteryStyleDrawable && original != null) {
+            icon.setImageDrawable(original)
+        }
     }
 
-    /**
-     * Lightweight circle/pill icon. It intentionally does not depend on
-     * Motorola's internal drawable classes so a ROM update cannot break it.
-     */
-    private class BatteryStyleDrawable(
-        context: Context,
-        private val style: HookConfig.BatteryIconStyle,
-        private val level: Int,
-        private val charging: Boolean,
-        private val tint: Int,
-        private val showPercent: Boolean
-    ) : Drawable() {
-
-        private val density = context.resources.displayMetrics.density
-        private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            typeface = Typeface.create("sans-serif", Typeface.BOLD)
-            textAlign = Paint.Align.CENTER
+    private fun applyLeadingSpacing(host: View) {
+        // Do not tighten battery meters in QS or other unrelated layouts.
+        var parent = host.parent
+        var statusBar = false
+        while (parent is View) {
+            if (parent.javaClass.simpleName in setOf("PhoneStatusBarView", "KeyguardStatusBarView")) {
+                statusBar = true
+                break
+            }
+            parent = parent.parent
         }
-        private val arcRect = RectF()
-        private var alphaValue = 255
-
-        override fun draw(canvas: Canvas) {
-            val bounds = bounds
-            if (bounds.isEmpty) return
-
-            val width = bounds.width().toFloat()
-            val height = bounds.height().toFloat()
-            val shortSide = minOf(width, height)
-            val percent = level.coerceIn(0, 100)
-            val accent = if (charging) COLOR_CHARGING else tint
-
-            if (style == HookConfig.BatteryIconStyle.CIRCLE) {
-                val radius = shortSide * 0.46f
-                val cx = bounds.exactCenterX()
-                val cy = bounds.exactCenterY()
-
-                if (showPercent) {
-                    // A filled badge is much more legible than an outline when
-                    // the status bar only gives us a ~12dp square.
-                    paint.style = Paint.Style.FILL
-                    paint.color = accent
-                    paint.alpha = alphaValue
-                    canvas.drawCircle(cx, cy, radius, paint)
-
-                    drawPercentText(
-                        canvas = canvas,
-                        text = percent.toString(),
-                        centerX = cx,
-                        centerY = cy,
-                        textSize = shortSide * 0.38f,
-                        textColor = contrastColor(accent)
-                    )
-                } else {
-                    paint.style = Paint.Style.STROKE
-                    paint.color = accent
-                    paint.alpha = alphaValue
-                    paint.strokeWidth = (shortSide * 0.08f).coerceAtLeast(density)
-                    canvas.drawCircle(cx, cy, radius, paint)
-
-                    paint.strokeWidth = (shortSide * 0.16f).coerceAtLeast(density * 1.5f)
-                    paint.strokeCap = Paint.Cap.ROUND
-                    arcRect.set(cx - radius, cy - radius, cx + radius, cy + radius)
-                    canvas.drawArc(arcRect, -90f, 360f * percent / 100f, false, paint)
-                    paint.strokeCap = Paint.Cap.BUTT
-                }
-            } else {
-                val body = RectF(
-                    width * 0.03f,
-                    height * 0.20f,
-                    width * 0.84f,
-                    height * 0.80f
-                )
-                val radius = body.height() * 0.28f
-
-                if (showPercent) {
-                    paint.style = Paint.Style.FILL
-                    paint.color = accent
-                    paint.alpha = alphaValue
-                    canvas.drawRoundRect(body, radius, radius, paint)
-                    canvas.drawRoundRect(
-                        RectF(width * 0.84f, height * 0.38f, width * 0.94f, height * 0.62f),
-                        height * 0.04f,
-                        height * 0.04f,
-                        paint
-                    )
-
-                    drawPercentText(
-                        canvas = canvas,
-                        text = percent.toString(),
-                        centerX = body.centerX(),
-                        centerY = body.centerY(),
-                        textSize = height * 0.36f,
-                        textColor = contrastColor(accent)
-                    )
-                } else {
-                    paint.style = Paint.Style.STROKE
-                    paint.color = accent
-                    paint.alpha = alphaValue
-                    paint.strokeWidth = (height * 0.09f).coerceAtLeast(density)
-                    canvas.drawRoundRect(body, radius, radius, paint)
-                    canvas.drawRoundRect(
-                        RectF(width * 0.84f, height * 0.38f, width * 0.94f, height * 0.62f),
-                        height * 0.04f,
-                        height * 0.04f,
-                        paint
-                    )
-
-                    if (percent > 0) {
-                        val fill = RectF(
-                            body.left,
-                            body.bottom - body.height() * percent / 100f,
-                            body.right,
-                            body.bottom
-                        )
-                        val clip = Path().apply {
-                            addRoundRect(body, radius, radius, Path.Direction.CW)
-                        }
-                        canvas.save()
-                        canvas.clipPath(clip)
-                        paint.style = Paint.Style.FILL
-                        paint.alpha = (alphaValue * 0.45f).toInt().coerceIn(0, 255)
-                        canvas.drawRect(fill, paint)
-                        canvas.restore()
-                    }
-                }
+        if (!statusBar) return
+        val margins = host.layoutParams as? ViewGroup.MarginLayoutParams
+        if (!originalLeadingSpacing.containsKey(host)) {
+            originalLeadingSpacing[host] = LeadingSpacing(
+                host.paddingStart,
+                margins?.let { if (it.isMarginRelative) it.marginStart else it.leftMargin },
+                margins?.isMarginRelative == true
+            )
+        }
+        // The drawable already has a small inset. Remove stacked native start
+        // padding and cap the external gap at 1dp, without using overlap/translation.
+        if (host.paddingStart != 0) {
+            host.setPaddingRelative(0, host.paddingTop, host.paddingEnd, host.paddingBottom)
+        }
+        if (margins != null) {
+            val relative = originalLeadingSpacing[host]?.relativeMargin == true
+            val current = if (relative) margins.marginStart else margins.leftMargin
+            val compact = current.coerceIn(0, host.resources.displayMetrics.density.roundToInt())
+            if (current != compact) {
+                if (relative) margins.marginStart = compact else margins.leftMargin = compact
+                host.layoutParams = margins
             }
         }
-
-        private fun drawPercentText(
-            canvas: Canvas,
-            text: String,
-            centerX: Float,
-            centerY: Float,
-            textSize: Float,
-            textColor: Int
-        ) {
-            textPaint.color = textColor
-            textPaint.alpha = alphaValue
-            textPaint.textSize = textSize
-            val metrics = textPaint.fontMetrics
-            val baseline = centerY - (metrics.ascent + metrics.descent) / 2f
-            canvas.drawText(text, centerX, baseline, textPaint)
-        }
-
-        private fun contrastColor(background: Int): Int =
-            if (Color.luminance(background) > 0.55f) Color.BLACK else Color.WHITE
-
-        override fun setAlpha(alpha: Int) {
-            alphaValue = alpha.coerceIn(0, 255)
-            paint.alpha = alphaValue
-            textPaint.alpha = alphaValue
-            invalidateSelf()
-        }
-
-        override fun setColorFilter(colorFilter: ColorFilter?) {
-            paint.colorFilter = colorFilter
-            textPaint.colorFilter = colorFilter
-            invalidateSelf()
-        }
-
-        @Deprecated("Deprecated in Java")
-        override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
-
-        override fun getIntrinsicWidth(): Int = (18 * density).toInt()
-
-        override fun getIntrinsicHeight(): Int = (18 * density).toInt()
     }
 
-    private const val COLOR_CHARGING = 0xFF34C759.toInt()
+    private fun restoreLeadingSpacing(host: View) {
+        val original = originalLeadingSpacing.remove(host) ?: return
+        host.setPaddingRelative(original.paddingStart, host.paddingTop, host.paddingEnd, host.paddingBottom)
+        val margins = host.layoutParams as? ViewGroup.MarginLayoutParams ?: return
+        original.marginStart?.let {
+            if (original.relativeMargin) margins.marginStart = it else margins.leftMargin = it
+            host.layoutParams = margins
+        }
+    }
+
+    private fun applyCustomLayout(icon: ImageView, size: BatteryIconSize) {
+        val params = icon.layoutParams ?: return
+        if (!originalLayouts.containsKey(icon)) {
+            originalLayouts[icon] = IconLayout(
+                params.width, params.height,
+                icon.paddingLeft, icon.paddingTop, icon.paddingRight, icon.paddingBottom,
+                icon.scaleType, (params as? LinearLayout.LayoutParams)?.gravity
+            )
+        }
+        val density = icon.resources.displayMetrics.density
+        val width = (size.widthDp * density).roundToInt()
+        val height = (size.heightDp * density).roundToInt()
+        val linearParams = params as? LinearLayout.LayoutParams
+        val centerVertically = linearParams != null && linearParams.gravity != Gravity.CENTER_VERTICAL
+        if (params.width != width || params.height != height || centerVertically) {
+            params.width = width
+            params.height = height
+            linearParams?.gravity = Gravity.CENTER_VERTICAL
+            icon.layoutParams = params
+        }
+        if (icon.paddingLeft != 0 || icon.paddingTop != 0 || icon.paddingRight != 0 || icon.paddingBottom != 0) {
+            icon.setPadding(0, 0, 0, 0)
+        }
+        icon.scaleType = ImageView.ScaleType.FIT_CENTER
+    }
+
+    private fun restoreNativeLayout(icon: ImageView) {
+        val original = originalLayouts.remove(icon) ?: return
+        icon.layoutParams?.let { params ->
+            params.width = original.width
+            params.height = original.height
+            if (params is LinearLayout.LayoutParams && original.gravity != null) {
+                params.gravity = original.gravity
+            }
+            icon.layoutParams = params
+        }
+        icon.setPadding(original.paddingLeft, original.paddingTop, original.paddingRight, original.paddingBottom)
+        icon.scaleType = original.scaleType
+    }
 }

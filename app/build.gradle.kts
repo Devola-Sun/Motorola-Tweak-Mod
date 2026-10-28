@@ -22,8 +22,8 @@ android {
         applicationId = moduleApplicationId
         minSdk = 36
         targetSdk = 36
-        versionCode = 19
-        versionName = "2.5.6"
+        versionCode = 20
+        versionName = "2.5.7"
     }
 
     buildTypes {

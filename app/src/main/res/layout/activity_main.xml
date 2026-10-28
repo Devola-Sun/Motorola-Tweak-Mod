@@ -1134,25 +1134,8 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/section_systemui_title"
-                    android:textAppearance="@style/TextAppearance.Moto.Section" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/systemui_hint"
-                    android:textColor="@color/app_text_secondary"
-                    android:textSize="12sp" />
-
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
                     android:text="@string/section_notification_media_title"
                     android:textAppearance="@style/TextAppearance.Moto.Section" />
-
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1186,6 +1169,40 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:contentDescription="@string/pref_notification_media_frost_title" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingEnd="12dp">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_media_artwork_light_brightness_title"
+                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/pref_media_artwork_light_brightness_desc"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                    </LinearLayout>
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_media_artwork_light_brightness"
+                        style="@style/Widget.Moto.Switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/pref_media_artwork_light_brightness_title" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -1230,6 +1247,12 @@
                     android:text="@string/notification_media_frost_hint"
                     android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
 
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:text="@string/section_systemui_title"
+                    android:textAppearance="@style/TextAppearance.Moto.Section" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1416,14 +1439,6 @@
                     android:layout_marginTop="24dp"
                     android:text="@string/section_battery_title"
                     android:textAppearance="@style/TextAppearance.Moto.Section" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/battery_hint"
-                    android:textColor="@color/app_text_secondary"
-                    android:textSize="12sp" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -1651,14 +1666,6 @@
                             android:layout_height="wrap_content" />
                     </LinearLayout>
                 </LinearLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/battery_reboot_hint"
-                    android:textColor="@color/app_text_secondary"
-                    android:textSize="12sp" />
 
                 <TextView
                     android:layout_width="match_parent"
@@ -1978,14 +1985,6 @@
                         android:text="@string/status_bar_order_reset" />
                 </LinearLayout>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/status_bar_order_hint"
-                    android:textColor="@color/app_text_secondary"
-                    android:textSize="12sp" />
-
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/button_restart_systemui"
                     style="@style/Widget.Moto.Button.Primary"
@@ -2095,6 +2094,40 @@
                     android:layout_marginTop="24dp"
                     android:text="@string/section_lock_clock_title"
                     android:textAppearance="@style/TextAppearance.Moto.Section" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="18dp">
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:paddingEnd="12dp">
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_lock_icon_above_clock_title"
+                            android:textAppearance="@style/TextAppearance.Moto.RowTitle" />
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/pref_lock_icon_above_clock_desc"
+                            android:textAppearance="@style/TextAppearance.Moto.RowSummary" />
+                    </LinearLayout>
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switch_lock_icon_above_clock"
+                        style="@style/Widget.Moto.Switch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:contentDescription="@string/pref_lock_icon_above_clock_title" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -3181,14 +3214,6 @@
                     </LinearLayout>
                 </LinearLayout>
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/corepatch_reboot_note"
-                    android:textColor="@color/app_text_secondary"
-                    android:textSize="12sp" />
-
                 <androidx.appcompat.widget.AppCompatButton
                     android:id="@+id/button_soft_reboot"
                     style="@style/Widget.Moto.Button.Secondary"
@@ -3425,6 +3450,14 @@
                         app:thumbTint="@color/switch_thumb_tint"
                         app:trackTint="@color/switch_track_tint" />
                 </LinearLayout>
+
+                <androidx.appcompat.widget.AppCompatButton
+                    android:id="@+id/button_check_updates"
+                    style="@style/Widget.Moto.Button.Primary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/update_check_now" />
 
                 <TextView
                     android:layout_width="match_parent"

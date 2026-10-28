@@ -209,6 +209,11 @@ class SettingsStore(context: Context) {
             ?: HookConfig.DEFAULT_NOTIFICATION_MEDIA_FROST
         set(value) = update(HookConfig.KEY_NOTIFICATION_MEDIA_FROST, value)
 
+    var mediaArtworkLightBrightness: Boolean
+        get() = values[HookConfig.KEY_MEDIA_ARTWORK_LIGHT_BRIGHTNESS] as? Boolean
+            ?: HookConfig.DEFAULT_MEDIA_ARTWORK_LIGHT_BRIGHTNESS
+        set(value) = update(HookConfig.KEY_MEDIA_ARTWORK_LIGHT_BRIGHTNESS, value)
+
     var notificationKeepSilentVisible: Boolean
         get() = values[HookConfig.KEY_NOTIFICATION_KEEP_SILENT_VISIBLE] as? Boolean
             ?: HookConfig.DEFAULT_NOTIFICATION_KEEP_SILENT_VISIBLE
@@ -235,6 +240,11 @@ class SettingsStore(context: Context) {
         get() = values[HookConfig.KEY_LOCK_CLOCK_LIQUID_GLASS] as? Boolean
             ?: HookConfig.DEFAULT_LOCK_CLOCK_LIQUID_GLASS
         set(value) = update(HookConfig.KEY_LOCK_CLOCK_LIQUID_GLASS, value)
+
+    var lockIconAboveClock: Boolean
+        get() = values[HookConfig.KEY_LOCK_ICON_ABOVE_CLOCK] as? Boolean
+            ?: HookConfig.DEFAULT_LOCK_ICON_ABOVE_CLOCK
+        set(value) = update(HookConfig.KEY_LOCK_ICON_ABOVE_CLOCK, value)
 
     var lockShortcutBlur: Boolean
         get() = values[HookConfig.KEY_LOCK_SHORTCUT_BLUR] as? Boolean
@@ -410,11 +420,13 @@ class SettingsStore(context: Context) {
             HookConfig.KEY_CC_LIQUID_GLASS to HookConfig.DEFAULT_CC_LIQUID_GLASS,
             HookConfig.KEY_CC_BACKGROUND_BLUR_PERCENT to HookConfig.DEFAULT_CC_BACKGROUND_BLUR_PERCENT,
             HookConfig.KEY_NOTIFICATION_MEDIA_FROST to HookConfig.DEFAULT_NOTIFICATION_MEDIA_FROST,
+            HookConfig.KEY_MEDIA_ARTWORK_LIGHT_BRIGHTNESS to HookConfig.DEFAULT_MEDIA_ARTWORK_LIGHT_BRIGHTNESS,
             HookConfig.KEY_NOTIFICATION_KEEP_SILENT_VISIBLE to HookConfig.DEFAULT_NOTIFICATION_KEEP_SILENT_VISIBLE,
             HookConfig.KEY_CC_IOS_CONNECTIVITY to HookConfig.DEFAULT_CC_IOS_CONNECTIVITY,
             HookConfig.KEY_LOCK_KEEP_LARGE_CLOCK to HookConfig.DEFAULT_LOCK_KEEP_LARGE_CLOCK,
             HookConfig.KEY_LOCK_CLOCK_SIZE_PERCENT to HookConfig.DEFAULT_LOCK_CLOCK_SIZE_PERCENT,
             HookConfig.KEY_LOCK_CLOCK_LIQUID_GLASS to HookConfig.DEFAULT_LOCK_CLOCK_LIQUID_GLASS,
+            HookConfig.KEY_LOCK_ICON_ABOVE_CLOCK to HookConfig.DEFAULT_LOCK_ICON_ABOVE_CLOCK,
             HookConfig.KEY_LOCK_PIN_AUTO_CONFIRM to HookConfig.DEFAULT_LOCK_PIN_AUTO_CONFIRM,
             HookConfig.KEY_LOCK_PIN_LENGTH to HookConfig.DEFAULT_LOCK_PIN_LENGTH,
             HookConfig.KEY_LOCK_MEDIA_COMPACT to HookConfig.DEFAULT_LOCK_MEDIA_COMPACT,

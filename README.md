@@ -42,11 +42,18 @@ or clear the displayed view.
 including for existing installs. On opening/resuming the settings app, it checks
 the latest stable release of `Devola-Sun/Motorola-Tweak-Mod` on GitHub. A newer
 version offers **GitHubで確認** or **あとで**; the former opens that release page.
-Version tags are compared numerically, with prerelease precedence; drafts and
-GitHub prereleases are excluded. Offline/API failures are silent.
-Checks are cached in memory for six hours (15 minutes after failures), and each
-version is suggested only once per app process. Disabling the switch persists
-across restarts and suppresses checks and pending suggestions immediately.
+The newest numeric stable version is selected from the 100 most recent GitHub
+releases, independently of GitHub's `latest` designation and publication order.
+Drafts and prereleases are excluded. Checks are cached in memory for 15 minutes
+(one minute after failures) and repeated while the settings screen is in the
+foreground. A different newer version is eligible for a prompt immediately after
+it is fetched, even if a previous release was already suggested. The same release
+can be suggested again after six hours; rotations/resumes do not spam dialogs.
+**今すぐ確認 / Check now** bypasses both cache and prompt suppression, works with
+automatic checks disabled, and reports up-to-date and network/API failure results.
+Automatic failures remain silent. These are in-app dialogs, not background/system
+notifications. Disabling the switch persists across restarts and suppresses
+automatic checks and pending automatic suggestions immediately.
 
 ### Launcher
 
@@ -62,6 +69,29 @@ across restarts and suppresses checks and pending suggestions immediately.
 
 The restart action automatically clears the icon cache when `icon_shape`
 changed since the last applied value.
+
+**フォルダをリキッドグラス調にする** keeps folder previews glass-styled and adds
+an open-folder container using the shared notification/control-center optical
+material. Fullscreen folders draw this container on their content background,
+ignoring the stock background's intentional zero alpha; the Folder view still
+owns the opening/closing fade. Ordinary folders retain their native drawable
+fades. No RenderEffect is applied to the folder contents.
+The fullscreen glass container is a 1:1 square based on its measured width.
+Folder rows are fitted to that height without scaling icon artwork; native
+opening placement also uses the square content height.
+Measurement hooks target the declared `PagedView.onMeasure(int, int)` directly
+(the ROM does not declare it in `FolderPagedView`), with an instance guard so
+other paged views remain untouched. Glass drawing and its outline also clamp
+to a square independently of measurement, preventing stale portrait bounds from
+producing a tall container if a vendor grid API is unavailable.
+
+**通知・コントロールセンター・フォルダの背景ブラー** reuses the existing
+`cc_background_blur_percent` setting for all three surfaces. Folder opening and
+closing use the launcher's native background-blur animation scaled by that
+percentage (100 = native strength, 0 = no blur), independently of the folder
+glass toggle. Changes take effect on the next folder opening. Zero-progress
+cleanup and unrelated floating sheets remain native. The native all-apps folder
+blur capability is no longer forcibly disabled.
 
 **ホーム画面グリッド → グリッドのセルを正方形にする** uses square home-screen
 cells for icons, folders and widget spans. The selected row/column counts are
@@ -93,7 +123,7 @@ KernelSU/SukiSU/Magisk if `su` is hidden from its process.
 | `disable_flag_secure` | `false` | Ignore FLAG_SECURE for system screenshots / screen recording |
 | `lock_keep_large_clock` | `false` | Experimental: keep the stock large keyguard clock when notifications/media are present |
 | `lock_clock_liquid_glass` | `false` | Translucent gradient/reflected bevel on supported lock-screen clock digits; independent of clock size, stock rendering in AOD |
-| `lock_media_compact` | `false` | Dark rounded keyguard-only playback card with small artwork, track information, seek bar and native controls; control-center cards are excluded |
+| `lock_media_compact` | `false` | Shared compact layout for keyguard, notification-center and expanded Dynamic Island-style playback cards; control-center cards are excluded |
 | `lock_pin_auto_confirm` | `false` | Hide device PIN confirmation and submit only at the selected length; known length mismatches stay stock |
 | `lock_pin_length` | `6` | Selected numeric device PIN length, 4..16 |
 
@@ -113,7 +143,8 @@ failed-attempt accounting are unchanged. Disable and restart SystemUI to restore
 stock behavior. Device verification is still required for 4/6-digit PINs,
 incorrect PINs, lockout, reboot, user changes and fold/unfold.
 
-**通知・メディアカード → ロック画面の再生カードをコンパクト化** is opt-in.
+**ロック画面 → 再生カードをコンパクト化** is opt-in and also controls expanded
+Dynamic Island-style playback popups (no separate switch).
 Restart SystemUI after changing it. Supported AOSP lock-screen playback cards use
 plain dark backdrop blur (without reflective edges) when Liquid glass is off,
 and the Liquid glass surface when it is on, with the same compact layout in both
@@ -135,13 +166,40 @@ updates that bypass the TransitionLayout method hooks.
 Opening Modern QS over keyguard temporarily restores the stock notification
 viewport/stack even when the status-bar controller remains in keyguard state.
 
-Expanded dynamic-notification playback popups also use the notification/media
-Liquid glass option. Their native layout is preserved; a rounded artwork overlay
-is placed 8dp beside the app icon at 1.25 times its size. The artwork follows the
-card's bound album drawable, occupies no layout/input space, and is removed when
-the card is detached, moved to another host, or the option is disabled. This path
-requires an identified dynamic host or a separate popup window with the expected
-playback controls; verify vendor popup recognition and artwork on the device.
+Light-mode notification and playback Liquid glass now reuses Modern QS's dark
+translucent material, rather than approximating glass with a near-clear or dense
+white wash. Body colors, broad reflection, directional rim and inner edge use the
+same dark optics as control-center cards, including the no-blur fallback. Standard
+framework notification labels and native playback labels/icons use white content
+on that dark glass. This changes material only, not the system theme or layout.
+App-defined custom notification content, artwork and notification buttons are not
+recolored. Native colors are restored on dark-mode/feature/host changes.
+Dark-mode notification/media material is unchanged.
+Light notification-shade cards also use
+the native geometry-only draw path already used on keyguard, bypassing additional
+vendor onDraw tint/blur passes rather than merely swapping the background drawable.
+Dark-mode lock-screen cards keep their thinner tint and reduced broad reflection.
+Light-mode lock-screen cards use the control-center tint/reflection, like the shade.
+Both lock-screen themes retain the smaller local blur radius. Reflective edges remain intact;
+the dark notification-shade body is unchanged. Compact liquid playback uses white
+text/icons/tracks in both modes, matching the dark glass; plain (non-liquid)
+compact playback keeps its dark background and white controls. Theme switches,
+bright/dark wallpapers, grouped notifications and blur-disabled/power-saving states
+still require device verification. Restart SystemUI after installing the updated APK.
+
+With `lock_media_compact` enabled, supported expanded dynamic-notification playback
+popups use the exact same layout renderer, lock-screen material and corner radius.
+It restyles the existing controls in place without adding a player, rebinding the
+session, or reparenting views. Only the innermost playback root is styled. The
+older glass/artwork-overlay path is restored before compact styling takes ownership,
+so both renderers never decorate the same card. Native state/draw-boundary hooks
+also cover popup seeking and expansion without a delayed style swap. Zero-sized
+transition frames retain an already applied style. Control-center ancestry always
+takes precedence, even over a dynamic-host name or a popup window.
+With compact mode off, the independent notification/media Liquid glass option
+retains the native popup layout and its decorative artwork overlay. Unsupported
+layouts remain native. Verify vendor popup recognition, open/close animations,
+seeking, track changes, and transitions to keyguard/QS on the device.
 
 **ロック画面 → ロック画面の時計 → 時計をリキッドガラス調にする** is opt-in.
 Restart SystemUI from the top-right menu after changing it. An AGSL RenderEffect

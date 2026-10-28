@@ -6,6 +6,9 @@ internal object ReleaseVersion {
         "^[vV]?(\\d+(?:\\.\\d+)*)(?:-([0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*))?(?:\\+[0-9A-Za-z-]+(?:\\.[0-9A-Za-z-]+)*)?$"
     )
 
+    fun isStable(tag: String): Boolean =
+        pattern.matchEntire(tag.trim())?.groupValues?.get(2) == ""
+
     fun isNewer(candidate: String, installed: String): Boolean {
         val next = pattern.matchEntire(candidate.trim()) ?: return false
         val current = pattern.matchEntire(installed.trim()) ?: return false

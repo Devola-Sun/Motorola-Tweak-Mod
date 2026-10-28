@@ -6,7 +6,6 @@ import android.graphics.RenderEffect
 import android.graphics.RenderNode
 import android.graphics.RuntimeShader
 import android.os.PowerManager
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,7 +26,6 @@ internal object LockClockGlass : YukiBaseHooker() {
     private const val TAG = "MotoLockClockGlass"
     private const val FRAME = "motorolaTweak.clockGlassFrame"
     private val errors = ConcurrentHashMap.newKeySet<String>()
-    private val diagnostics = ConcurrentHashMap.newKeySet<String>()
     private val states = WeakHashMap<View, State>()
     private val roots = WeakHashMap<View, Boolean>()
     private val drawMethods = mutableSetOf<Method>()
@@ -48,7 +46,6 @@ internal object LockClockGlass : YukiBaseHooker() {
     override fun onHook() {
         // Validate AGSL early: Kotlin compilation alone does not validate shaders.
         runCatching { RuntimeShader(GLASS_SHADER) }
-            .onSuccess { info("shader", "AGSL compiled; enabled=${enabled()}") }
             .onFailure { report("shader compilation", it) }
 
         // This wrapper is optional: default Android 16 clocks do not use Moto's plugin.
@@ -142,7 +139,6 @@ internal object LockClockGlass : YukiBaseHooker() {
                 })
             }
         }
-        info("installed", "Independent glyph rendering hooks installed")
     }
 
     private fun enabled() = HookConfig.safeGetBoolean(modulePrefs,
@@ -151,10 +147,8 @@ internal object LockClockGlass : YukiBaseHooker() {
     private fun hook(name: String, install: (Class<*>) -> Unit) {
         runCatching {
             install(Class.forName(name, false, appClassLoader))
-            info("entry:$name", "Clock entry available: $name")
         }.onFailure {
-            if (it is ClassNotFoundException) info("entry:$name", "Optional clock entry absent: $name")
-            else report("install $name", it)
+            if (it !is ClassNotFoundException) report("install $name", it)
         }
     }
 
@@ -180,7 +174,6 @@ internal object LockClockGlass : YukiBaseHooker() {
 
     private fun observeRoot(root: View, insideFace: Boolean) {
         if (roots.put(root, true) != null) return
-        info("host:${root.javaClass.name}:${id(root)}", "Clock host: ${root.javaClass.name} id=${id(root)}")
         scan(root, insideFace)
         val listener = ViewTreeObserver.OnGlobalLayoutListener {
             runCatching { scan(root, insideFace) }.onFailure { report("clock layout discovery", it) }
@@ -213,7 +206,6 @@ internal object LockClockGlass : YukiBaseHooker() {
             } }.firstOrNull() ?: return
         if (drawMethods.add(method)) XposedBridge.hookMethod(method, drawHook)
         states[view] = State()
-        info("target:${view.javaClass.name}:${id(view)}", "Clock glyph target: ${view.javaClass.name} id=${id(view)}")
     }
 
     private val drawHook = object : XC_MethodHook() {
@@ -247,7 +239,6 @@ internal object LockClockGlass : YukiBaseHooker() {
                 frame.state.recording = false
                 if (param.hasThrowable()) return@runCatching
                 frame.original.drawRenderNode(frame.state.node)
-                info("drawn", "Glass glyph frame rendered; native clock size/layout untouched")
             }.onFailure {
                 frame.state.failed = true
                 frame.state.recording = false
@@ -274,10 +265,6 @@ internal object LockClockGlass : YukiBaseHooker() {
         state.width = view.width
         state.height = view.height
         state.density = density
-    }
-
-    private fun info(key: String, message: String) {
-        if (diagnostics.add(key)) Log.i(TAG, message)
     }
 
     private fun report(stage: String, error: Throwable) {

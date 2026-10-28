@@ -24,6 +24,7 @@ object MainDockGlassHook : YukiBaseHooker() {
     private val reported = mutableSetOf<String>()
 
     override fun onHook() {
+        hookNativeBlurRegions()
         listOf("layoutBgView", "onLayout", "onConfigurationChanged").forEach { methodName ->
             runCatching {
                 findClass("com.android.launcher3.Hotseat").hook {
@@ -39,6 +40,39 @@ object MainDockGlassHook : YukiBaseHooker() {
                 }
             }.onFailure { report("hook $methodName", it) }
         }
+    }
+
+    /** Motorola submits these blur regions separately from View backgrounds every frame. */
+    private fun hookNativeBlurRegions() {
+        runCatching {
+            findClass("com.android.launcher3.uioverrides.QuickstepLauncher").hook {
+                injectMember {
+                    method { name = "addBlurTarget" }.all()
+                    beforeHook {
+                        runCatching {
+                            val folderGlass = HookConfig.safeGetBoolean(modulePrefs,
+                                HookConfig.KEY_FOLDER_LIQUID_GLASS, false)
+                            val dockGlass = HookConfig.isMainDockLiquidGlassEnabled(modulePrefs)
+                            if (!folderGlass && !dockGlass) return@runCatching
+                            val target = args.getOrNull(2) as? View ?: return@runCatching
+                            if (folderGlass && target.javaClass.name == "com.android.launcher3.folder.FolderIcon") {
+                                result = null
+                                return@runCatching
+                            }
+                            if (!dockGlass) return@runCatching
+                            val hotseat = target.parent as? View ?: return@runCatching
+                            if (hotseat.javaClass.name != "com.android.launcher3.Hotseat") return@runCatching
+                            if (XposedHelpers.getObjectField(hotseat, "mBgView") === target &&
+                                CoverDockHook.isMainDisplay(hotseat)) {
+                                // Do not skip doBlurRegions: it must still clear old regions and
+                                // submit the remaining widget/search/page-indicator backgrounds.
+                                result = null
+                            }
+                        }.onFailure { report("exclude native glass blur region", it) }
+                    }
+                }
+            }
+        }.onFailure { report("hook native glass blur regions", it) }
     }
 
     private fun update(hotseat: View) {

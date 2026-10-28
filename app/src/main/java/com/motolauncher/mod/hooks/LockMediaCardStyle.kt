@@ -5,9 +5,11 @@ import android.graphics.Color
 import android.graphics.Outline
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.ClipDrawable
+import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.LayerDrawable
 import android.text.TextUtils
 import android.util.TypedValue
-import android.util.Log
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
@@ -16,15 +18,18 @@ import android.widget.ImageView
 import android.widget.SeekBar
 import android.widget.TextView
 import java.util.WeakHashMap
+import java.lang.ref.WeakReference
 import kotlin.math.roundToInt
 
 /** Restyles real controls in place; never creates a media session or changes host placement. */
 internal object LockMediaCardStyle {
     private val states = WeakHashMap<ViewGroup, State>()
-    private val diagnostics = mutableSetOf<String>()
+    private val owners = WeakHashMap<View, WeakReference<ViewGroup>>()
+
+    fun owner(view: View): ViewGroup? = owners[view]?.get()
+    fun isApplied(root: ViewGroup): Boolean = states.containsKey(root)
     private val whiteTint = ColorStateList.valueOf(Color.WHITE)
-    private val progressColor = ColorStateList.valueOf(0xffded5df.toInt())
-    private val progressTrack = ColorStateList.valueOf(0xff71636f.toInt())
+    private val lightProgressTrack = ColorStateList.valueOf(SystemUiGlassPalette.progressTrackColor(true, true))
     private val coverOutline = object : ViewOutlineProvider() {
         override fun getOutline(view: View, outline: Outline) {
             outline.setRoundRect(0, 0, view.width, view.height, 6f * view.resources.displayMetrics.density)
@@ -39,6 +44,11 @@ internal object LockMediaCardStyle {
         var surface: Drawable? = null
         var liquid = false
         var blur = false
+        var keyguard = false
+        var night = false
+        var seekDrawable: Drawable? = null
+        var seekThumb: Drawable? = null
+        var seekColor: Int? = null
         val children = WeakHashMap<View, Snapshot>()
     }
 
@@ -65,6 +75,8 @@ internal object LockMediaCardStyle {
         val gravity = (view as? TextView)?.gravity
         val imageTint = (view as? ImageView)?.imageTintList
         val scaleType = (view as? ImageView)?.scaleType
+        val progressDrawable = (view as? SeekBar)?.progressDrawable
+        val thumb = (view as? SeekBar)?.thumb
         val progressTint = (view as? SeekBar)?.progressTintList
         val progressBackgroundTint = (view as? SeekBar)?.progressBackgroundTintList
         val thumbTint = (view as? SeekBar)?.thumbTintList
@@ -98,6 +110,8 @@ internal object LockMediaCardStyle {
                 scaleType?.let { view.scaleType = it }
             }
             if (view is SeekBar) {
+                view.progressDrawable = progressDrawable
+                view.thumb = thumb
                 view.progressTintList = progressTint
                 view.progressBackgroundTintList = progressBackgroundTint
                 view.thumbTintList = thumbTint
@@ -106,7 +120,8 @@ internal object LockMediaCardStyle {
     }
 
     /** Missing/unsupported layouts are left untouched, rather than hiding working controls. */
-    fun apply(root: ViewGroup, liquid: Boolean, blurAvailable: Boolean, report: (Throwable) -> Unit): Boolean {
+    fun apply(root: ViewGroup, liquid: Boolean, blurAvailable: Boolean,
+        forceKeyguardAppearance: Boolean = false, report: (Throwable) -> Unit): Boolean {
         val children = descendants(root).associateBy(::name)
         val album = children["album_art"] as? ImageView ?: return false
         val title = children["header_title"] as? TextView ?: return false
@@ -117,20 +132,33 @@ internal object LockMediaCardStyle {
         if (listOf(album, title, artist, progress, play).any { it.parent !== root }) return false
         val d = root.resources.displayMetrics.density
         fun dp(value: Float) = (value * d).roundToInt()
-        if (root.width < dp(240f) || root.height < dp(136f)) {
-            if (root.width > 0 && root.height > 0 && diagnostics.add("size:${root.width}:${root.height}")) {
-                Log.i("MotoNotificationFrost", "Compact media waiting for usable bounds: ${root.width}x${root.height} density=$d")
-            }
+        if (root.width <= 0 || root.height <= 0) {
             return false
         }
         val state = states.getOrPut(root) { State(root) }
-        if (state.surface == null || state.liquid != liquid || state.blur != blurAvailable) {
-            state.surface = LiquidGlassSurface.create(root, LiquidGlassSurface.cardRadius(root, true), blurAvailable,
-                keyguard = true, night = true, liquid = liquid, report = report)
+        // Expanded island popups share the lock-screen material/radius, even when
+        // opened over a light home screen. The actual host/lock state stays native.
+        val keyguard = forceKeyguardAppearance || LockNotificationLayout.isKeyguard(root)
+        val night = forceKeyguardAppearance || root.resources.configuration.uiMode and
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val contentColor = SystemUiGlassPalette.primaryContentColor(night, liquid)
+        val secondaryColor = SystemUiGlassPalette.secondaryContentColor(night, liquid)
+        val trackColor = SystemUiGlassPalette.progressTrackColor(night, liquid)
+        val contentTint = whiteTint
+        val trackTint = lightProgressTrack
+        if (state.surface == null || state.liquid != liquid || state.blur != blurAvailable ||
+            state.keyguard != keyguard || state.night != night) {
+            state.surface = LiquidGlassSurface.create(root, LiquidGlassSurface.cardRadius(root, keyguard), blurAvailable,
+                keyguard = keyguard, night = night, liquid = liquid, report = report)
             state.liquid = liquid
             state.blur = blurAvailable
+            state.keyguard = keyguard
+            state.night = night
         }
-        fun remember(view: View) { state.children.getOrPut(view) { Snapshot(view) } }
+        fun remember(view: View) {
+            state.children.getOrPut(view) { Snapshot(view) }
+            if (owners[view]?.get() !== root) owners[view] = WeakReference(root)
+        }
         fun place(view: View, left: Int, top: Int, width: Int, height: Int,
             measure: Boolean = true, clearClip: Boolean = true) {
             remember(view)
@@ -180,32 +208,63 @@ internal object LockMediaCardStyle {
             }
         }
         val inset = dp(12f)
-        val cover = dp(if (root.height < dp(168f)) 44f else 56f)
+        // Keep the layout active during collapsed/expanded native transitions.
+        val compactHeight = root.height < dp(152f)
+        val cover = dp(if (compactHeight) 36f else 44f)
         val infoLeft = inset + cover + dp(12f)
         val outputSize = dp(48f)
-        val infoWidth = root.width - infoLeft - inset - outputSize - dp(4f)
+        val infoWidth = root.width - infoLeft - inset
         place(album, inset, inset, cover, cover)
         if (album.scaleType != ImageView.ScaleType.CENTER_CROP) album.scaleType = ImageView.ScaleType.CENTER_CROP
         if (album.imageTintList != null) album.imageTintList = null
         if (album.outlineProvider !== coverOutline) album.outlineProvider = coverOutline
         if (!album.clipToOutline) album.clipToOutline = true
         place(title, infoLeft, inset, infoWidth, dp(22f))
-        text(title, 14f, Color.WHITE)
+        text(title, 14f, contentColor)
         place(artist, infoLeft, inset + dp(22f), infoWidth, dp(18f))
-        text(artist, 11f, 0xffbdb3bd.toInt())
+        text(artist, 12f, secondaryColor)
 
-        val progressTop = maxOf(inset + cover - dp(8f), root.height - dp(96f))
-        place(progress, infoLeft, progressTop, root.width - inset - infoLeft, dp(28f))
-        if (progress.progressTintList !== progressColor) progress.progressTintList = progressColor
-        if (progress.progressBackgroundTintList !== progressTrack) progress.progressBackgroundTintList = progressTrack
-        if (progress.thumbTintList !== progressColor) progress.thumbTintList = progressColor
+        // The reference uses one full-width timeline, with times beside the track.
+        val progressTop = maxOf(inset + cover, root.height - dp(88f))
+        val timeWidth = dp(36f)
+        val trackLeft = inset + timeWidth
+        place(progress, trackLeft, progressTop, root.width - trackLeft - inset - timeWidth, dp(28f))
+        if (progress.paddingLeft != 0 || progress.paddingRight != 0) progress.setPadding(0, 0, 0, 0)
+        if (state.seekDrawable == null || state.seekColor != contentColor) {
+            fun line(color: Int) = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                cornerRadius = dp(2f).toFloat()
+                setColor(color)
+                setSize(dp(1f), dp(3f))
+            }
+            state.seekDrawable = LayerDrawable(arrayOf(line(trackColor),
+                ClipDrawable(line(contentColor), Gravity.LEFT, ClipDrawable.HORIZONTAL))).apply {
+                setId(0, android.R.id.background)
+                setId(1, android.R.id.progress)
+                for (index in 0..1) {
+                    setLayerHeight(index, dp(3f))
+                    setLayerGravity(index, Gravity.CENTER_VERTICAL or Gravity.FILL_HORIZONTAL)
+                }
+            }
+            state.seekThumb = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(contentColor)
+                setSize(dp(5f), dp(5f))
+            }
+            state.seekColor = contentColor
+        }
+        if (progress.progressDrawable !== state.seekDrawable) progress.progressDrawable = state.seekDrawable
+        if (progress.thumb !== state.seekThumb) progress.thumb = state.seekThumb
+        if (progress.progressTintList !== contentTint) progress.progressTintList = contentTint
+        if (progress.progressBackgroundTintList !== trackTint) progress.progressBackgroundTintList = trackTint
+        if (progress.thumbTintList !== contentTint) progress.thumbTintList = contentTint
         for ((id, right) in listOf("media_elapsed_time" to false, "media_total_time" to true,
             "media_scrubbing_elapsed_time" to false, "media_scrubbing_total_time" to true)) {
             val time = children[id] as? TextView ?: continue
             if (time.parent !== root) continue
-            place(time, if (right) root.width - inset - dp(52f) else infoLeft,
-                progressTop + dp(23f), dp(52f), dp(16f))
-            text(time, 9f, 0xffbdb3bd.toInt(), right)
+            place(time, if (right) root.width - inset - timeWidth else inset,
+                progressTop, timeWidth, dp(28f))
+            text(time, 9f, secondaryColor, right)
         }
 
         val actionSize = dp(48f)
@@ -216,24 +275,37 @@ internal object LockMediaCardStyle {
         val actions = actionNames.mapNotNull { children[it] }.filter { it.parent === root }.distinct()
         val semanticActions = actions.filter { name(it) in setOf("actionPrev", "actionPlayPause", "actionNext") }
         val customActions = actions.filter { name(it).startsWith("action") &&
-            name(it) !in setOf("actionPrev", "actionPlayPause", "actionNext") && it.visibility != View.GONE }
-        val split = (customActions.size + 1) / 2
-        val orderedActions = customActions.take(split) + semanticActions + customActions.drop(split)
-        val slots = MediaControlGeometry.actions(root.width, inset, actionSize, orderedActions.size)
-        orderedActions.zip(slots).forEach { (action, slot) ->
+            name(it) !in setOf("actionPrev", "actionPlayPause", "actionNext") &&
+            (it.visibility != View.GONE || (it as? ImageView)?.drawable != null) }
+        // Reserve the trailing slot for the real output picker. Do not invent a
+        // favourite action if the media session does not offer one.
+        val actionSlots = MediaControlGeometry.referenceActions(root.width, inset, actionSize,
+            semanticActions.map(::name), customActions.map(::name))
+        actions.forEach { action ->
+            val slot = actionSlots[name(action)] ?: return@forEach
             place(action, slot.left, actionTop + (actionSize - slot.size) / 2, slot.size, slot.size)
             if (action.background != null) action.background = null
-            if (action is ImageView && action.imageTintList !== whiteTint) action.imageTintList = whiteTint
+            val padding = dp(if (name(action) == "actionPlayPause") 8f else 12f)
+            if (action.paddingLeft != padding || action.paddingTop != padding ||
+                action.paddingRight != padding || action.paddingBottom != padding) {
+                action.setPadding(padding, padding, padding, padding)
+            }
+            if (action is ImageView) {
+                if (action.imageTintList !== contentTint) action.imageTintList = contentTint
+                if (action.scaleType != ImageView.ScaleType.FIT_CENTER) action.scaleType = ImageView.ScaleType.FIT_CENTER
+            }
         }
         (children["icon"] as? ImageView)?.takeIf { it.parent === root }?.let {
             // App badge stays with the cover, leaving a full header touch target for output.
             place(it, inset + cover - dp(18f), inset + cover - dp(18f), dp(18f), dp(18f))
         }
         children["media_seamless"]?.takeIf { it.parent === root }?.let { output ->
-            val size = outputSize
+            val slot = MediaControlGeometry.referenceOutput(root.width, inset, outputSize, customActions.size)
+            val size = slot.size
             // Change real hit bounds as well as pixels. Do not remeasure the native
             // text-bearing LinearLayout: that can create a scrubbing layout loop.
-            place(output, root.width - inset - size, inset, size, size, measure = false, clearClip = false)
+            place(output, slot.left, actionTop + (actionSize - size) / 2, size, size,
+                measure = false, clearClip = false)
             val clip = Rect(0, 0, size, size)
             if (output.clipBounds != clip) output.clipBounds = clip
             val outputLayers = listOf(output) + if (output is ViewGroup) descendants(output) else emptyList()
@@ -267,19 +339,20 @@ internal object LockMediaCardStyle {
                 // ImageView needs a matching measured size and FIT_CENTER; retaining
                 // the pill's matrix/measurement can cut off wide cast/device icons.
                 if (image.scaleType != ImageView.ScaleType.FIT_CENTER) image.scaleType = ImageView.ScaleType.FIT_CENTER
-                place(image, dp(12f), dp(12f), dp(24f), dp(24f))
-                if (image.imageTintList !== whiteTint) image.imageTintList = whiteTint
+                val imageSize = minOf(dp(24f), size)
+                place(image, (size - imageSize) / 2, (size - imageSize) / 2, imageSize, imageSize)
+                if (image.imageTintList !== contentTint) image.imageTintList = contentTint
             }
-        }
-        if (diagnostics.add("applied:$liquid:$blurAvailable")) {
-            Log.i("MotoNotificationFrost", "Compact keyguard media applied: ${root.width}x${root.height} liquid=$liquid blur=$blurAvailable actions=${actions.size}")
         }
         return true
     }
 
     fun restore(root: ViewGroup) {
         val state = states.remove(root) ?: return
-        state.children.forEach { (view, snapshot) -> snapshot.restore(view) }
+        state.children.forEach { (view, snapshot) ->
+            owners.remove(view)
+            snapshot.restore(view)
+        }
         if (root.background === state.surface) {
             root.background = state.background
             root.backgroundTintList = state.tint
