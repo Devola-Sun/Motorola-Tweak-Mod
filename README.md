@@ -2,7 +2,7 @@
 
 **Author / 製作者: Devola-Sun**
 
-Integrated LSPosed module for the Motorola Razr (Android 16 / API 36). One
+Integrated LSPosed module for the Motorola RazrFold/Signature/Razr (Android 16 / API 36). One
 settings app controls both the Motorola launcher (`com.motorola.launcher3`) and
 SystemUI (`com.android.systemui`), built with Kotlin and YukiHookAPI 1.3.2.
 
