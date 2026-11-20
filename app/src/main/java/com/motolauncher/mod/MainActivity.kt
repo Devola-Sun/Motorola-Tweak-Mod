@@ -367,6 +367,7 @@ class MainActivity : AppCompatActivity() {
         bindBatterySettings()
         bindCorePatchSettings()
         bindCameraSettings()
+        bindInnerSnapSettings()
         bindLanguage()
         bindUpdateSettings()
         bindStatusBarOrder()
@@ -1381,6 +1382,41 @@ class MainActivity : AppCompatActivity() {
      * The toggle is read by the system_server hook, so the prefs are pushed to
      * the LSPosed prefs location right away.
      */
+    private fun bindInnerSnapSettings() {
+        val three = findViewById<SwitchCompat>(R.id.switch_three_column)
+        three.isChecked = settings.threeColumnEnabled
+        three.setOnCheckedChangeListener { _, value -> settings.threeColumnEnabled = value }
+        val enabled = findViewById<SwitchCompat>(R.id.switch_inner_snap)
+        val gestures = findViewById<SwitchCompat>(R.id.switch_inner_snap_double_tap)
+        val mode = findViewById<Spinner>(R.id.spinner_inner_snap_mode)
+        val modes = HookConfig.InnerSnapMode.entries
+        mode.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item,
+            modes.map { getString(it.labelRes) })
+        mode.setSelection(modes.indexOf(HookConfig.InnerSnapMode.fromKey(settings.innerSnapMode)), false)
+        fun updateControls() {
+            mode.isEnabled = settings.innerSnapEnabled
+            gestures.isEnabled = settings.innerSnapEnabled &&
+                settings.innerSnapMode != HookConfig.InnerSnapMode.FREEFORM.key
+            mode.alpha = if (mode.isEnabled) 1f else 0.4f
+            gestures.alpha = if (gestures.isEnabled) 1f else 0.4f
+        }
+        enabled.isChecked = settings.innerSnapEnabled
+        gestures.isChecked = settings.innerSnapDoubleTap
+        enabled.setOnCheckedChangeListener { _, value ->
+            settings.innerSnapEnabled = value
+            updateControls()
+        }
+        gestures.setOnCheckedChangeListener { _, value -> settings.innerSnapDoubleTap = value }
+        mode.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                settings.innerSnapMode = modes[position].key
+                updateControls()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+        }
+        updateControls()
+    }
+
     private fun bindCameraSettings() {
         disableCameraSoundSwitch.isChecked = settings.disableCameraSound
         disableCameraSoundSwitch.setOnCheckedChangeListener { _, value ->
@@ -1408,6 +1444,11 @@ class MainActivity : AppCompatActivity() {
         RootShell.run(SYNC_PREFS_COMMAND) { success, output ->
             prefsSyncRunning = false
             if (!success) Log.w(TAG, "Prefs sync failed: $output")
+            if (success) {
+                runCatching {
+                    sendBroadcast(Intent(HookConfig.ACTION_INNER_SNAP_REFRESH).setPackage("android"))
+                }.onFailure { Log.w(TAG, "Inner snap refresh notification failed", it) }
+            }
             if (prefsSyncPending) syncModulePrefs()
         }
     }

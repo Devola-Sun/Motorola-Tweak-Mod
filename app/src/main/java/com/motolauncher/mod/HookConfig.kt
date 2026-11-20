@@ -162,6 +162,28 @@ object HookConfig {
     const val KEY_DISABLE_CAMERA_SOUND: String = "disable_camera_sound"
     const val DEFAULT_DISABLE_CAMERA_SOUND: Boolean = false
 
+    /** Inner-display task alignment; always opt-in, including margin gestures. */
+    const val KEY_INNER_SNAP_ENABLED = "inner_snap_enabled"
+    const val KEY_INNER_SNAP_MODE = "inner_snap_mode"
+    const val KEY_INNER_SNAP_DOUBLE_TAP = "inner_snap_double_tap"
+    const val DEFAULT_INNER_SNAP_ENABLED = false
+    const val DEFAULT_INNER_SNAP_DOUBLE_TAP = false
+    const val DEFAULT_INNER_SNAP_MODE = "BOTH"
+    const val ACTION_INNER_SNAP_REFRESH = "io.github.devola_sun.motorolatweak.INNER_SNAP_REFRESH"
+    const val INNER_SNAP_REFRESH_PERMISSION = "io.github.devola_sun.motorolatweak.permission.INNER_SNAP_REFRESH"
+    const val KEY_THREE_COLUMN_ENABLED = "three_column_enabled"
+
+    enum class InnerSnapMode(val key: String, @StringRes val labelRes: Int) {
+        LETTERBOX("LETTERBOX", R.string.inner_snap_mode_letterbox),
+        FREEFORM("FREEFORM", R.string.inner_snap_mode_freeform),
+        BOTH("BOTH", R.string.inner_snap_mode_both);
+
+        companion object {
+            fun fromKey(value: String?): InnerSnapMode =
+                entries.firstOrNull { it.key == value } ?: BOTH
+        }
+    }
+
     /** CorePatch-style installer policy bypass (system framework). */
     const val KEY_COREPATCH_BYPASS_SIGNATURES: String = "corepatch_bypass_signatures"
     const val KEY_COREPATCH_ALLOW_DOWNGRADE: String = "corepatch_allow_downgrade"

@@ -1,5 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="three_column_title">三点メニューに3画面整列を追加（実験的）</string>
+    <string name="three_column_desc">展開した横画面で、全画面アプリの三点メニューから3画面整列を開始します。起動済みの分割対応アプリを右端、中央の順に選ぶと、3つのアプリをまとめて配置します。標準の2分割や表示密度は変更しません。初回導入はソフトリブートが必要です。</string>
+    <string name="inner_snap_title">インナースクリーンの左右寄せボタン</string>
+    <string name="inner_snap_desc">展開時の余白に左・中央・右へ移動するボタンを表示します（既定OFF）。上下に余白がある全画面アプリでは上・中央・下へ切り替わります。48dp以上の余白があるフォーカス中のアプリが対象で、設定などの埋め込み分割ペインは対象外です。初回導入はAndroidスコープを有効にして再起動してください。未対応ROMでは表示しません。</string>
+    <string name="inner_snap_mode_title">左右寄せの適用対象</string>
+    <string name="inner_snap_mode_letterbox">レターボックスのみ</string>
+    <string name="inner_snap_mode_freeform">フリーフォームのみ</string>
+    <string name="inner_snap_mode_both">両方</string>
+    <string name="inner_snap_double_tap_title">余白のダブルタップでも移動</string>
+    <string name="inner_snap_double_tap_desc">レターボックスのシステム標準リーチビリティ操作を有効にします。単タップの横取りはしません。対応ROMのみ。ボタン操作はこの設定に関係なく利用できます。</string>
+    <string name="inner_snap_move_left">左に寄せる</string>
+    <string name="inner_snap_move_right">右に寄せる</string>
+    <string name="inner_snap_move_top">上に寄せる</string>
+    <string name="inner_snap_move_bottom">下に寄せる</string>
+    <string name="inner_snap_move_center">中央に寄せる</string>
+    <string name="three_column_action_start">⊞ 3画面整列</string>
+    <string name="three_column_action_roll">⇄ カラムを入れ替え</string>
+    <string name="three_column_action_exit">3画面整列を解除</string>
+    <string name="three_column_choose_right">右端のアプリを選択</string>
+    <string name="three_column_choose_center">中央のアプリを選択</string>
+    <string name="three_column_window_label">%1$s（ウィンドウ %2$d）</string>
+    <string name="three_column_initializing">3画面選択の初期化が完了していません</string>
+    <string name="three_column_hooks_unavailable">この環境では3画面選択のフックを読み込めません</string>
+    <string name="three_column_environment_unavailable">3画面選択の利用条件を確認できません</string>
+    <string name="three_column_use_unfolded_landscape">展開した横画面で操作してください</string>
+    <string name="three_column_not_ready">純正3画面分割の準備ができていません</string>
+    <string name="three_column_wait_transition">画面の切り替えが終わってから、もう一度お試しください</string>
+    <string name="three_column_group_unavailable">この3画面整列は操作できません</string>
+    <string name="three_column_action_failed">純正3画面の操作を開始できませんでした</string>
+    <string name="three_column_already_running">3画面選択または整列を実行中です</string>
+    <string name="three_column_native_disabled">純正の3画面分割が有効になっていません</string>
+    <string name="three_column_exit_current_split">現在の分割を終了してから、もう一度お試しください</string>
+    <string name="three_column_require_fullscreen">分割できる全画面アプリから操作してください</string>
+    <string name="three_column_enter_failed">3画面整列を開始できませんでした</string>
+    <plurals name="three_column_need_more_windows">
+        <item quantity="other">3画面整列には、分割できるウィンドウをあと%1$dつ開いてください</item>
+    </plurals>
     <string name="section_updates_title">アップデート</string>
     <string name="pref_auto_update_check_title">アップデートを自動確認</string>
     <string name="pref_auto_update_check_desc">アプリを開いたときにGitHubの正式リリースを確認します。未更新の場合は6時間後から再び案内します。バックグラウンド通知ではありません。</string>

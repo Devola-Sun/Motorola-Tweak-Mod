@@ -1,5 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="three_column_title">Add three-column tiling to the three-dot menu (experimental)</string>
+    <string name="three_column_desc">On the unfolded screen in landscape, start three-column tiling from the three-dot menu of a fullscreen app. Choose an already running split-screen–capable app for the right column, then one for the center. Standard two-app split screen and display density are unchanged. A soft reboot is required after first installation.</string>
+    <string name="inner_snap_title">Window alignment buttons on the inner screen</string>
+    <string name="inner_snap_desc">Show buttons in the empty space to move the focused app left, center, or right when unfolded (off by default). For fullscreen apps with space above and below, the buttons move the app up, center, or down. The focused app needs at least 48 dp of empty space. Embedded panes, such as those in Settings, are excluded. Enable Android scope and reboot after first installation. Unsupported ROMs do not show the buttons.</string>
+    <string name="inner_snap_mode_title">Apply alignment to</string>
+    <string name="inner_snap_mode_letterbox">Letterboxed apps only</string>
+    <string name="inner_snap_mode_freeform">Freeform windows only</string>
+    <string name="inner_snap_mode_both">Both</string>
+    <string name="inner_snap_double_tap_title">Double-tap empty space to move the app</string>
+    <string name="inner_snap_double_tap_desc">Enable the system reachability gesture for letterboxed apps on supported ROMs. Single taps are not intercepted. The alignment buttons work regardless of this setting.</string>
+    <string name="inner_snap_move_left">Align left</string>
+    <string name="inner_snap_move_right">Align right</string>
+    <string name="inner_snap_move_top">Align to top</string>
+    <string name="inner_snap_move_bottom">Align to bottom</string>
+    <string name="inner_snap_move_center">Center window</string>
+    <string name="three_column_action_start">⊞ Tile three apps</string>
+    <string name="three_column_action_roll">⇄ Rotate columns</string>
+    <string name="three_column_action_exit">Exit three-column tiling</string>
+    <string name="three_column_choose_right">Choose an app for the right column</string>
+    <string name="three_column_choose_center">Choose an app for the center column</string>
+    <string name="three_column_window_label">%1$s (window %2$d)</string>
+    <string name="three_column_initializing">Three-column tiling is still initializing</string>
+    <string name="three_column_hooks_unavailable">Three-column tiling hooks could not load on this device</string>
+    <string name="three_column_environment_unavailable">Could not check if three-column tiling is available</string>
+    <string name="three_column_use_unfolded_landscape">Unfold the device and use it in landscape</string>
+    <string name="three_column_not_ready">Native three-app split screen is not ready</string>
+    <string name="three_column_wait_transition">Wait for the window transition to finish, then try again</string>
+    <string name="three_column_group_unavailable">This three-column group cannot be changed right now</string>
+    <string name="three_column_action_failed">Could not complete the three-column action</string>
+    <string name="three_column_already_running">Three-column selection or tiling is already in progress</string>
+    <string name="three_column_native_disabled">Native three-app split screen is not enabled</string>
+    <string name="three_column_exit_current_split">Exit the current split screen, then try again</string>
+    <string name="three_column_require_fullscreen">Start from a fullscreen app that supports split screen</string>
+    <string name="three_column_enter_failed">Could not start three-column tiling</string>
+    <plurals name="three_column_need_more_windows">
+        <item quantity="one">Open %1$d more window that supports split screen to tile three apps</item>
+        <item quantity="other">Open %1$d more windows that support split screen to tile three apps</item>
+    </plurals>
     <string name="section_updates_title">Updates</string>
     <string name="pref_auto_update_check_title">Automatically check for updates</string>
     <string name="pref_auto_update_check_desc">Check GitHub for stable releases when you open the app. Remind again after 6 hours if not updated. This is not a background notification.</string>

@@ -5,6 +5,9 @@ import com.highcapable.yukihookapi.YukiHookAPI
 import com.highcapable.yukihookapi.annotation.xposed.InjectYukiHookWithXposed
 import com.highcapable.yukihookapi.hook.xposed.proxy.IYukiHookXposedInit
 import com.motolauncher.mod.hooks.BatteryServiceHook
+import com.motolauncher.mod.hooks.InnerScreenSnapHook
+import com.motolauncher.mod.hooks.NativeThreeColumnLauncherDiagnostics
+import com.motolauncher.mod.hooks.ThreeColumnMenuHook
 import com.motolauncher.mod.hooks.CameraHook
 import com.motolauncher.mod.hooks.ControlCenterHooks
 import com.motolauncher.mod.hooks.CoverDockHook
@@ -99,6 +102,13 @@ object HookEntry : IYukiHookXposedInit {
                     runCatching { LauncherHooker.install(this, prefs) }.onFailure {
                         Log.w(MODULE_TAG, "LauncherHooker could not be installed", it)
                     }
+                    runCatching {
+                        appClassLoader?.let { loader ->
+                            NativeThreeColumnLauncherDiagnostics.install(loader) {
+                                HookConfig.safeGetBoolean(prefs, HookConfig.KEY_THREE_COLUMN_ENABLED, false)
+                            }
+                        }
+                    }.onFailure { ErrorLogger.log(MODULE_TAG, "Three-app picker diagnostics could not be installed", it) }
                     runCatching { loadHooker(CoverDockHook) }.onFailure {
                         Log.w(MODULE_TAG, "CoverDockHook could not be loaded", it)
                     }
@@ -160,6 +170,9 @@ object HookEntry : IYukiHookXposedInit {
                     }
                     runCatching { loadHooker(ControlCenterHooks) }.onFailure {
                         Log.w(MODULE_TAG, "ControlCenterHooks could not be loaded", it)
+                    }
+                    runCatching { loadHooker(ThreeColumnMenuHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "ThreeColumnMenuHook could not be loaded", it)
                     }
                     runCatching { loadHooker(LockShortcutHook) }.onFailure {
                         ErrorLogger.log(MODULE_TAG, "LockShortcutHook could not be loaded", it)
@@ -269,6 +282,9 @@ object HookEntry : IYukiHookXposedInit {
                     }
                     runCatching { loadHooker(BatteryServiceHook) }.onFailure {
                         Log.w(MODULE_TAG, "BatteryServiceHook could not be loaded", it)
+                    }
+                    runCatching { loadHooker(InnerScreenSnapHook) }.onFailure {
+                        ErrorLogger.log(MODULE_TAG, "InnerScreenSnapHook could not be loaded", it)
                     }
                 }
             }

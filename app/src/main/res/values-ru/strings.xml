@@ -1,5 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="three_column_title">Добавить раскладку в три колонки в меню с тремя точками (экспериментально)</string>
+    <string name="three_column_desc">Разверните устройство и поверните его горизонтально. Запустите раскладку в три колонки из меню полноэкранного приложения. Сначала выберите приложение для правой колонки, затем для центральной. Оба приложения должны быть уже запущены и поддерживать разделение экрана. Обычное разделение на два приложения и плотность экрана не меняются. После первой установки нужна мягкая перезагрузка.</string>
+    <string name="inner_snap_title">Кнопки выравнивания окон на внутреннем экране</string>
+    <string name="inner_snap_desc">На развёрнутом устройстве кнопки на свободном месте перемещают активное приложение влево, в центр или вправо (по умолчанию выключено). Если у полноэкранного приложения есть свободное место сверху и снизу, кнопки перемещают его вверх, в центр или вниз. Нужно не менее 48 dp свободного места. Встроенные панели, например в Настройках, не поддерживаются. После первой установки включите область действия Android и перезагрузите устройство. На неподдерживаемых прошивках кнопки не отображаются.</string>
+    <string name="inner_snap_mode_title">Где использовать выравнивание</string>
+    <string name="inner_snap_mode_letterbox">Только приложения с полями</string>
+    <string name="inner_snap_mode_freeform">Только плавающие окна</string>
+    <string name="inner_snap_mode_both">Оба варианта</string>
+    <string name="inner_snap_double_tap_title">Перемещать приложение двойным касанием свободной области</string>
+    <string name="inner_snap_double_tap_desc">Включает системный жест перемещения приложений с полями на поддерживаемых прошивках. Одиночные касания не перехватываются. Кнопки выравнивания работают независимо от этой настройки.</string>
+    <string name="inner_snap_move_left">Выровнять по левому краю</string>
+    <string name="inner_snap_move_right">Выровнять по правому краю</string>
+    <string name="inner_snap_move_top">Выровнять по верхнему краю</string>
+    <string name="inner_snap_move_bottom">Выровнять по нижнему краю</string>
+    <string name="inner_snap_move_center">Поместить окно в центр</string>
+    <string name="three_column_action_start">⊞ Три колонки</string>
+    <string name="three_column_action_roll">⇄ Переставить колонки</string>
+    <string name="three_column_action_exit">Выйти из режима трёх колонок</string>
+    <string name="three_column_choose_right">Выберите приложение для правой колонки</string>
+    <string name="three_column_choose_center">Выберите приложение для центральной колонки</string>
+    <string name="three_column_window_label">%1$s (окно %2$d)</string>
+    <string name="three_column_initializing">Режим трёх колонок ещё не готов</string>
+    <string name="three_column_hooks_unavailable">Не удалось загрузить режим трёх колонок на этом устройстве</string>
+    <string name="three_column_environment_unavailable">Не удалось проверить доступность режима трёх колонок</string>
+    <string name="three_column_use_unfolded_landscape">Разверните устройство и поверните его горизонтально</string>
+    <string name="three_column_not_ready">Системный режим разделения экрана на три приложения ещё не готов</string>
+    <string name="three_column_wait_transition">Дождитесь окончания переключения окон и повторите попытку</string>
+    <string name="three_column_group_unavailable">Сейчас нельзя изменить эту группу из трёх колонок</string>
+    <string name="three_column_action_failed">Не удалось выполнить действие с тремя колонками</string>
+    <string name="three_column_already_running">Выбор приложений или раскладка в три колонки уже выполняется</string>
+    <string name="three_column_native_disabled">Системный режим разделения экрана на три приложения не включён</string>
+    <string name="three_column_exit_current_split">Выйдите из текущего режима разделения экрана и повторите попытку</string>
+    <string name="three_column_require_fullscreen">Запустите режим из полноэкранного приложения с поддержкой разделения экрана</string>
+    <string name="three_column_enter_failed">Не удалось запустить режим трёх колонок</string>
+    <plurals name="three_column_need_more_windows">
+        <item quantity="one">Для раскладки откройте ещё %1$d окно с поддержкой разделения экрана</item>
+        <item quantity="few">Для раскладки откройте ещё %1$d окна с поддержкой разделения экрана</item>
+        <item quantity="many">Для раскладки откройте ещё %1$d окон с поддержкой разделения экрана</item>
+        <item quantity="other">Для раскладки откройте ещё %1$d окна с поддержкой разделения экрана</item>
+    </plurals>
     <string name="section_updates_title">Обновления</string>
     <string name="pref_auto_update_check_title">Автоматическая проверка обновлений</string>
     <string name="pref_auto_update_check_desc">Проверяет стабильные выпуски на GitHub при открытии приложения. Если обновление не установлено, напомнит через 6 часов. Это не фоновое уведомление.</string>

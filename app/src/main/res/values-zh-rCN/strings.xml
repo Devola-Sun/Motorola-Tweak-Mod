@@ -1,5 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="three_column_title">在三点菜单中添加三列分屏（实验性）</string>
+    <string name="three_column_desc">展开设备并横屏使用时，从全屏应用的三点菜单启动三列分屏。先选择右侧应用，再选择中间应用；两者都必须已运行并支持分屏。不会更改标准双应用分屏或显示密度。首次安装后需要软重启。</string>
+    <string name="inner_snap_title">内屏窗口对齐按钮</string>
+    <string name="inner_snap_desc">设备展开时，在空白区域显示按钮，可将当前应用移至左侧、居中或右侧（默认关闭）。如果全屏应用上下有空白，可移至顶部、居中或底部。当前应用周围至少需要 48 dp 的空白；不适用于设置等应用中的嵌入式面板。首次安装后请启用 Android 作用域并重启。不支持的 ROM 不会显示按钮。</string>
+    <string name="inner_snap_mode_title">窗口对齐适用范围</string>
+    <string name="inner_snap_mode_letterbox">仅限带留白的应用</string>
+    <string name="inner_snap_mode_freeform">仅限自由窗口</string>
+    <string name="inner_snap_mode_both">两者都适用</string>
+    <string name="inner_snap_double_tap_title">双击空白区域移动应用</string>
+    <string name="inner_snap_double_tap_desc">在受支持的 ROM 上为带留白的应用启用系统原有的移动手势。不拦截单击。无论此设置是否开启，均可使用对齐按钮。</string>
+    <string name="inner_snap_move_left">靠左对齐</string>
+    <string name="inner_snap_move_right">靠右对齐</string>
+    <string name="inner_snap_move_top">靠顶部对齐</string>
+    <string name="inner_snap_move_bottom">靠底部对齐</string>
+    <string name="inner_snap_move_center">居中窗口</string>
+    <string name="three_column_action_start">⊞ 三列分屏</string>
+    <string name="three_column_action_roll">⇄ 轮换列顺序</string>
+    <string name="three_column_action_exit">退出三列分屏</string>
+    <string name="three_column_choose_right">选择右侧应用</string>
+    <string name="three_column_choose_center">选择中间应用</string>
+    <string name="three_column_window_label">%1$s（窗口 %2$d）</string>
+    <string name="three_column_initializing">正在初始化三列分屏</string>
+    <string name="three_column_hooks_unavailable">此设备无法加载三列分屏功能</string>
+    <string name="three_column_environment_unavailable">无法确认是否满足三列分屏的使用条件</string>
+    <string name="three_column_use_unfolded_landscape">请展开设备并在横屏状态下操作</string>
+    <string name="three_column_not_ready">系统三应用分屏尚未就绪</string>
+    <string name="three_column_wait_transition">请等待窗口切换完成后重试</string>
+    <string name="three_column_group_unavailable">暂时无法操作当前的三列分屏</string>
+    <string name="three_column_action_failed">无法完成三列分屏操作</string>
+    <string name="three_column_already_running">正在选择应用或进行三列分屏</string>
+    <string name="three_column_native_disabled">系统三应用分屏未启用</string>
+    <string name="three_column_exit_current_split">请退出当前分屏后重试</string>
+    <string name="three_column_require_fullscreen">请从支持分屏的全屏应用启动</string>
+    <string name="three_column_enter_failed">无法启动三列分屏</string>
+    <plurals name="three_column_need_more_windows">
+        <item quantity="other">请再打开 %1$d 个支持分屏的窗口</item>
+    </plurals>
     <string name="section_updates_title">更新</string>
     <string name="pref_auto_update_check_title">自动检查更新</string>
     <string name="pref_auto_update_check_desc">打开应用时检查 GitHub 上的正式版本。未更新时，6 小时后可再次提醒。这不是后台通知。</string>

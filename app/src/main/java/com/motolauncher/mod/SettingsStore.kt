@@ -329,6 +329,24 @@ class SettingsStore(context: Context) {
             ?: HookConfig.DEFAULT_DISABLE_CAMERA_SOUND
         set(value) = update(HookConfig.KEY_DISABLE_CAMERA_SOUND, value)
 
+    var threeColumnEnabled: Boolean
+        get() = values[HookConfig.KEY_THREE_COLUMN_ENABLED] as? Boolean ?: false
+        set(value) = update(HookConfig.KEY_THREE_COLUMN_ENABLED, value)
+
+    var innerSnapEnabled: Boolean
+        get() = values[HookConfig.KEY_INNER_SNAP_ENABLED] as? Boolean
+            ?: HookConfig.DEFAULT_INNER_SNAP_ENABLED
+        set(value) = update(HookConfig.KEY_INNER_SNAP_ENABLED, value)
+
+    var innerSnapMode: String
+        get() = HookConfig.InnerSnapMode.fromKey(values[HookConfig.KEY_INNER_SNAP_MODE] as? String).key
+        set(value) = update(HookConfig.KEY_INNER_SNAP_MODE, HookConfig.InnerSnapMode.fromKey(value).key)
+
+    var innerSnapDoubleTap: Boolean
+        get() = values[HookConfig.KEY_INNER_SNAP_DOUBLE_TAP] as? Boolean
+            ?: HookConfig.DEFAULT_INNER_SNAP_DOUBLE_TAP
+        set(value) = update(HookConfig.KEY_INNER_SNAP_DOUBLE_TAP, value)
+
     var corepatchBypassSignatures: Boolean
         get() = values[HookConfig.KEY_COREPATCH_BYPASS_SIGNATURES] as? Boolean
             ?: HookConfig.DEFAULT_COREPATCH_BYPASS_SIGNATURES
@@ -442,6 +460,10 @@ class SettingsStore(context: Context) {
             HookConfig.KEY_SB_RIGHT_ORDER to HookConfig.DEFAULT_SB_RIGHT_ORDER,
             HookConfig.KEY_DISABLE_FLAG_SECURE to HookConfig.DEFAULT_DISABLE_FLAG_SECURE,
             HookConfig.KEY_DISABLE_CAMERA_SOUND to HookConfig.DEFAULT_DISABLE_CAMERA_SOUND,
+            HookConfig.KEY_INNER_SNAP_ENABLED to HookConfig.DEFAULT_INNER_SNAP_ENABLED,
+            HookConfig.KEY_THREE_COLUMN_ENABLED to false,
+            HookConfig.KEY_INNER_SNAP_MODE to HookConfig.DEFAULT_INNER_SNAP_MODE,
+            HookConfig.KEY_INNER_SNAP_DOUBLE_TAP to HookConfig.DEFAULT_INNER_SNAP_DOUBLE_TAP,
             HookConfig.KEY_COREPATCH_BYPASS_SIGNATURES to HookConfig.DEFAULT_COREPATCH_BYPASS_SIGNATURES,
             HookConfig.KEY_COREPATCH_ALLOW_DOWNGRADE to HookConfig.DEFAULT_COREPATCH_ALLOW_DOWNGRADE,
             HookConfig.KEY_COREPATCH_BYPASS_DIGEST to HookConfig.DEFAULT_COREPATCH_BYPASS_DIGEST,
